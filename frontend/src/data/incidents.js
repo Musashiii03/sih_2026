@@ -1,0 +1,182 @@
+// ── Shared incident data ─────────────────────────────────────────
+export const INCIDENTS = [
+  {
+    id: 'INC-00142',
+    shortId: '#00142',
+    building: 'Arjun Tech Park — Block B',
+    zone: 'East Corridor, 2F',
+    severity: 'CRITICAL',
+    type: 'fire',
+    typLabel: 'Fire',
+    typeIcon: 'local_fire_department',
+    timeSince: '3 min ago',
+    timestamp: '14:02:11',
+    victims: 4,
+    camId: 'CAM-03',
+    confidence: 97.4,
+    framesConfirmed: 5,
+    framesTotal: 5,
+    status: 'Active',
+    address: 'Plot 14, MIDC Phase II, Andheri East, Mumbai — 400093',
+    floors: '1 → 6',
+    owner: 'Rajesh Mehra',
+    ownerPhone: '+91-98200-11234',
+    ownerEmail: 'r.mehra@arjuntechpark.in',
+    ownerInitials: 'RM',
+    station: 'Andheri East Fire Station',
+    stationDist: '2.1 km',
+    stationEta: '~6 min',
+    stationPhone: '101',
+    surfacePct: 34,
+    temperature: '62°C',
+    windSpeed: '12 km/h',
+    humidity: '28%',
+    aiAnalysis: 'Fire probability HIGH — confirmed thermal signature with sustained smoke column. YOLOv8x confidence 97.4%. Temporal engine: 5/5 frames verified. Recommend immediate evacuation of 2F East wing.',
+    evidenceImgs: [
+      'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=200&q=60',
+      'https://images.unsplash.com/photo-1574607383476-f517f260d30b?w=200&q=60',
+      'https://images.unsplash.com/photo-1599134842279-fe807d23316e?w=200&q=60',
+    ],
+    alertCooldown: [
+      { time: '14:02:11', event: 'Alert generated — 5/5 frames confirmed', type: 'alert' },
+      { time: '14:02:14', event: 'Owner SMS + push dispatched', type: 'notify' },
+      { time: '14:02:16', event: 'Owner email sent', type: 'notify' },
+      { time: '14:02:30', event: 'Follow-up notification sent', type: 'notify' },
+      { time: '14:02:56', event: 'No owner response — escalated to ERSS/112', type: 'escalate' },
+    ],
+    units: [
+      { id: 'UNIT-12', name: 'Engine 12', eta: '5 min', status: 'En Route' },
+      { id: 'UNIT-07', name: 'Ladder 7',  eta: '8 min', status: 'Dispatched' },
+      { id: 'AMB-03',  name: 'Ambulance 3', eta: '4 min', status: 'En Route' },
+    ],
+    sensors: {
+      smoke: 'HIGH (850 ppm)',
+      temp: '62°C',
+      co: '180 ppm',
+      sprinkler: 'Activated',
+      hvac: 'Shutdown',
+    },
+  },
+  {
+    id: 'INC-00141',
+    shortId: '#00141',
+    building: 'Shalimar Residency',
+    zone: 'Kitchen Block, 3F',
+    severity: 'MODERATE',
+    type: 'smoke',
+    typLabel: 'Smoke',
+    typeIcon: 'foggy',
+    timeSince: '11 min ago',
+    timestamp: '13:51:04',
+    victims: 2,
+    camId: 'CAM-07',
+    confidence: 72.1,
+    framesConfirmed: 4,
+    framesTotal: 5,
+    status: 'Investigating',
+    address: 'Sector 18, Nerul, Navi Mumbai — 400706',
+    floors: '1 → 4',
+    owner: 'Sunita Kadam',
+    ownerPhone: '+91-91234-56789',
+    ownerEmail: 's.kadam@shalimarresidency.com',
+    ownerInitials: 'SK',
+    station: 'Nerul Fire Brigade',
+    stationDist: '3.8 km',
+    stationEta: '~10 min',
+    stationPhone: '101',
+    surfacePct: 18,
+    temperature: '38°C',
+    windSpeed: '7 km/h',
+    humidity: '55%',
+    aiAnalysis: 'Smoke detected — moderate density. Possible kitchen steam but persistence beyond 5 frames. 4/5 temporal verification. Monitoring continues. Owner acknowledged.',
+    evidenceImgs: [
+      'https://images.unsplash.com/photo-1583847268964-b28dc8f51f92?w=200&q=60',
+    ],
+    alertCooldown: [
+      { time: '13:51:04', event: 'Advisory alert — 4/5 frames confirmed', type: 'alert' },
+      { time: '13:51:07', event: 'Owner notified via push', type: 'notify' },
+      { time: '13:51:30', event: 'Owner acknowledged — investigating', type: 'ack' },
+    ],
+    units: [
+      { id: 'UNIT-09', name: 'Engine 9', eta: '10 min', status: 'Standby' },
+    ],
+    sensors: {
+      smoke: 'MOD (320 ppm)',
+      temp: '38°C',
+      co: '45 ppm',
+      sprinkler: 'Standby',
+      hvac: 'Normal',
+    },
+  },
+  {
+    id: 'INC-00139',
+    shortId: '#00139',
+    building: 'Regency Business Hub',
+    zone: 'Server Room, B1',
+    severity: 'RESOLVED',
+    type: 'water_leak',
+    typLabel: 'Water Leak',
+    typeIcon: 'water_drop',
+    timeSince: '38 min ago',
+    timestamp: '13:24:40',
+    victims: 0,
+    camId: 'CAM-04',
+    confidence: 91.0,
+    framesConfirmed: 5,
+    framesTotal: 5,
+    status: 'Resolved',
+    address: 'BKC, Bandra East, Mumbai — 400051',
+    floors: 'B2 → 10',
+    owner: 'Priya Nair',
+    ownerPhone: '+91-99876-54321',
+    ownerEmail: 'p.nair@regencyhub.in',
+    ownerInitials: 'PN',
+    station: 'BKC Emergency Services',
+    stationDist: '1.5 km',
+    stationEta: 'Deployed',
+    stationPhone: '100',
+    surfacePct: 0,
+    temperature: '24°C',
+    windSpeed: '—',
+    humidity: '82%',
+    aiAnalysis: 'Water leak on basement floor detected via pipe pressure sensors and visual confirmation. Sprinkler activation confirmed. HVAC shutdown applied. Incident fully resolved.',
+    evidenceImgs: [],
+    alertCooldown: [
+      { time: '13:24:40', event: 'Water leak detected — CAM-04', type: 'alert' },
+      { time: '13:24:44', event: 'HVAC auto-shutdown triggered', type: 'system' },
+      { time: '13:25:10', event: 'Owner confirmed and resolved', type: 'ack' },
+    ],
+    units: [
+      { id: 'UNIT-03', name: 'Engine 3', eta: 'On-site', status: 'Deployed' },
+    ],
+    sensors: {
+      smoke: 'NONE',
+      temp: '24°C',
+      co: '0 ppm',
+      sprinkler: 'Triggered',
+      hvac: 'Shutdown',
+    },
+  },
+];
+
+export function getIncident(id) {
+  return INCIDENTS.find(i => i.id === id || i.shortId === id) || null;
+}
+
+export function severityClass(s) {
+  if (s === 'CRITICAL') return 'badge badge-critical';
+  if (s === 'MODERATE') return 'badge badge-moderate';
+  return 'badge badge-safe';
+}
+
+export function statusColor(s) {
+  if (s === 'Active')        return 'var(--critical)';
+  if (s === 'Investigating') return 'var(--moderate)';
+  return 'var(--safe)';
+}
+
+export const TYPE_ICON = {
+  fire: 'local_fire_department',
+  smoke: 'foggy',
+  water_leak: 'water_drop',
+};
