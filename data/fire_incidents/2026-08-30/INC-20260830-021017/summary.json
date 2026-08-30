@@ -1,0 +1,147 @@
+{
+  "incident_id": "INC-20260830-021017",
+  "timestamp": 1788035981.9726212,
+  "timestamp_readable": "2026-08-30T02:09:41.972621Z",
+  "camera_id": "CAM-01",
+  "location": "Video Source",
+  "frame_count": 6,
+  "frames": [
+    {
+      "frame_index": 0,
+      "timestamp": 1788035981.9726212,
+      "timestamp_readable": "2026-08-30T02:09:41.972621Z",
+      "confidence": 0.4625338017940521,
+      "bounding_boxes": [
+        {
+          "x": 488,
+          "y": 1155,
+          "width": 68,
+          "height": 77,
+          "confidence": 0.4793618619441986
+        },
+        {
+          "x": 247,
+          "y": 219,
+          "width": 203,
+          "height": 102,
+          "confidence": 0.44570574164390564
+        }
+      ],
+      "image_path": "S:\\Programming\\sih_2026\\backend\\models\\..\\..\\data\\fire_incidents\\2026-08-30\\INC-20260830-021017\\frames\\frame_000.jpg",
+      "metadata_path": "S:\\Programming\\sih_2026\\backend\\models\\..\\..\\data\\fire_incidents\\2026-08-30\\INC-20260830-021017\\metadata\\frame_000.json"
+    },
+    {
+      "frame_index": 7,
+      "timestamp": 1788035987.5414078,
+      "timestamp_readable": "2026-08-30T02:09:47.541408Z",
+      "confidence": 0.4525386840105057,
+      "bounding_boxes": [
+        {
+          "x": 488,
+          "y": 1155,
+          "width": 68,
+          "height": 77,
+          "confidence": 0.49809423089027405
+        },
+        {
+          "x": 256,
+          "y": 197,
+          "width": 182,
+          "height": 124,
+          "confidence": 0.4069831371307373
+        }
+      ],
+      "image_path": "S:\\Programming\\sih_2026\\backend\\models\\..\\..\\data\\fire_incidents\\2026-08-30\\INC-20260830-021017\\frames\\frame_007.jpg",
+      "metadata_path": "S:\\Programming\\sih_2026\\backend\\models\\..\\..\\data\\fire_incidents\\2026-08-30\\INC-20260830-021017\\metadata\\frame_007.json"
+    },
+    {
+      "frame_index": 13,
+      "timestamp": 1788035990.853414,
+      "timestamp_readable": "2026-08-30T02:09:50.853414Z",
+      "confidence": 0.4732038676738739,
+      "bounding_boxes": [
+        {
+          "x": 488,
+          "y": 1155,
+          "width": 68,
+          "height": 77,
+          "confidence": 0.4732038676738739
+        }
+      ],
+      "image_path": "S:\\Programming\\sih_2026\\backend\\models\\..\\..\\data\\fire_incidents\\2026-08-30\\INC-20260830-021017\\frames\\frame_013.jpg",
+      "metadata_path": "S:\\Programming\\sih_2026\\backend\\models\\..\\..\\data\\fire_incidents\\2026-08-30\\INC-20260830-021017\\metadata\\frame_013.json"
+    },
+    {
+      "frame_index": 17,
+      "timestamp": 1788035993.196074,
+      "timestamp_readable": "2026-08-30T02:09:53.196074Z",
+      "confidence": 0.41881799697875977,
+      "bounding_boxes": [
+        {
+          "x": 488,
+          "y": 1155,
+          "width": 68,
+          "height": 77,
+          "confidence": 0.45897775888442993
+        },
+        {
+          "x": 246,
+          "y": 193,
+          "width": 89,
+          "height": 142,
+          "confidence": 0.3786582350730896
+        }
+      ],
+      "image_path": "S:\\Programming\\sih_2026\\backend\\models\\..\\..\\data\\fire_incidents\\2026-08-30\\INC-20260830-021017\\frames\\frame_017.jpg",
+      "metadata_path": "S:\\Programming\\sih_2026\\backend\\models\\..\\..\\data\\fire_incidents\\2026-08-30\\INC-20260830-021017\\metadata\\frame_017.json"
+    },
+    {
+      "frame_index": 18,
+      "timestamp": 1788035993.7739048,
+      "timestamp_readable": "2026-08-30T02:09:53.773905Z",
+      "confidence": 0.4042801409959793,
+      "bounding_boxes": [
+        {
+          "x": 488,
+          "y": 1155,
+          "width": 68,
+          "height": 77,
+          "confidence": 0.4624215066432953
+        },
+        {
+          "x": 239,
+          "y": 176,
+          "width": 225,
+          "height": 180,
+          "confidence": 0.34613877534866333
+        }
+      ],
+      "image_path": "S:\\Programming\\sih_2026\\backend\\models\\..\\..\\data\\fire_incidents\\2026-08-30\\INC-20260830-021017\\frames\\frame_018.jpg",
+      "metadata_path": "S:\\Programming\\sih_2026\\backend\\models\\..\\..\\data\\fire_incidents\\2026-08-30\\INC-20260830-021017\\metadata\\frame_018.json"
+    },
+    {
+      "frame_index": 19,
+      "timestamp": 1788035994.3295138,
+      "timestamp_readable": "2026-08-30T02:09:54.329514Z",
+      "confidence": 0.41678136587142944,
+      "bounding_boxes": [
+        {
+          "x": 488,
+          "y": 1155,
+          "width": 68,
+          "height": 77,
+          "confidence": 0.4701850414276123
+        },
+        {
+          "x": 235,
+          "y": 150,
+          "width": 227,
+          "height": 194,
+          "confidence": 0.3633776903152466
+        }
+      ],
+      "image_path": "S:\\Programming\\sih_2026\\backend\\models\\..\\..\\data\\fire_incidents\\2026-08-30\\INC-20260830-021017\\frames\\frame_019.jpg",
+      "metadata_path": "S:\\Programming\\sih_2026\\backend\\models\\..\\..\\data\\fire_incidents\\2026-08-30\\INC-20260830-021017\\metadata\\frame_019.json"
+    }
+  ]
+}
