@@ -14,7 +14,7 @@ const router = express.Router();
 
 // Base path for fire incidents storage
 // Configured relative to backend directory or via environment variable
-const INCIDENTS_BASE_PATH = process.env.FRAME_STORAGE_PATH 
+const INCIDENTS_BASE_PATH = process.env.FRAME_STORAGE_PATH
   ? path.join(__dirname, '../..', process.env.FRAME_STORAGE_PATH)
   : path.join(__dirname, '../../data/fire_incidents');
 
@@ -46,32 +46,32 @@ async function scanIncidentDirectories() {
     }
 
     const incidents = [];
-    
+
     // Read date directories (e.g., "2025-01-15")
     const dateDirs = await fs.readdir(INCIDENTS_BASE_PATH, { withFileTypes: true });
-    
+
     for (const dateDir of dateDirs) {
       if (!dateDir.isDirectory()) continue;
-      
+
       const datePath = path.join(INCIDENTS_BASE_PATH, dateDir.name);
-      
+
       // Read incident directories within each date directory
       const incidentDirs = await fs.readdir(datePath, { withFileTypes: true });
-      
+
       for (const incidentDir of incidentDirs) {
         if (!incidentDir.isDirectory()) continue;
-        
+
         const incidentPath = path.join(datePath, incidentDir.name);
         const summaryPath = path.join(incidentPath, 'summary.json');
-        
+
         // Check if summary.json exists
         try {
           await fs.access(summaryPath);
-          
+
           // Read summary to get metadata
           const summaryContent = await fs.readFile(summaryPath, 'utf8');
           const summary = JSON.parse(summaryContent);
-          
+
           incidents.push({
             incident_id: summary.incident_id || incidentDir.name,
             timestamp: summary.timestamp || 0,
@@ -89,10 +89,10 @@ async function scanIncidentDirectories() {
         }
       }
     }
-    
+
     // Sort incidents by timestamp (newest first)
     incidents.sort((a, b) => b.timestamp - a.timestamp);
-    
+
     return incidents;
   } catch (error) {
     console.error('❌ Error scanning incident directories:', error);
@@ -118,16 +118,16 @@ async function findSummaryPath(incidentId) {
 
     // Read date directories
     const dateDirs = await fs.readdir(INCIDENTS_BASE_PATH, { withFileTypes: true });
-    
+
     for (const dateDir of dateDirs) {
       if (!dateDir.isDirectory()) continue;
-      
+
       const datePath = path.join(INCIDENTS_BASE_PATH, dateDir.name);
-      
+
       // Check if incident directory exists under this date
       const incidentPath = path.join(datePath, incidentId);
       const summaryPath = path.join(incidentPath, 'summary.json');
-      
+
       try {
         await fs.access(summaryPath);
         // Return absolute path
@@ -137,7 +137,7 @@ async function findSummaryPath(incidentId) {
         continue;
       }
     }
-    
+
     // Incident not found in any date directory
     return null;
   } catch (error) {
@@ -157,27 +157,27 @@ async function findFramePath(incidentId, frameIndex) {
   try {
     // First find the incident directory using summary
     const summaryPath = await findSummaryPath(incidentId);
-    
+
     if (!summaryPath) {
       return null;
     }
-    
+
     // Read summary to get frame information
     const summaryContent = await fs.readFile(summaryPath, 'utf8');
     const summary = JSON.parse(summaryContent);
-    
+
     // Find the frame metadata for the requested index
     const frameMetadata = summary.frames.find(f => f.frame_index === frameIndex);
-    
+
     if (!frameMetadata) {
       console.warn(`⚠️  Frame index ${frameIndex} not found in incident ${incidentId}`);
       return null;
     }
-    
+
     // Construct frame path
     const incidentDir = path.dirname(summaryPath);
     const framePath = path.join(incidentDir, 'frames', `frame_${String(frameIndex).padStart(3, '0')}.jpg`);
-    
+
     // Verify frame file exists
     try {
       await fs.access(framePath);
@@ -280,7 +280,7 @@ async function aggregateMetadataHumans(incidentId) {
 router.get('/incidents', async (req, res) => {
   try {
     const incidents = await scanIncidentDirectories();
-    
+
     res.json({
       incidents: incidents,
       count: incidents.length,
@@ -322,7 +322,7 @@ router.get('/incidents', async (req, res) => {
 router.get('/incidents/:incidentId/summary', async (req, res) => {
   try {
     const { incidentId } = req.params;
-    
+
     // Validate incident ID format (basic validation)
     if (!incidentId || incidentId.trim() === '') {
       return res.status(400).json({
@@ -330,17 +330,17 @@ router.get('/incidents/:incidentId/summary', async (req, res) => {
         message: 'Invalid incident ID provided'
       });
     }
-    
+
     // Find summary path
     const summaryPath = await findSummaryPath(incidentId);
-    
+
     if (!summaryPath) {
       return res.status(404).json({
         error: 'NotFound',
         message: `Incident '${incidentId}' not found`
       });
     }
-    
+
     // Read and parse summary JSON
     const summaryContent = await fs.readFile(summaryPath, 'utf8');
     const summary = JSON.parse(summaryContent);
@@ -370,11 +370,10 @@ router.get('/incidents/:incidentId/summary', async (req, res) => {
       // Non-fatal — return summary as-is if enrichment fails
       console.warn('⚠️  Metadata enrichment failed:', enrichErr.message);
     }
-    
     res.json(summary);
   } catch (error) {
     console.error('❌ Error reading incident summary:', error);
-    
+
     // Check if it's a JSON parse error
     if (error instanceof SyntaxError) {
       return res.status(500).json({
@@ -383,7 +382,7 @@ router.get('/incidents/:incidentId/summary', async (req, res) => {
         details: error.message
       });
     }
-    
+
     res.status(500).json({
       error: 'InternalServerError',
       message: 'Failed to read incident summary',
@@ -458,7 +457,7 @@ router.get('/incidents/:incidentId/metadata', async (req, res) => {
 router.get('/incidents/:incidentId/frames/:frameIndex', async (req, res) => {
   try {
     const { incidentId, frameIndex } = req.params;
-    
+
     // Validate incident ID
     if (!incidentId || incidentId.trim() === '') {
       return res.status(400).json({
@@ -466,7 +465,7 @@ router.get('/incidents/:incidentId/frames/:frameIndex', async (req, res) => {
         message: 'Invalid incident ID provided'
       });
     }
-    
+
     // Validate and parse frame index
     const frameIndexNum = parseInt(frameIndex, 10);
     if (isNaN(frameIndexNum) || frameIndexNum < 0) {
@@ -475,22 +474,22 @@ router.get('/incidents/:incidentId/frames/:frameIndex', async (req, res) => {
         message: 'Invalid frame index (must be non-negative integer)'
       });
     }
-    
+
     // Find frame path
     const framePath = await findFramePath(incidentId, frameIndexNum);
-    
+
     if (!framePath) {
       return res.status(404).json({
         error: 'NotFound',
         message: `Frame ${frameIndexNum} not found for incident '${incidentId}'`
       });
     }
-    
+
     // Serve the image file
     res.sendFile(framePath, (error) => {
       if (error) {
         console.error('❌ Error sending frame file:', error);
-        
+
         // Only send response if headers haven't been sent
         if (!res.headersSent) {
           res.status(500).json({
@@ -503,7 +502,7 @@ router.get('/incidents/:incidentId/frames/:frameIndex', async (req, res) => {
     });
   } catch (error) {
     console.error('❌ Error serving frame:', error);
-    
+
     // Only send response if headers haven't been sent
     if (!res.headersSent) {
       res.status(500).json({

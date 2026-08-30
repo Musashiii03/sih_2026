@@ -16,6 +16,15 @@ try {
   frameRouter = null;
 }
 
+// Import nearest station API routes
+let nearestStationRouter;
+try {
+  nearestStationRouter = require('./api/nearest_station_api');
+} catch (error) {
+  console.warn('⚠️  Nearest station API routes not yet available.');
+  nearestStationRouter = null;
+}
+
 const app = express();
 const PORT = process.env.API_PORT || 3001;
 const CORS_ORIGIN = process.env.API_CORS_ORIGIN || 'http://localhost:5173';
@@ -98,6 +107,19 @@ if (frameRouter) {
     res.status(503).json({
       error: 'Frame API not available',
       message: 'Frame API routes have not been implemented yet'
+    });
+  });
+}
+
+// Mount nearest station API routes at /api
+if (nearestStationRouter) {
+  app.use('/api', nearestStationRouter);
+  console.log('✅ Nearest station API routes mounted at /api');
+} else {
+  app.get('/api/nearest-station', (req, res) => {
+    res.status(503).json({
+      error: 'Nearest station API not available',
+      message: 'Nearest station API routes have not been implemented yet'
     });
   });
 }
