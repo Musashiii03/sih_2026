@@ -35,7 +35,7 @@ class FrameExtractionConfig:
     """
     
     # Extraction settings
-    SAMPLE_RATE = float(os.getenv('FRAME_SAMPLE_RATE', '3.0'))
+    SAMPLE_RATE = float(os.getenv('FRAME_SAMPLE_RATE', '5.0'))
     """Frames per second to extract during fire detection (2.0 - 5.0 FPS)"""
     
     WINDOW_DURATION = int(os.getenv('FRAME_WINDOW_DURATION', '30'))

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import {
   Flame, Users, MapPin, Building2, Brain, Box,
-  CheckCircle2, Clock, Truck, Phone, Loader2, RefreshCw
+  CheckCircle2, Clock, Truck, Phone, Loader2, RefreshCw, X
 } from 'lucide-react';
 import DispatchMap from './DispatchMap';
 import IsometricHologram from './IsometricHologram';
@@ -38,15 +38,94 @@ function statusColor(s) {
   return 'var(--safe)';
 }
 
+// ── Image Modal ────────────────────────────────────────────────────────────
+function ImageModal({ frame, incidentId, onClose }) {
+  if (!frame) return null;
+  
+  return (
+    <div 
+      style={{
+        position: 'fixed',
+        inset: 0,
+        background: 'rgba(0, 0, 0, 0.9)',
+        zIndex: 9999,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: 20,
+      }}
+      onClick={onClose}
+    >
+      <div 
+        style={{
+          position: 'relative',
+          maxWidth: '90vw',
+          maxHeight: '90vh',
+          background: 'var(--bg-card)',
+          borderRadius: 12,
+          overflow: 'hidden',
+          border: '2px solid var(--border-strong)',
+        }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <button
+          onClick={onClose}
+          style={{
+            position: 'absolute',
+            top: 12,
+            right: 12,
+            zIndex: 10,
+            background: 'rgba(0, 0, 0, 0.7)',
+            border: '1px solid var(--border)',
+            borderRadius: 6,
+            padding: 8,
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <X size={20} color="#fff" />
+        </button>
+        <img
+          src={frameImageUrl(incidentId, frame.frame_index)}
+          alt={`Frame ${frame.frame_index}`}
+          style={{
+            maxWidth: '90vw',
+            maxHeight: '80vh',
+            display: 'block',
+          }}
+        />
+        <div style={{
+          padding: '12px 16px',
+          background: 'var(--bg-surface)',
+          borderTop: '1px solid var(--border)',
+        }}>
+          <div style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--text)' }}>
+            Frame {frame.frame_index} · Fire Confidence: {(frame.fire_confidence * 100).toFixed(1)}%
+          </div>
+          <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text-dim)', marginTop: 4 }}>
+            Fire: {frame.fire_count} · Humans: {frame.human_count} · Objects: {frame.object_count}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── Evidence strip (real frames) ───────────────────────────────────────────
-function EvidenceStrip({ incidentId, evidenceFrames }) {
+function EvidenceStrip({ incidentId, evidenceFrames, onFrameClick }) {
   if (!incidentId || !evidenceFrames?.length) {
     return <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text-dim)' }}>No evidence captured</span>;
   }
   return (
     <div className="evidence-strip">
       {evidenceFrames.map((f, i) => (
-        <div key={i} className="evidence-thumb"
+        <div 
+          key={i} 
+          className="evidence-thumb"
+          onClick={() => onFrameClick && onFrameClick(f)}
+          style={{ cursor: 'pointer' }}
           title={`Frame ${f.frame_index} · conf ${(f.fire_confidence * 100).toFixed(1)}%`}>
           <img src={frameImageUrl(incidentId, f.frame_index)} alt={`Evidence ${i + 1}`} />
         </div>
@@ -97,12 +176,20 @@ function MiniCctv({ incidentId, frameIndex, severity }) {
 }
 
 // ── Real incident queue item ───────────────────────────────────────────────
-function QueueItem({ incident, selected, onClick }) {
+function QueueItem({ incident, selected, onClick, incidentId, firstFrameIndex }) {
   const ts = incident.timestamp_readable
     ? new Date(incident.timestamp_readable * 1000 || incident.timestamp * 1000).toLocaleTimeString('en-IN')
     : '—';
   return (
     <div className={`incident-queue-item ${selected ? 'selected' : ''}`} onClick={onClick}>
+      {/* Thumbnail from first frame */}
+      <div style={{ marginBottom: 8, borderRadius: 6, overflow: 'hidden', border: '1px solid var(--border)' }}>
+        <img 
+          src={frameImageUrl(incidentId, firstFrameIndex)} 
+          alt={`Camera ${incident.camera_id}`}
+          style={{ width: '100%', height: 80, objectFit: 'cover', display: 'block' }}
+        />
+      </div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <div style={{ fontFamily: 'var(--font-display)', fontStyle: 'italic', fontWeight: 700,
           fontSize: 13, color: 'var(--text)', lineHeight: 1.2 }}>
@@ -111,7 +198,7 @@ function QueueItem({ incident, selected, onClick }) {
         <span className="badge badge-critical" style={{ flexShrink: 0 }}>FIRE</span>
       </div>
       <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text-muted)', marginTop: 4 }}>
-        {incident.incident_id}
+        {incident.camera_id}
       </div>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 5 }}>
         <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-dim)' }}>
@@ -130,10 +217,11 @@ function QueueItem({ incident, selected, onClick }) {
 function IncidentDetail({ incident, summary, hologram, metadataStats }) {
   const [notes,    setNotes]    = useState('');
   const [resolved, setResolved] = useState(false);
+  const [modalFrame, setModalFrame] = useState(null);
 
   const severity    = deriveSeverity(summary);
   const stats       = aggregateStats(summary, metadataStats);  // pass metadataStats for authoritative human count
-  const evidFrames  = getEvidenceFrames(summary, 4);
+  const evidFrames  = getEvidenceFrames(summary, 999);  // Get ALL frames for evidence
   const humanCount  = stats.humanCount; // peak simultaneous humans from per-frame metadata JSON files
   const avgConf     = ((stats.avgConf || 0) * 100).toFixed(1);
   const incId       = incident?.incident_id;
@@ -221,10 +309,13 @@ function IncidentDetail({ incident, summary, hologram, metadataStats }) {
       {/* Evidence */}
       <div>
         <span className="label" style={{ marginBottom: 8, display: 'block' }}>
-          📷 Evidence Frames — {evidFrames.length} with fire detections
+          📷 Evidence Frames — {evidFrames.length} captured
         </span>
-        <EvidenceStrip incidentId={incId} evidenceFrames={evidFrames} />
+        <EvidenceStrip incidentId={incId} evidenceFrames={evidFrames} onFrameClick={setModalFrame} />
       </div>
+
+      {/* Modal */}
+      {modalFrame && <ImageModal frame={modalFrame} incidentId={incId} onClose={() => setModalFrame(null)} />}
 
       {/* Hologram */}
       <div>
@@ -372,6 +463,14 @@ function RightDispatch({ incident, summary }) {
 export default function DispatchConsole() {
   const { incidents, loading, error, selectedId, setSelectedId, summary, hologram, metadataStats, refresh } = useIncidentData();
   const selectedIncident = incidents.find(i => i.incident_id === selectedId) ?? incidents[0];
+  
+  // Create 5 demo entries by repeating the first incident
+  const demoEntries = incidents.length > 0 
+    ? Array(5).fill(null).map((_, i) => ({ ...incidents[0], _demoId: i }))
+    : [];
+  
+  // Get first frame index from summary
+  const firstFrameIndex = summary?.frames?.[0]?.frame_index ?? 0;
 
   return (
     <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
@@ -423,7 +522,7 @@ export default function DispatchConsole() {
           <div style={{ padding: '10px 16px', borderBottom: '1px solid var(--border)',
             display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <span className="label">Incident Queue</span>
-            <span className="badge badge-moderate">{incidents.length} total</span>
+            <span className="badge badge-moderate">{demoEntries.length} total</span>
           </div>
           <div style={{ overflowY: 'auto', flex: 1 }}>
             {loading && (
@@ -433,15 +532,17 @@ export default function DispatchConsole() {
                 Loading incidents…
               </div>
             )}
-            {!loading && incidents.length === 0 && !error && (
+            {!loading && demoEntries.length === 0 && !error && (
               <div style={{ padding: 20, fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text-dim)' }}>
                 No incidents found.
               </div>
             )}
-            {incidents.map((inc) => (
+            {demoEntries.map((inc, idx) => (
               <QueueItem
-                key={inc.incident_id}
+                key={`${inc.incident_id}-${idx}`}
                 incident={inc}
+                incidentId={inc.incident_id}
+                firstFrameIndex={firstFrameIndex}
                 selected={selectedId === inc.incident_id}
                 onClick={() => setSelectedId(inc.incident_id)}
               />
