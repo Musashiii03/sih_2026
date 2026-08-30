@@ -1,121 +1,211 @@
 import React, { useState, useEffect } from 'react';
+import {
+  Flame, CheckCircle, AlertTriangle, Phone,
+  MessageSquare, Mail, Bell, Building2, ExternalLink,
+  ChevronRight, RefreshCw, Camera, Loader2
+} from 'lucide-react';
 import IsometricHologram from './IsometricHologram';
+import {
+  useIncidentData,
+  frameImageUrl,
+  deriveSeverity,
+  getEvidenceFrames,
+  aggregateStats,
+} from '../hooks/useIncidentData';
 
-// ── Mock incident data ────────────────────────────────────────────
-const INCIDENT = {
-  id: 'ALERT_CAM03_FIRE_140211',
-  camId: 'CAM-03',
-  hazard: 'Fire',
-  location: 'East Corridor, 2nd Floor',
-  building: 'Arjun Tech Park — Block B',
-  severity: 'CRITICAL',
-  confidence: 97.4,
-  surfacePct: 34,
-  humanCount: 4,
-  framesConfirmed: 5,
-  framesTotal: 5,
-  timestamp: '14:02:11',
-  owner: {
-    name: 'Rajesh Mehra',
-    role: 'Building Owner',
-    phone: '+91-98200-11234',
-    email: 'r.mehra@arjuntechpark.in',
-    initials: 'RM',
-  },
-  building_info: {
-    name: 'Arjun Tech Park — Block B',
-    address: 'Plot 14, MIDC Phase II, Andheri East, Mumbai — 400093',
-    floors: 6,
-    cameras: 5,
-    buildingId: 'BLD-ARJ-B-042',
-  },
-  nearest_fire: {
-    station: 'Andheri East Fire Station',
-    distance: '2.1 km',
-    eta: '~6 min',
-    phone: '101',
-  },
-  notifications: [
-    { id: 1, msg: 'Push notification sent to owner', channel: 'push', icon: 'notifications_active', time: '14:02:11', status: 'read' },
-    { id: 2, msg: 'SMS alert dispatched',            channel: 'sms',  icon: 'sms',                 time: '14:02:14', status: 'delivered' },
-    { id: 3, msg: 'Email incident report sent',      channel: 'email', icon: 'mail',               time: '14:02:16', status: 'delivered' },
-    { id: 4, msg: 'Follow-up push notification',     channel: 'push', icon: 'notifications_active', time: '14:02:30', status: 'delivered' },
-    { id: 5, msg: 'Auto-escalated to ERSS/112',     channel: 'push', icon: 'campaign',            time: '14:02:56', status: 'pending' },
-  ],
+// ── Mock enrichment (fields the backend doesn't store yet) ────────────────
+const BUILDING_META = {
+  name: 'Arjun Tech Park — Block B',
+  address: 'Plot 14, MIDC Phase II, Andheri East, Mumbai — 400093',
+  floors: 6,
+  buildingId: 'BLD-ARJ-B-042',
+  owner: { name: 'Rajesh Mehra', phone: '+91-98200-11234', email: 'r.mehra@arjuntechpark.in' },
+  nearest_fire: { station: 'Andheri East Fire Station', distance: '2.1 km', eta: '~6 min', phone: '101' },
 };
 
-// ── Camera Feed ──────────────────────────────────────────────────
-function CctvFeed() {
+const MOCK_CAMS = [
+  { id: 'CAM-01', label: 'Main Lobby',         status: 'NORMAL' },
+  { id: 'CAM-02', label: 'East Corridor 2F',   status: 'FIRE'   },
+  { id: 'CAM-03', label: 'Server Room B',      status: 'SMOKE'  },
+  { id: 'CAM-04', label: 'Underground Parking',status: 'NORMAL' },
+];
+
+const NOTIFICATIONS = [
+  { id: 1, msg: 'Fire confirmed on CAM-02. Immediate attention required.',           channel: 'push',  time: '15:45:39', status: 'read' },
+  { id: 2, msg: 'SMS: URGENT — Fire alert at Arjun Tech Park Block B, 2nd Floor.',  channel: 'sms',   time: '15:45:42', status: 'delivered' },
+  { id: 3, msg: 'Email dispatched: Incident report attached.',                       channel: 'email', time: '15:45:44', status: 'delivered' },
+  { id: 4, msg: 'Follow-up: Have you acknowledged the incident?',                   channel: 'push',  time: '15:45:58', status: 'delivered' },
+  { id: 5, msg: 'Final notice: No response. Auto-escalating to ERSS/112 dispatch.', channel: 'push',  time: '15:46:14', status: 'pending' },
+];
+
+// ── CCTV live feed (real frame from backend OR placeholder) ───────────────
+function CctvFrame({ incidentId, frameIndex, label, status = 'NORMAL', size = 'full' }) {
+  const [loaded, setLoaded] = useState(false);
+  const [err,    setErr]    = useState(false);
+  const url = incidentId ? frameImageUrl(incidentId, frameIndex) : null;
+
+  const isAlert = status === 'FIRE' || status === 'SMOKE';
+  const borderCol = status === 'FIRE'  ? 'var(--critical)' :
+                    status === 'SMOKE' ? 'var(--moderate)' : 'var(--border-strong)';
+
   return (
-    <div className="oc-camera-wrap">
-      {/* Dark fire-glow background */}
-      <div className="oc-camera-bg" />
-      {/* Simulated fire SVG */}
-      <svg className="oc-camera-svg" viewBox="0 0 640 360" preserveAspectRatio="xMidYMid slice">
-        <defs>
-          <radialGradient id="ocFireGlow" cx="55%" cy="55%" r="30%">
-            <stop offset="0%"   stopColor="#C93A1C" stopOpacity="0.8" />
-            <stop offset="60%"  stopColor="#C8841A" stopOpacity="0.3" />
-            <stop offset="100%" stopColor="transparent" stopOpacity="0" />
-          </radialGradient>
-          <radialGradient id="ocSmokeGlow" cx="55%" cy="30%" r="25%">
-            <stop offset="0%"   stopColor="#7A5C3E" stopOpacity="0.55" />
-            <stop offset="100%" stopColor="transparent" stopOpacity="0" />
-          </radialGradient>
-        </defs>
-        <rect x="60" y="60" width="520" height="240" fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="1" />
-        <line x1="60" y1="200" x2="580" y2="200" stroke="rgba(255,255,255,0.03)" strokeWidth="1" />
-        <rect x="120" y="90" width="80" height="110" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.06)" strokeWidth="1" />
-        <rect x="220" y="90" width="60" height="80"  fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.05)" strokeWidth="1" />
-        <ellipse cx="350" cy="210" rx="90" ry="60" fill="url(#ocFireGlow)" />
-        <ellipse cx="350" cy="145" rx="55" ry="70" fill="url(#ocSmokeGlow)" />
-        <ellipse cx="350" cy="295" rx="120" ry="18" fill="rgba(201,58,28,0.14)" />
-      </svg>
+    <div style={{
+      position: 'relative', borderRadius: 8, overflow: 'hidden',
+      border: `1.5px solid ${borderCol}`,
+      background: '#0d0906',
+      ...(size === 'full' ? { aspectRatio: '16/9' } : { height: 100 }),
+    }}>
       {/* Scanlines */}
-      <div className="oc-scanlines" />
-      {/* Detection bounding box */}
-      <div className="oc-bbox" style={{ left: '38%', top: '28%', width: '34%', height: '48%' }}>
-        <span className="oc-bbox-label">FIRE · 97.4%</span>
-      </div>
-      <div className="oc-bbox oc-bbox-person" style={{ left: '18%', top: '50%', width: '9%', height: '26%' }}>
-        <span className="oc-bbox-label oc-bbox-label-person">PERSON</span>
-      </div>
+      <div className="cctv-scanlines" />
+
+      {/* Real frame image */}
+      {url && !err ? (
+        <img
+          src={url}
+          alt={`Frame ${frameIndex}`}
+          onLoad={() => setLoaded(true)}
+          onError={() => setErr(true)}
+          style={{
+            width: '100%', height: '100%',
+            objectFit: 'cover',
+            opacity: loaded ? 1 : 0,
+            transition: 'opacity 0.3s',
+          }}
+        />
+      ) : null}
+
+      {/* Dark gradient overlay */}
+      {status === 'FIRE' && (
+        <div style={{
+          position: 'absolute', inset: 0, pointerEvents: 'none',
+          background: 'radial-gradient(ellipse 60% 50% at 55% 55%, rgba(232,89,59,0.25) 0%, transparent 70%)',
+        }} />
+      )}
+
       {/* HUD overlay */}
-      <div className="oc-hud">
-        <div className="oc-hud-top">
-          <span className="oc-hud-pill oc-hud-pill-live">● REC LIVE</span>
-          <span className="oc-hud-pill">{INCIDENT.camId} · 2.4 FPS</span>
+      <div style={{
+        position: 'absolute', inset: 0, display: 'flex',
+        flexDirection: 'column', justifyContent: 'space-between', padding: 8, zIndex: 4,
+      }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+          {isAlert && (
+            <span className="hud-pill live" style={{ fontSize: 9 }}>● {status}</span>
+          )}
+          <span className="hud-pill" style={{ marginLeft: 'auto', fontSize: 9 }}>
+            {label}
+          </span>
         </div>
-        <div className="oc-hud-bot">
-          <span className="oc-hud-pill">East Corridor — 2F</span>
-          <span className="oc-hud-pill">{INCIDENT.timestamp} UTC+5:30</span>
-        </div>
+        {size === 'full' && (
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+            <span className="hud-pill" style={{ fontSize: 9 }}>Frame {frameIndex}</span>
+          </div>
+        )}
       </div>
+
+      {/* Loading spinner */}
+      {url && !loaded && !err && (
+        <div style={{
+          position: 'absolute', inset: 0, display: 'flex',
+          alignItems: 'center', justifyContent: 'center', zIndex: 5,
+        }}>
+          <Loader2 size={20} color="var(--text-dim)" style={{ animation: 'spin 1s linear infinite' }} />
+        </div>
+      )}
+
+      {/* No-data placeholder */}
+      {(!url || err) && (
+        <div style={{
+          position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column',
+          alignItems: 'center', justifyContent: 'center', gap: 4,
+        }}>
+          <Camera size={18} color="var(--text-dim)" />
+          {size === 'full' && <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-dim)' }}>NO FEED</span>}
+        </div>
+      )}
     </div>
   );
 }
 
-// ── Temporal filmstrip ────────────────────────────────────────────
-function Filmstrip({ confirmed, total }) {
+// ── 4-camera grid ─────────────────────────────────────────────────────────
+function FourCamGrid({ incidentId, frames }) {
+  // Map available real frames to cam slots. Use frame indices where fire detected first.
+  const fireFrames = (frames || []).filter(f => f.fire_count > 0);
+  const getIdx = slotIndex => {
+    const f = fireFrames[slotIndex] ?? frames?.[slotIndex];
+    return f?.frame_index ?? slotIndex;
+  };
+
   return (
-    <div className="oc-filmstrip-wrap">
-      <div className="oc-filmstrip">
-        {Array.from({ length: total }).map((_, i) => (
-          <div key={i} className={`oc-film-frame${i < confirmed ? ' fire' : ''}`} />
+    <div>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+        <span className="label">Live Camera Grid — 4 Feeds</span>
+        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-dim)' }}>
+          {incidentId || 'Awaiting data…'}
+        </span>
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+        {MOCK_CAMS.map((cam, i) => (
+          <CctvFrame
+            key={cam.id}
+            incidentId={incidentId}
+            frameIndex={getIdx(i)}
+            label={cam.id}
+            status={cam.status}
+          />
         ))}
       </div>
-      <span className="oc-film-label">{confirmed}/{total} positive frames</span>
     </div>
   );
 }
 
-// ── SVG Countdown Ring ────────────────────────────────────────────
+// ── Evidence strip ─────────────────────────────────────────────────────────
+function EvidenceStrip({ incidentId, evidenceFrames }) {
+  if (!incidentId || !evidenceFrames?.length) {
+    return (
+      <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text-dim)' }}>
+        No evidence frames available
+      </div>
+    );
+  }
+  return (
+    <div className="evidence-strip">
+      {evidenceFrames.map((f, i) => (
+        <div key={i} className="evidence-thumb" title={`Frame ${f.frame_index} — conf ${(f.fire_confidence * 100).toFixed(1)}%`}>
+          <img src={frameImageUrl(incidentId, f.frame_index)} alt={`Evidence ${i + 1}`} />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ── Temporal filmstrip ─────────────────────────────────────────────────────
+function Filmstrip({ confirmed, total }) {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        <div className="filmstrip">
+          {Array.from({ length: total }).map((_, i) => (
+            <div key={i} className={`film-frame ${i < confirmed ? 'lit-fire' : ''}`} />
+          ))}
+        </div>
+        <span style={{
+          fontFamily: 'var(--font-mono)', fontSize: 11,
+          color: 'var(--critical)', fontWeight: 700, letterSpacing: '0.06em',
+        }}>
+          {confirmed}/{total} confirmed
+        </span>
+      </div>
+      <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-dim)' }}>
+        Temporal verification engine · 5+ consecutive frames required
+      </span>
+    </div>
+  );
+}
+
+// ── Countdown ring ─────────────────────────────────────────────────────────
 function CountdownRing({ onAcknowledge, onEscalate }) {
   const [seconds, setSeconds] = useState(45);
   const [done, setDone] = useState(false);
-  const TOTAL = 45;
-  const r = 46;
-  const circ = 2 * Math.PI * r;
 
   useEffect(() => {
     if (seconds <= 0) { setDone(true); return; }
@@ -123,430 +213,382 @@ function CountdownRing({ onAcknowledge, onEscalate }) {
     return () => clearTimeout(t);
   }, [seconds]);
 
-  const pct = seconds / TOTAL;
+  const pct = seconds / 45;
+  const r = 58, circ = 2 * Math.PI * r;
   const dashOffset = circ * (1 - pct);
-  const ringColor = seconds <= 10 ? 'var(--critical)' : seconds <= 20 ? 'var(--moderate)' : 'var(--accent)';
-  const numColor  = seconds <= 10 ? 'var(--critical)' : seconds <= 20 ? 'var(--moderate)' : 'var(--text)';
+  const ringColor = seconds <= 10 ? 'var(--critical)' : seconds <= 20 ? 'var(--moderate)' : '#C87941';
 
   if (done) {
     return (
-      <div className="oc-escalated-box">
-        <span className="material-symbols-outlined" style={{ fontSize: 32, color: 'var(--critical)' }}>campaign</span>
-        <div className="oc-escalated-title">AUTO-ESCALATED</div>
-        <div className="oc-escalated-sub">Routed to ERSS / 112 emergency dispatch.</div>
+      <div style={{
+        background: 'var(--critical-dim)', border: '1.5px solid var(--critical)',
+        borderRadius: 10, padding: '16px 18px', textAlign: 'center', width: '100%',
+      }}>
+        <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--critical)', fontWeight: 700, marginBottom: 6 }}>
+          ⚠ AUTO-ESCALATED
+        </div>
+        <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>
+          No response. Incident routed to ERSS / 112 dispatch.
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="oc-ring-wrap">
-      <div className="oc-ring">
-        <svg width="120" height="120" viewBox="0 0 100 100">
-          {/* Track */}
-          <circle cx="50" cy="50" r={r} fill="transparent" stroke="var(--border-strong)" strokeWidth="5" />
-          {/* Progress */}
-          <circle
-            cx="50" cy="50" r={r}
-            fill="transparent"
-            stroke={ringColor}
-            strokeWidth="5"
-            strokeLinecap="round"
-            strokeDasharray={circ}
-            strokeDashoffset={dashOffset}
-            style={{ transform: 'rotate(-90deg)', transformOrigin: '50% 50%', transition: 'stroke-dashoffset 0.9s linear, stroke 0.4s' }}
-          />
+    <div className="countdown-ring-wrap">
+      <div className="countdown-ring">
+        <svg width="140" height="140" viewBox="0 0 140 140">
+          <circle cx="70" cy="70" r={r} fill="none" stroke="var(--border-strong)" strokeWidth="8" />
+          <circle cx="70" cy="70" r={r} fill="none"
+            stroke={ringColor} strokeWidth="8" strokeLinecap="round"
+            strokeDasharray={circ} strokeDashoffset={dashOffset}
+            style={{ transition: 'stroke-dashoffset 0.9s linear, stroke 0.5s' }} />
         </svg>
-        <div className="oc-ring-inner">
-          <span className="oc-ring-number" style={{ color: numColor }}>{seconds}</span>
-          <span className="oc-ring-label">SEC</span>
+        <div className="countdown-ring-inner">
+          <span className="countdown-number" style={{ color: ringColor }}>{seconds}</span>
+          <span className="countdown-label">seconds</span>
         </div>
       </div>
-      <p className="oc-ring-sub">Auto-escalates if no response in time.</p>
-      <button className="oc-btn-ack" onClick={onAcknowledge}>
-        <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>
-        I'm handling this
-      </button>
-      <button className="oc-btn-escalate" onClick={onEscalate}>
-        <span className="material-symbols-outlined">campaign</span>
-        Escalate now
-      </button>
+      <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 8 }}>
+        <button className="btn btn-primary" style={{ width: '100%', fontSize: 12 }} onClick={onAcknowledge}>
+          <CheckCircle size={15} /> I'm handling this
+        </button>
+        <button className="btn btn-danger" style={{ width: '100%', fontSize: 12 }} onClick={onEscalate}>
+          <AlertTriangle size={15} /> Escalate now
+        </button>
+        <p style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-dim)', textAlign: 'center', lineHeight: 1.5 }}>
+          If no response, auto-escalates to emergency dispatch.
+        </p>
+      </div>
     </div>
   );
 }
 
-// ── Owner Console Root ────────────────────────────────────────────
-export default function OwnerConsole() {
-  const inc = INCIDENT;
-  const [ackDone, setAckDone] = useState(false);
-
+// ── Notification log ───────────────────────────────────────────────────────
+function NotificationLog({ notifications }) {
+  const icons = { push: <Bell size={12} />, sms: <MessageSquare size={12} />, email: <Mail size={12} />, phone: <Phone size={12} /> };
   return (
-    <div className="oc-root">
-      {/* ── Page Header ── */}
-      <header className="oc-header">
-        <div>
-          <h1 className="oc-header-title">OWNER CONSOLE</h1>
-          <div className="oc-header-sub">
-            <span className="material-symbols-outlined" style={{ fontSize: 17 }}>location_city</span>
-            {inc.building_info.name}
+    <div className="notif-timeline">
+      {notifications.map(n => (
+        <div className="notif-item" key={n.id}>
+          <div className="notif-dot-wrap" style={{
+            color: n.status === 'read' ? 'var(--accent)' : n.status === 'delivered' ? 'var(--safe)' : 'var(--text-dim)',
+          }}>
+            {icons[n.channel] || <Bell size={12} />}
+          </div>
+          <div className="notif-content">
+            <div className="notif-msg">{n.msg}</div>
+            <div className="notif-meta">
+              <span className="notif-time">{n.time}</span>
+              <span className={`notif-status ${n.status}`}>{n.status}</span>
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-dim)', textTransform: 'uppercase' }}>
+                via {n.channel}
+              </span>
+            </div>
           </div>
         </div>
-        <div className="oc-live-pill">
-          <span className="oc-live-dot" />
-          <span>Live Monitoring</span>
+      ))}
+    </div>
+  );
+}
+
+// ── Loading / error states ─────────────────────────────────────────────────
+function StatusBanner({ loading, error, onRetry }) {
+  if (loading) return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 16px',
+      background: 'var(--bg-card)', borderRadius: 8, border: '1px solid var(--border)', marginBottom: 16 }}>
+      <Loader2 size={16} color="var(--accent)" style={{ animation: 'spin 1s linear infinite' }} />
+      <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--text-muted)' }}>
+        Connecting to detection backend…
+      </span>
+    </div>
+  );
+  if (error) return (
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+      padding: '12px 16px', background: 'var(--critical-dim)', borderRadius: 8,
+      border: '1px solid var(--critical)', marginBottom: 16 }}>
+      <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--critical)' }}>
+        Backend offline — showing cached/mock data · {error}
+      </span>
+      <button className="btn btn-ghost" style={{ padding: '4px 12px', fontSize: 11 }} onClick={onRetry}>
+        <RefreshCw size={12} /> Retry
+      </button>
+    </div>
+  );
+  return null;
+}
+
+// ── Owner Console Root ─────────────────────────────────────────────────────
+export default function OwnerConsole() {
+  const { incidents, loading, error, selectedId, summary, hologram, metadataStats, refresh } = useIncidentData();
+  const [ackDone, setAckDone] = useState(false);
+
+  // Derive real values from backend data
+  const inc = summary;
+  const severity   = inc ? deriveSeverity(inc) : 'CRITICAL';
+  const stats      = aggregateStats(inc, metadataStats);
+  const evidFrames = getEvidenceFrames(inc, 6);
+
+  // Build incident ID display
+  const incidentIdDisplay = selectedId ?? 'ALERT_CAM02_FIRE_154614';
+  const timestampDisplay  = inc?.timestamp_readable
+    ? new Date(inc.timestamp_readable).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })
+    : '2026-08-30 15:46:14 IST';
+
+  // Frames confirmed = how many frames have fire detections
+  const framesConfirmed = inc?.frames ? inc.frames.filter(f => f.fire_count > 0).length : 5;
+  const framesTotal     = Math.max(5, framesConfirmed);
+  const avgConf         = ((stats.avgConf || 0) * 100).toFixed(1);
+  const humanCount      = stats.humanCount; // peak from per-frame metadata JSON files
+
+  return (
+    <div className="view-content" style={{ paddingBottom: 80 }}>
+      {/* Status banner */}
+      <StatusBanner loading={loading} error={error} onRetry={refresh} />
+
+      {/* Page header */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
+        <div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <span className="label" style={{ fontSize: 11 }}>Owner Console</span>
+            <ChevronRight size={12} color="var(--text-dim)" />
+            <span className="label" style={{ color: 'var(--text-muted)', fontSize: 11 }}>{BUILDING_META.name}</span>
+          </div>
+          <h1 style={{ fontFamily: 'var(--font-display)', fontStyle: 'italic', fontSize: 24, fontWeight: 700, color: 'var(--text)', marginTop: 4 }}>
+            Building Owner Alert View
+          </h1>
         </div>
-      </header>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div className="live-dot-wrap">
+            <span className="live-dot alert" />
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--critical)' }}>
+              Critical Hazard Active
+            </span>
+          </div>
+          <a href={`https://atmarakshak.in/building/${BUILDING_META.buildingId}`} target="_blank" rel="noreferrer"
+            style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--accent)', textDecoration: 'none',
+              display: 'flex', alignItems: 'center', gap: 5 }}>
+            <ExternalLink size={11} />
+            atmarakshak.in/building/{BUILDING_META.buildingId}
+          </a>
+        </div>
+      </div>
 
-      {/* ── 8 + 4 Grid ── */}
-      <div className="oc-grid">
-
-        {/* ═══ Left col (8) ═══ */}
-        <div className="oc-left">
+      <div className="owner-grid">
+        {/* ── Left column ── */}
+        <div className="owner-left-col">
 
           {/* Hero incident card */}
-          <section className="oc-hero-card">
-            <div className="oc-hero-accent-bar" />
-            <div className="oc-hero-inner">
-              {/* Card top row */}
-              <div className="oc-hero-top">
-                <div className="oc-hero-top-left">
-                  <span className="badge badge-critical">
-                    <span className="material-symbols-outlined" style={{ fontSize: 12 }}>warning</span>
-                    {inc.severity}
-                  </span>
-                  <span className="oc-incident-id">{inc.id}</span>
-                </div>
-                <span className="oc-timestamp">{inc.timestamp}</span>
+          <div className="card animate-slide-in">
+            <div className="card-header">
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <span className="badge badge-critical"><Flame size={10} /> {severity}</span>
+                <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text-muted)' }}>
+                  {incidentIdDisplay}
+                </span>
               </div>
+              <span className="label">Detected {timestampDisplay}</span>
+            </div>
 
-              {/* Fire headline */}
-              <h2 className="oc-headline">
+            <div className="card-body">
+              {/* Title */}
+              <h2 style={{ fontFamily: 'var(--font-display)', fontStyle: 'italic', fontWeight: 700,
+                fontSize: 26, color: 'var(--text)', lineHeight: 1.2, marginBottom: 16 }}>
                 Fire confirmed —{' '}
-                <span style={{ color: 'var(--critical)' }}>{inc.location}</span>
+                <span style={{ color: 'var(--critical)' }}>East Corridor, 2nd Floor</span>
               </h2>
 
-              {/* Camera + Temporal verification side by side */}
-              <div className="oc-camera-row">
-                {/* Camera feed */}
-                <CctvFeed />
+              {/* 4-camera grid */}
+              <FourCamGrid incidentId={selectedId} frames={inc?.frames} />
 
-                {/* Verification + stats */}
-                <div className="oc-verify-col">
-                  <div>
-                    <div className="oc-section-label">
-                      <span className="material-symbols-outlined" style={{ fontSize: 16 }}>timeline</span>
-                      Temporal Verification
-                    </div>
-                    <Filmstrip confirmed={inc.framesConfirmed} total={inc.framesTotal} />
-                    <p className="oc-verify-sub">5/5 positive frames analyzed</p>
-                  </div>
+              {/* Temporal filmstrip */}
+              <div style={{ marginTop: 14, padding: '12px 14px', background: 'var(--bg-surface)',
+                borderRadius: 8, border: '1px solid var(--border)' }}>
+                <div className="label" style={{ marginBottom: 8 }}>Temporal Verification Engine</div>
+                <Filmstrip confirmed={framesConfirmed} total={framesTotal} />
+              </div>
 
-                  {/* Stats 3-col */}
-                  <div className="oc-stats-grid">
-                    <div className="oc-stat">
-                      <div className="stat-number critical" style={{ fontSize: 28 }}>{inc.confidence}%</div>
-                      <div className="label">Confidence</div>
-                    </div>
-                    <div className="oc-stat">
-                      <div className="stat-number critical" style={{ fontSize: 28 }}>High</div>
-                      <div className="label">Severity</div>
-                    </div>
-                    <div className="oc-stat">
-                      <div className="stat-number accent" style={{ fontSize: 28 }}>{inc.humanCount}</div>
-                      <div className="label">Humans</div>
-                    </div>
-                  </div>
+              {/* Stats */}
+              <div className="stat-row" style={{ marginTop: 14 }}>
+                <div className="stat-chip">
+                  <span className="label">Confidence</span>
+                  <span className="stat-number critical" style={{ fontSize: 32 }}>{avgConf}%</span>
                 </div>
+                <div className="stat-chip">
+                  <span className="label">Severity</span>
+                  <span className="stat-number critical" style={{ fontSize: 28 }}>{severity}</span>
+                </div>
+                <div className="stat-chip">
+                  <span className="label">Fire Detections</span>
+                  <span className="stat-number moderate" style={{ fontSize: 32 }}>{stats.fireCount}</span>
+                </div>
+                <div className="stat-chip">
+                  <span className="label">People at Risk</span>
+                  <span className="stat-number accent" style={{ fontSize: 32 }}>{stats.humanCount}</span>
+                  {(stats.totalHumanDetections > 0 || stats.framesWithHumans > 0) && (
+                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-dim)', marginTop: 2 }}>
+                      {stats.totalHumanDetections} total · {stats.framesWithHumans} frame{stats.framesWithHumans !== 1 ? 's' : ''}
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {/* Evidence strip */}
+              <div style={{ marginTop: 16 }}>
+                <div className="label" style={{ marginBottom: 8 }}>
+                  Evidence Frames — {evidFrames.length} fire-confirmed captures
+                </div>
+                <EvidenceStrip incidentId={selectedId} evidenceFrames={evidFrames} />
+              </div>
+
+              {/* Hologram */}
+              <div style={{ marginTop: 16 }}>
+                <div className="label" style={{ marginBottom: 8 }}>3D Room Hologram — AI Spatial Analysis</div>
+                <IsometricHologram hologramData={hologram} humanCount={humanCount} />
               </div>
             </div>
-          </section>
-
-          {/* ════ Spatial Analysis — full professional panel ════ */}
-          <section className="sa-card">
-            {/* ── Top header bar ── */}
-            <div className="sa-header">
-              <div className="sa-header-left">
-                <div className="sa-header-icon">
-                  <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1", fontSize: 18, color: 'var(--accent)' }}>view_in_ar</span>
-                </div>
-                <div>
-                  <div className="sa-title">Spatial Analysis</div>
-                  <div className="sa-subtitle">Arjun Tech Park — Block B · Live occupancy &amp; hazard mapping</div>
-                </div>
-              </div>
-              <div className="sa-header-right">
-                <span className="sa-live-tag">
-                  <span className="sa-live-blink" />
-                  LIVE
-                </span>
-                <span className="sa-updated">Updated 2s ago</span>
-              </div>
-            </div>
-
-            {/* ── Stats strip ── */}
-            <div className="sa-stats-strip">
-              {[
-                { icon: 'local_fire_department', label: 'Active Zones',  value: '1',   color: 'var(--critical)', bg: 'var(--critical-dim)' },
-                { icon: 'person',                label: 'Occupants',     value: '4',   color: 'var(--accent)',   bg: 'var(--accent-dim)'   },
-                { icon: 'videocam',              label: 'Cameras Online', value: '5/5', color: 'var(--safe)',     bg: 'var(--safe-dim)'     },
-                { icon: 'stairs',                label: 'Floors',        value: '6',   color: 'var(--text)',     bg: 'var(--bg-card-hover)' },
-                { icon: 'thermostat',            label: 'Temp (2F)',     value: '62°C', color: 'var(--critical)', bg: 'var(--critical-dim)' },
-              ].map((s, i) => (
-                <div key={i} className="sa-stat-chip" style={{ '--chip-color': s.color, '--chip-bg': s.bg }}>
-                  <span className="material-symbols-outlined sa-stat-icon" style={{ color: s.color, fontVariationSettings: "'FILL' 1" }}>{s.icon}</span>
-                  <div>
-                    <div className="sa-stat-value" style={{ color: s.color }}>{s.value}</div>
-                    <div className="sa-stat-label">{s.label}</div>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {/* ── Main body: floor tabs + 3D view + camera list ── */}
-            <div className="sa-body">
-
-              {/* Left: Floor selector */}
-              <div className="sa-floors">
-                <div className="sa-floors-title">FLOORS</div>
-                {[
-                  { label: 'Roof',  sub: 'Clear',       color: 'var(--safe)',     active: false },
-                  { label: '2F',    sub: '🔥 FIRE',     color: 'var(--critical)', active: true  },
-                  { label: '1F',    sub: 'Evacuating',  color: 'var(--moderate)', active: false },
-                  { label: 'GF',    sub: 'Clear',       color: 'var(--safe)',     active: false },
-                  { label: 'B1',    sub: 'Clear',       color: 'var(--safe)',     active: false },
-                ].map((f, i) => (
-                  <div key={i} className={`sa-floor-btn${f.active ? ' active' : ''}`} style={{ '--floor-color': f.color }}>
-                    <div className="sa-floor-label">{f.label}</div>
-                    <div className="sa-floor-sub" style={{ color: f.color }}>{f.sub}</div>
-                  </div>
-                ))}
-                <div className="sa-floor-legend">
-                  <div className="sa-floor-legend-item"><span style={{ background: 'var(--critical)' }} />Fire</div>
-                  <div className="sa-floor-legend-item"><span style={{ background: 'var(--moderate)' }} />Evacuating</div>
-                  <div className="sa-floor-legend-item"><span style={{ background: 'var(--safe)' }} />Clear</div>
-                </div>
-              </div>
-
-              {/* Centre: 3D building model */}
-              <div className="sa-model-wrap">
-                <div className="sa-model-label-top">
-                  <span className="material-symbols-outlined" style={{ fontSize: 12 }}>layers</span>
-                  2nd Floor Active — East Corridor
-                </div>
-                <IsometricHologram humanCount={inc.humanCount} />
-                <div className="sa-model-compass">
-                  <svg width="32" height="32" viewBox="0 0 32 32">
-                    <circle cx="16" cy="16" r="14" fill="rgba(255,253,249,0.9)" stroke="var(--border-strong)" strokeWidth="1"/>
-                    <polygon points="16,4 13,16 16,14 19,16" fill="var(--critical)" />
-                    <polygon points="16,28 13,16 16,18 19,16" fill="var(--text-dim)" />
-                    <text x="16" y="7" textAnchor="middle" fontSize="5" fill="var(--critical)" fontFamily="JetBrains Mono" fontWeight="700">N</text>
-                  </svg>
-                </div>
-              </div>
-
-              {/* Right: Camera + Occupant list */}
-              <div className="sa-sidebar">
-                <div className="sa-sidebar-section">
-                  <div className="sa-sidebar-title">
-                    <span className="material-symbols-outlined" style={{ fontSize: 14, fontVariationSettings: "'FILL' 1" }}>videocam</span>
-                    Camera Status
-                  </div>
-                  {[
-                    { id: 'CAM-01', loc: 'GF Lobby',      status: 'safe',     fps: '3.2' },
-                    { id: 'CAM-02', loc: '1F Stairwell',  status: 'moderate', fps: '2.8' },
-                    { id: 'CAM-03', loc: '2F East Corr.', status: 'critical', fps: '2.4' },
-                    { id: 'CAM-04', loc: '2F West Corr.', status: 'safe',     fps: '3.0' },
-                    { id: 'CAM-05', loc: 'Roof Access',   status: 'safe',     fps: '3.5' },
-                  ].map(cam => (
-                    <div key={cam.id} className={`sa-cam-item${cam.status === 'critical' ? ' critical' : ''}`}>
-                      <div className={`sa-cam-dot ${cam.status}`} />
-                      <div className="sa-cam-info">
-                        <div className="sa-cam-id">{cam.id}</div>
-                        <div className="sa-cam-loc">{cam.loc}</div>
-                      </div>
-                      <div className="sa-cam-fps">{cam.fps}<span>fps</span></div>
-                    </div>
-                  ))}
-                </div>
-
-                <div className="sa-sidebar-section">
-                  <div className="sa-sidebar-title">
-                    <span className="material-symbols-outlined" style={{ fontSize: 14, fontVariationSettings: "'FILL' 1" }}>person_search</span>
-                    Occupant Tracking
-                  </div>
-                  {[
-                    { id: 'P1', zone: '2F East', dist: '3m from fire', risk: 'HIGH' },
-                    { id: 'P2', zone: '2F East', dist: '6m from fire', risk: 'HIGH' },
-                    { id: 'P3', zone: '2F East', dist: '9m from fire', risk: 'MOD'  },
-                    { id: 'P4', zone: '2F West', dist: '15m from fire',risk: 'LOW'  },
-                  ].map(p => (
-                    <div key={p.id} className="sa-person-item">
-                      <div className="sa-person-avatar">{p.id}</div>
-                      <div className="sa-person-info">
-                        <div className="sa-person-zone">{p.zone}</div>
-                        <div className="sa-person-dist">{p.dist}</div>
-                      </div>
-                      <span className={`sa-risk-badge ${p.risk.toLowerCase()}`}>{p.risk}</span>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Evacuation route status */}
-                <div className="sa-evac-box">
-                  <div className="sa-sidebar-title">
-                    <span className="material-symbols-outlined" style={{ fontSize: 14, color: 'var(--safe)', fontVariationSettings: "'FILL' 1" }}>emergency_home</span>
-                    Evacuation Routes
-                  </div>
-                  {[
-                    { route: 'Stairwell A', status: 'Clear', ok: true },
-                    { route: 'Stairwell B', status: 'Blocked', ok: false },
-                    { route: 'Fire Exit GF', status: 'Open', ok: true },
-                  ].map((r, i) => (
-                    <div key={i} className="sa-evac-row">
-                      <span className="material-symbols-outlined" style={{ fontSize: 14, color: r.ok ? 'var(--safe)' : 'var(--critical)', fontVariationSettings: "'FILL' 1" }}>
-                        {r.ok ? 'check_circle' : 'cancel'}
-                      </span>
-                      <span className="sa-evac-name">{r.route}</span>
-                      <span className="sa-evac-status" style={{ color: r.ok ? 'var(--safe)' : 'var(--critical)' }}>{r.status}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </section>
-
+          </div>
 
           {/* Notification log */}
-          <section className="oc-comm-card-wide">
+          <div className="card">
             <div className="card-header">
-              <span className="card-title">
-                <span className="material-symbols-outlined" style={{ fontSize: 15 }}>history</span>
-                {' '}Communication Log
-              </span>
-              <span className="badge badge-moderate">{inc.notifications.length} messages</span>
-            </div>
-            <div className="card-body" style={{ padding: 0 }}>
-              <ul className="oc-comm-list">
-                {inc.notifications.map((n, i) => (
-                  <li key={n.id} className="oc-comm-item">
-                    <span
-                      className="material-symbols-outlined"
-                      style={{
-                        fontSize: 16, marginTop: 2, flexShrink: 0,
-                        color: n.status === 'read' ? 'var(--accent)' : n.status === 'delivered' ? 'var(--safe)' : 'var(--text-dim)'
-                      }}
-                    >
-                      {n.icon}
-                    </span>
-                    <span className="oc-comm-msg">{n.msg}</span>
-                    <div className="oc-comm-right">
-                      <div className="oc-comm-time">{n.time}</div>
-                      <div className={`oc-comm-status ${n.status}`}>{n.status}</div>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </section>
-        </div>
-
-        {/* ═══ Right col (4) ═══ */}
-        <div className="oc-right">
-
-          {/* Action Center / Countdown */}
-          <section className="oc-action-card">
-            {ackDone ? (
-              <div className="oc-ack-done">
-                <span className="material-symbols-outlined" style={{ fontSize: 40, color: 'var(--safe)', fontVariationSettings: "'FILL' 1" }}>
-                  check_circle
-                </span>
-                <div className="oc-ack-title">Acknowledged</div>
-                <div className="oc-ack-sub">You've taken ownership. Escalation paused.</div>
-              </div>
-            ) : (
-              <CountdownRing
-                onAcknowledge={() => setAckDone(true)}
-                onEscalate={() => alert('Escalated to ERSS / 112 dispatch immediately.')}
-              />
-            )}
-          </section>
-
-          {/* Nearest fire station */}
-          <section className="card oc-info-card">
-            <div className="card-header">
-              <span className="card-title">
-                <span className="material-symbols-outlined" style={{ fontSize: 15 }}>local_fire_department</span>
-                {' '}Nearest Responder
-              </span>
+              <span className="card-title">Multi-Channel Notification Log</span>
+              <span className="badge badge-moderate">{NOTIFICATIONS.length} messages sent</span>
             </div>
             <div className="card-body">
-              <div className="oc-fire-row">
-                <span className="oc-fire-station">{inc.nearest_fire.station}</span>
-                <span className="oc-fire-dist-badge">{inc.nearest_fire.distance}</span>
-              </div>
-              <div className="oc-fire-eta">
-                <span className="material-symbols-outlined" style={{ fontSize: 15 }}>schedule</span>
-                ETA {inc.nearest_fire.eta}
-              </div>
-              <div className="oc-fire-phone">
-                <span className="material-symbols-outlined" style={{ fontSize: 15, color: 'var(--safe)' }}>call</span>
-                Emergency: <strong style={{ color: 'var(--safe)' }}>{inc.nearest_fire.phone}</strong>
-              </div>
+              <NotificationLog notifications={NOTIFICATIONS} />
             </div>
-          </section>
+          </div>
+        </div>
+
+        {/* ── Right column ── */}
+        <div className="owner-right-col">
+          {/* Countdown */}
+          <div className="card">
+            <div className="card-header">
+              <span className="card-title">Response Window</span>
+              <span className="badge badge-critical">45s</span>
+            </div>
+            <div className="card-body" style={{ display: 'flex', flexDirection: 'column', gap: 16, alignItems: 'center' }}>
+              {ackDone ? (
+                <div style={{ textAlign: 'center', padding: '20px 16px', background: 'var(--safe-dim)',
+                  borderRadius: 10, border: '1px solid rgba(143,175,62,0.3)', width: '100%' }}>
+                  <CheckCircle size={32} color="var(--safe)" style={{ marginBottom: 10 }} />
+                  <div style={{ fontFamily: 'var(--font-display)', fontStyle: 'italic', fontSize: 20, color: 'var(--safe)', marginBottom: 6 }}>
+                    Acknowledged
+                  </div>
+                  <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>You've taken ownership. Escalation paused.</div>
+                </div>
+              ) : (
+                <CountdownRing
+                  onAcknowledge={() => setAckDone(true)}
+                  onEscalate={() => alert('Escalated to ERSS / 112 dispatch immediately.')}
+                />
+              )}
+            </div>
+          </div>
 
           {/* Building info */}
-          <section className="card oc-info-card">
+          <div className="card">
             <div className="card-header">
-              <span className="card-title">
-                <span className="material-symbols-outlined" style={{ fontSize: 15 }}>apartment</span>
-                {' '}Building Info
-              </span>
+              <span className="card-title">🏢 Building Info</span>
             </div>
             <div className="card-body" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               <div>
-                <div className="label" style={{ fontSize: 9 }}>Building</div>
-                <div className="oc-info-val">{inc.building_info.name}</div>
+                <span className="label" style={{ fontSize: 9 }}>Building</span>
+                <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)', marginTop: 2 }}>{BUILDING_META.name}</div>
               </div>
               <div>
-                <div className="label" style={{ fontSize: 9 }}>Address</div>
-                <div className="oc-info-sub">{inc.building_info.address}</div>
+                <span className="label" style={{ fontSize: 9 }}>Address</span>
+                <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2, lineHeight: 1.5 }}>{BUILDING_META.address}</div>
               </div>
-              <div style={{ display: 'flex', gap: 16 }}>
+              <div style={{ display: 'flex', gap: 12 }}>
                 <div>
-                  <div className="label" style={{ fontSize: 9 }}>Floors</div>
-                  <div className="stat-number" style={{ fontSize: 22 }}>{inc.building_info.floors}</div>
+                  <span className="label" style={{ fontSize: 9 }}>Floors</span>
+                  <div className="stat-number" style={{ fontSize: 22 }}>{BUILDING_META.floors}</div>
                 </div>
                 <div>
-                  <div className="label" style={{ fontSize: 9 }}>Cameras</div>
-                  <div className="stat-number safe" style={{ fontSize: 22 }}>{inc.building_info.cameras}/5</div>
+                  <span className="label" style={{ fontSize: 9 }}>Frames</span>
+                  <div className="stat-number safe" style={{ fontSize: 22 }}>{stats.frameCount}/6</div>
                 </div>
+              </div>
+              <div className="sep" />
+              <div>
+                <span className="label" style={{ fontSize: 9 }}>Owner</span>
+                <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)', marginTop: 2 }}>{BUILDING_META.owner.name}</div>
+                <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text-muted)', marginTop: 3 }}>{BUILDING_META.owner.phone}</div>
+                <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text-dim)', marginTop: 1 }}>{BUILDING_META.owner.email}</div>
               </div>
             </div>
-          </section>
+          </div>
 
-          {/* Owner card */}
-          <section className="card oc-info-card">
-            <div className="card-body" style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-              <div className="oc-owner-avatar">{inc.owner.initials}</div>
-              <div>
-                <div className="oc-info-val">{inc.owner.name}</div>
-                <div className="oc-info-sub" style={{ marginTop: 3 }}>{inc.owner.role}</div>
-                <div className="oc-info-sub">{inc.owner.phone}</div>
+          {/* Nearest fire station */}
+          <div className="card">
+            <div className="card-header">
+              <span className="card-title" style={{ color: 'var(--critical)' }}>🚒 Nearest Fire Station</span>
+            </div>
+            <div className="card-body">
+              <div style={{ fontFamily: 'var(--font-display)', fontStyle: 'italic', fontSize: 16, fontWeight: 700, color: 'var(--text)', marginBottom: 8 }}>
+                {BUILDING_META.nearest_fire.station}
+              </div>
+              <div style={{ display: 'flex', gap: 14, marginBottom: 10 }}>
+                <div>
+                  <span className="label" style={{ fontSize: 9 }}>Distance</span>
+                  <div className="stat-number moderate" style={{ fontSize: 24 }}>{BUILDING_META.nearest_fire.distance}</div>
+                </div>
+                <div>
+                  <span className="label" style={{ fontSize: 9 }}>ETA</span>
+                  <div className="stat-number accent" style={{ fontSize: 24 }}>{BUILDING_META.nearest_fire.eta}</div>
+                </div>
+              </div>
+              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 6 }}>
+                <Phone size={11} color="var(--safe)" />
+                Emergency: <span style={{ color: 'var(--safe)', fontWeight: 700 }}>{BUILDING_META.nearest_fire.phone}</span>
               </div>
             </div>
-          </section>
+          </div>
+
+          {/* Incident selector (if multiple) */}
+          {incidents.length > 1 && (
+            <div className="card">
+              <div className="card-header">
+                <span className="card-title">All Incidents</span>
+                <span className="badge badge-moderate">{incidents.length}</span>
+              </div>
+              <div style={{ maxHeight: 160, overflowY: 'auto' }}>
+                {incidents.map(i => (
+                  <div key={i.incident_id}
+                    onClick={() => {}}
+                    style={{
+                      padding: '10px 16px', borderBottom: '1px solid var(--border)',
+                      cursor: 'pointer', display: 'flex', justifyContent: 'space-between',
+                      background: i.incident_id === selectedId ? 'var(--bg-card-hover)' : 'transparent',
+                    }}>
+                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--accent)' }}>
+                      {i.incident_id}
+                    </span>
+                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-dim)' }}>
+                      {i.frame_count} frames
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
       {/* Footer */}
-      <footer className="oc-footer">
-        <span>Atmarakshak v2.4 · ERSS/112 Integration Active · YOLOv8x Detection Engine</span>
-        <div style={{ display: 'flex', gap: 24 }}>
-          <a href="#" className="oc-footer-link">Privacy Policy</a>
-          <a href="#" className="oc-footer-link">System Health</a>
-          <a href="#" className="oc-footer-link">Support</a>
-        </div>
-      </footer>
+      <div className="footer-bar" style={{ margin: '16px -20px -20px', position: 'sticky', bottom: 0 }}>
+        <span>Atmarakshak v2.4 · ERSS/112 Integration · YOLOv8x Detection · API: localhost:3001</span>
+        <a href={`https://atmarakshak.in/building/${BUILDING_META.buildingId}`} className="footer-link">
+          atmarakshak.in/building/{BUILDING_META.buildingId}
+        </a>
+      </div>
+
+      <style>{`
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+      `}</style>
     </div>
   );
 }

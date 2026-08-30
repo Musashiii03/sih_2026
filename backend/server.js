@@ -58,6 +58,45 @@ app.use((req, res, next) => {
 // API ROUTES
 // ============================================================================
 
+// Serve static frame images and hologram files directly from data directory
+// GET /data/fire_incidents/... → data/ folder
+const DATA_PATH = path.join(__dirname, '..', 'data');
+app.use('/data', express.static(DATA_PATH, {
+  setHeaders: (res, filePath) => {
+    if (filePath.endsWith('.jpg') || filePath.endsWith('.jpeg')) {
+      res.setHeader('Content-Type', 'image/jpeg');
+    } else if (filePath.endsWith('.glb')) {
+      res.setHeader('Content-Type', 'model/gltf-binary');
+    } else if (filePath.endsWith('.json')) {
+      res.setHeader('Content-Type', 'application/json');
+    }
+    res.setHeader('Cache-Control', 'no-cache');
+  }
+}));
+console.log(`✅ Static data files served from ${DATA_PATH} at /data`);
+
+// Also expose hologram endpoint that serves the hologram JSON data for a given incident
+app.get('/api/incidents/:incidentId/hologram', async (req, res) => {
+  const fs = require('fs').promises;
+  const { incidentId } = req.params;
+  const incidentBasePath = path.join(DATA_PATH, 'fire_incidents');
+  try {
+    const dateDirs = await fs.readdir(incidentBasePath, { withFileTypes: true });
+    for (const dateDir of dateDirs) {
+      if (!dateDir.isDirectory()) continue;
+      const hPath = path.join(incidentBasePath, dateDir.name, incidentId, `hologram_data_${incidentId}.json`);
+      try {
+        await fs.access(hPath);
+        const content = await fs.readFile(hPath, 'utf8');
+        return res.json(JSON.parse(content));
+      } catch (_) { continue; }
+    }
+    return res.status(404).json({ error: 'NotFound', message: `Hologram not found for ${incidentId}` });
+  } catch (err) {
+    return res.status(500).json({ error: 'InternalServerError', message: err.message });
+  }
+});
+
 // Mount frame API routes at /api
 if (frameRouter) {
   app.use('/api', frameRouter);
