@@ -16,7 +16,7 @@ const router = express.Router();
 // Configured relative to backend directory or via environment variable
 const INCIDENTS_BASE_PATH = process.env.FRAME_STORAGE_PATH 
   ? path.join(__dirname, '../..', process.env.FRAME_STORAGE_PATH)
-  : path.join(__dirname, '../../data/fire_incidents_demo');
+  : path.join(__dirname, '../../data/fire_incidents');
 
 // ============================================================================
 // HELPER FUNCTIONS
@@ -192,6 +192,68 @@ async function findFramePath(incidentId, frameIndex) {
   }
 }
 
+/**
+ * Reads all per-frame metadata JSON files for an incident and
+ * aggregates human-count statistics from the rich bounding-box data.
+ *
+ * Each metadata/frame_NNN.json has the shape:
+ *   { frame_index, humans: { detected, count, bounding_boxes }, fire: {...}, objects: {...} }
+ *
+ * @param {string} incidentId
+ * @returns {Promise<object|null>} Aggregated metadata stats, or null if not found
+ */
+async function aggregateMetadataHumans(incidentId) {
+  const summaryPath = await findSummaryPath(incidentId);
+  if (!summaryPath) return null;
+
+  const incidentDir = path.dirname(summaryPath);
+  const metadataDir = path.join(incidentDir, 'metadata');
+
+  let metaFiles;
+  try {
+    metaFiles = await fs.readdir(metadataDir);
+  } catch (_) {
+    return null; // no metadata directory
+  }
+
+  const jsonFiles = metaFiles.filter(f => f.endsWith('.json'));
+
+  let totalHumans = 0;
+  let peakHumans  = 0;
+  const perFrame  = [];
+
+  for (const file of jsonFiles) {
+    try {
+      const content  = await fs.readFile(path.join(metadataDir, file), 'utf8');
+      const meta     = JSON.parse(content);
+      const hCount   = meta.humans?.count ?? 0;
+      totalHumans   += hCount;
+      if (hCount > peakHumans) peakHumans = hCount;
+      perFrame.push({
+        frame_index:    meta.frame_index,
+        timestamp_readable: meta.timestamp_readable,
+        human_count:    hCount,
+        humans_detected: meta.humans?.detected ?? false,
+        bounding_boxes: meta.humans?.bounding_boxes ?? [],
+        fire_count:     meta.fire?.count ?? 0,
+        fire_confidence: meta.fire?.confidence ?? 0,
+      });
+    } catch (_) {
+      // skip malformed file
+    }
+  }
+
+  // Sort by frame_index for consistent ordering
+  perFrame.sort((a, b) => a.frame_index - b.frame_index);
+
+  return {
+    total_human_detections: totalHumans,
+    peak_human_count:       peakHumans,
+    frames_with_humans:     perFrame.filter(f => f.human_count > 0).length,
+    per_frame:              perFrame,
+  };
+}
+
 // ============================================================================
 // API ENDPOINTS
 // ============================================================================
@@ -282,6 +344,32 @@ router.get('/incidents/:incidentId/summary', async (req, res) => {
     // Read and parse summary JSON
     const summaryContent = await fs.readFile(summaryPath, 'utf8');
     const summary = JSON.parse(summaryContent);
+
+    // Enrich statistics with human counts sourced from per-frame metadata JSON files.
+    // The summary.json may have stale/zero human counts if the detection pipeline
+    // didn't write them correctly — the per-frame metadata files are the authoritative source.
+    try {
+      const metaStats = await aggregateMetadataHumans(incidentId);
+      if (metaStats) {
+        summary.statistics = {
+          ...summary.statistics,
+          total_human_detections:      metaStats.total_human_detections,
+          peak_human_count:            metaStats.peak_human_count,
+          frames_with_humans:          metaStats.frames_with_humans,
+        };
+        // Also enrich per-frame rows with metadata-sourced human_count
+        if (Array.isArray(summary.frames)) {
+          summary.frames = summary.frames.map(f => {
+            const meta = metaStats.per_frame.find(m => m.frame_index === f.frame_index);
+            return meta ? { ...f, human_count: meta.human_count, human_bboxes: meta.bounding_boxes } : f;
+          });
+        }
+        summary._metadata_enriched = true;
+      }
+    } catch (enrichErr) {
+      // Non-fatal — return summary as-is if enrichment fails
+      console.warn('⚠️  Metadata enrichment failed:', enrichErr.message);
+    }
     
     res.json(summary);
   } catch (error) {
@@ -299,6 +387,51 @@ router.get('/incidents/:incidentId/summary', async (req, res) => {
     res.status(500).json({
       error: 'InternalServerError',
       message: 'Failed to read incident summary',
+      details: error.message
+    });
+  }
+});
+
+/**
+ * GET /api/incidents/:incidentId/metadata
+ *
+ * Returns aggregated human-count statistics sourced directly from the
+ * per-frame metadata JSON files (the most authoritative human-detection data).
+ *
+ * Response:
+ * {
+ *   "incident_id": "INC-...",
+ *   "total_human_detections": 3,
+ *   "peak_human_count": 2,
+ *   "frames_with_humans": 2,
+ *   "per_frame": [
+ *     { frame_index, human_count, humans_detected, bounding_boxes, fire_count, ... }
+ *   ]
+ * }
+ */
+router.get('/incidents/:incidentId/metadata', async (req, res) => {
+  try {
+    const { incidentId } = req.params;
+
+    if (!incidentId || incidentId.trim() === '') {
+      return res.status(400).json({ error: 'BadRequest', message: 'Invalid incident ID' });
+    }
+
+    const metaStats = await aggregateMetadataHumans(incidentId);
+
+    if (!metaStats) {
+      return res.status(404).json({
+        error: 'NotFound',
+        message: `Metadata not found for incident '${incidentId}'`
+      });
+    }
+
+    res.json({ incident_id: incidentId, ...metaStats });
+  } catch (error) {
+    console.error('❌ Error reading incident metadata:', error);
+    res.status(500).json({
+      error: 'InternalServerError',
+      message: 'Failed to read incident metadata',
       details: error.message
     });
   }
