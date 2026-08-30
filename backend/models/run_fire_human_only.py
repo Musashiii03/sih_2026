@@ -45,7 +45,7 @@ human_model = YOLO(HUMAN_MODEL_PATH)
 # Initialize frame extraction modules
 print("📸 Initializing frame extraction system...")
 try:
-    frame_extractor = FrameExtractor(sample_rate=3.0, window_duration=30)
+    frame_extractor = FrameExtractor(sample_rate=5.0, window_duration=30)
     frame_selector = FrameSelector(min_frames=6, max_frames=15, similarity_threshold=0.85)
     storage_manager = StorageManager(base_path=os.path.join('..', '..', 'data', 'fire_incidents'))
     print("✅ Frame extraction system initialized")

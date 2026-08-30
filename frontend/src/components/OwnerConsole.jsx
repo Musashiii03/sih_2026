@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import {
   Flame, CheckCircle, AlertTriangle, Phone,
   MessageSquare, Mail, Bell, Building2, ExternalLink,
-  ChevronRight, RefreshCw, Camera, Loader2
+  ChevronRight, RefreshCw, Camera, Loader2, X
 } from 'lucide-react';
 import IsometricHologram from './IsometricHologram';
 import {
@@ -37,6 +37,81 @@ const NOTIFICATIONS = [
   { id: 4, msg: 'Follow-up: Have you acknowledged the incident?',                   channel: 'push',  time: '15:45:58', status: 'delivered' },
   { id: 5, msg: 'Final notice: No response. Auto-escalating to ERSS/112 dispatch.', channel: 'push',  time: '15:46:14', status: 'pending' },
 ];
+
+// ── Image Modal ────────────────────────────────────────────────────────────
+function ImageModal({ frame, incidentId, onClose }) {
+  if (!frame) return null;
+  
+  return (
+    <div 
+      style={{
+        position: 'fixed',
+        inset: 0,
+        background: 'rgba(0, 0, 0, 0.9)',
+        zIndex: 9999,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: 20,
+      }}
+      onClick={onClose}
+    >
+      <div 
+        style={{
+          position: 'relative',
+          maxWidth: '90vw',
+          maxHeight: '90vh',
+          background: 'var(--bg-card)',
+          borderRadius: 12,
+          overflow: 'hidden',
+          border: '2px solid var(--border-strong)',
+        }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <button
+          onClick={onClose}
+          style={{
+            position: 'absolute',
+            top: 12,
+            right: 12,
+            zIndex: 10,
+            background: 'rgba(0, 0, 0, 0.7)',
+            border: '1px solid var(--border)',
+            borderRadius: 6,
+            padding: 8,
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <X size={20} color="#fff" />
+        </button>
+        <img
+          src={frameImageUrl(incidentId, frame.frame_index)}
+          alt={`Frame ${frame.frame_index}`}
+          style={{
+            maxWidth: '90vw',
+            maxHeight: '80vh',
+            display: 'block',
+          }}
+        />
+        <div style={{
+          padding: '12px 16px',
+          background: 'var(--bg-surface)',
+          borderTop: '1px solid var(--border)',
+        }}>
+          <div style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--text)' }}>
+            Frame {frame.frame_index} · Fire Confidence: {(frame.fire_confidence * 100).toFixed(1)}%
+          </div>
+          <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text-dim)', marginTop: 4 }}>
+            Fire: {frame.fire_count} · Humans: {frame.human_count} · Objects: {frame.object_count}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 // ── CCTV live feed (real frame from backend OR placeholder) ───────────────
 function CctvFrame({ incidentId, frameIndex, label, status = 'NORMAL', size = 'full' }) {
@@ -159,7 +234,7 @@ function FourCamGrid({ incidentId, frames }) {
 }
 
 // ── Evidence strip ─────────────────────────────────────────────────────────
-function EvidenceStrip({ incidentId, evidenceFrames }) {
+function EvidenceStrip({ incidentId, evidenceFrames, onFrameClick }) {
   if (!incidentId || !evidenceFrames?.length) {
     return (
       <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text-dim)' }}>
@@ -170,7 +245,12 @@ function EvidenceStrip({ incidentId, evidenceFrames }) {
   return (
     <div className="evidence-strip">
       {evidenceFrames.map((f, i) => (
-        <div key={i} className="evidence-thumb" title={`Frame ${f.frame_index} — conf ${(f.fire_confidence * 100).toFixed(1)}%`}>
+        <div 
+          key={i} 
+          className="evidence-thumb" 
+          onClick={() => onFrameClick && onFrameClick(f)}
+          style={{ cursor: 'pointer' }}
+          title={`Frame ${f.frame_index} — conf ${(f.fire_confidence * 100).toFixed(1)}%`}>
           <img src={frameImageUrl(incidentId, f.frame_index)} alt={`Evidence ${i + 1}`} />
         </div>
       ))}
@@ -322,12 +402,13 @@ function StatusBanner({ loading, error, onRetry }) {
 export default function OwnerConsole() {
   const { incidents, loading, error, selectedId, summary, hologram, metadataStats, refresh } = useIncidentData();
   const [ackDone, setAckDone] = useState(false);
+  const [modalFrame, setModalFrame] = useState(null);
 
   // Derive real values from backend data
   const inc = summary;
   const severity   = inc ? deriveSeverity(inc) : 'CRITICAL';
   const stats      = aggregateStats(inc, metadataStats);
-  const evidFrames = getEvidenceFrames(inc, 6);
+  const evidFrames = getEvidenceFrames(inc, 999);  // Get ALL frames for evidence
 
   // Build incident ID display
   const incidentIdDisplay = selectedId ?? 'ALERT_CAM02_FIRE_154614';
@@ -436,10 +517,13 @@ export default function OwnerConsole() {
               {/* Evidence strip */}
               <div style={{ marginTop: 16 }}>
                 <div className="label" style={{ marginBottom: 8 }}>
-                  Evidence Frames — {evidFrames.length} fire-confirmed captures
+                  Evidence Frames — {evidFrames.length} captures
                 </div>
-                <EvidenceStrip incidentId={selectedId} evidenceFrames={evidFrames} />
+                <EvidenceStrip incidentId={selectedId} evidenceFrames={evidFrames} onFrameClick={setModalFrame} />
               </div>
+
+              {/* Modal */}
+              {modalFrame && <ImageModal frame={modalFrame} incidentId={selectedId} onClose={() => setModalFrame(null)} />}
 
               {/* Hologram */}
               <div style={{ marginTop: 16 }}>

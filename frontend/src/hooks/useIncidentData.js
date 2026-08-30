@@ -120,13 +120,11 @@ export function deriveSeverity(summary) {
 }
 
 /**
- * Return frame objects that have fire detections (for evidence strip)
+ * Return frame objects for evidence strip (all available frames)
  */
-export function getEvidenceFrames(summary, maxCount = 6) {
+export function getEvidenceFrames(summary, maxCount = 999) {
   if (!summary?.frames) return [];
-  return summary.frames
-    .filter(f => f.fire_count > 0)
-    .slice(0, maxCount);
+  return summary.frames.slice(0, maxCount);
 }
 
 /**
