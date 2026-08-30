@@ -1,0 +1,22 @@
+# Fire Detection Dependencies (existing)
+# YOLOv8 and ML framework dependencies
+ultralytics>=8.0.0
+torch>=2.0.0
+torchvision>=0.15.0
+
+# Frame Extraction Dependencies (new)
+# OpenCV for frame capture and image processing
+opencv-python>=4.5.0
+
+# NumPy for numerical operations and array handling
+numpy>=1.21.0
+
+# Scikit-image for structural similarity (SSIM) computation
+scikit-image>=0.19.0
+
+# Pillow for image format handling and manipulation
+Pillow>=9.0.0
+
+# Configuration Management
+# Python-dotenv for environment variable loading
+python-dotenv>=0.19.0

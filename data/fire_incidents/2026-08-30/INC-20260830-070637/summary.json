@@ -1,0 +1,112 @@
+{
+  "incident_id": "INC-20260830-070637",
+  "timestamp": 1788053766.0864422,
+  "timestamp_readable": "2026-08-30T07:06:06.086442Z",
+  "camera_id": "CAM-01",
+  "location": "Video Source",
+  "frame_count": 6,
+  "frames": [
+    {
+      "frame_index": 0,
+      "timestamp": 1788053766.0864422,
+      "timestamp_readable": "2026-08-30T07:06:06.086442Z",
+      "confidence": 0.3718162178993225,
+      "bounding_boxes": [
+        {
+          "x": 58,
+          "y": 211,
+          "width": 113,
+          "height": 95,
+          "confidence": 0.3718162178993225
+        }
+      ],
+      "image_path": "S:\\Programming\\sih_2026\\backend\\models\\..\\..\\data\\fire_incidents\\2026-08-30\\INC-20260830-070637\\frames\\frame_000.jpg",
+      "metadata_path": "S:\\Programming\\sih_2026\\backend\\models\\..\\..\\data\\fire_incidents\\2026-08-30\\INC-20260830-070637\\metadata\\frame_000.json"
+    },
+    {
+      "frame_index": 16,
+      "timestamp": 1788053774.5579505,
+      "timestamp_readable": "2026-08-30T07:06:14.557950Z",
+      "confidence": 0.4058454632759094,
+      "bounding_boxes": [
+        {
+          "x": 63,
+          "y": 228,
+          "width": 97,
+          "height": 72,
+          "confidence": 0.4058454632759094
+        }
+      ],
+      "image_path": "S:\\Programming\\sih_2026\\backend\\models\\..\\..\\data\\fire_incidents\\2026-08-30\\INC-20260830-070637\\frames\\frame_016.jpg",
+      "metadata_path": "S:\\Programming\\sih_2026\\backend\\models\\..\\..\\data\\fire_incidents\\2026-08-30\\INC-20260830-070637\\metadata\\frame_016.json"
+    },
+    {
+      "frame_index": 19,
+      "timestamp": 1788053776.0676029,
+      "timestamp_readable": "2026-08-30T07:06:16.067603Z",
+      "confidence": 0.4136684238910675,
+      "bounding_boxes": [
+        {
+          "x": 51,
+          "y": 218,
+          "width": 112,
+          "height": 83,
+          "confidence": 0.4136684238910675
+        }
+      ],
+      "image_path": "S:\\Programming\\sih_2026\\backend\\models\\..\\..\\data\\fire_incidents\\2026-08-30\\INC-20260830-070637\\frames\\frame_019.jpg",
+      "metadata_path": "S:\\Programming\\sih_2026\\backend\\models\\..\\..\\data\\fire_incidents\\2026-08-30\\INC-20260830-070637\\metadata\\frame_019.json"
+    },
+    {
+      "frame_index": 20,
+      "timestamp": 1788053776.577894,
+      "timestamp_readable": "2026-08-30T07:06:16.577894Z",
+      "confidence": 0.3718913793563843,
+      "bounding_boxes": [
+        {
+          "x": 56,
+          "y": 232,
+          "width": 107,
+          "height": 69,
+          "confidence": 0.3718913793563843
+        }
+      ],
+      "image_path": "S:\\Programming\\sih_2026\\backend\\models\\..\\..\\data\\fire_incidents\\2026-08-30\\INC-20260830-070637\\frames\\frame_020.jpg",
+      "metadata_path": "S:\\Programming\\sih_2026\\backend\\models\\..\\..\\data\\fire_incidents\\2026-08-30\\INC-20260830-070637\\metadata\\frame_020.json"
+    },
+    {
+      "frame_index": 48,
+      "timestamp": 1788053790.8104446,
+      "timestamp_readable": "2026-08-30T07:06:30.810445Z",
+      "confidence": 0.45182907581329346,
+      "bounding_boxes": [
+        {
+          "x": 56,
+          "y": 204,
+          "width": 84,
+          "height": 96,
+          "confidence": 0.45182907581329346
+        }
+      ],
+      "image_path": "S:\\Programming\\sih_2026\\backend\\models\\..\\..\\data\\fire_incidents\\2026-08-30\\INC-20260830-070637\\frames\\frame_048.jpg",
+      "metadata_path": "S:\\Programming\\sih_2026\\backend\\models\\..\\..\\data\\fire_incidents\\2026-08-30\\INC-20260830-070637\\metadata\\frame_048.json"
+    },
+    {
+      "frame_index": 49,
+      "timestamp": 1788053791.338517,
+      "timestamp_readable": "2026-08-30T07:06:31.338517Z",
+      "confidence": 0.36747264862060547,
+      "bounding_boxes": [
+        {
+          "x": 56,
+          "y": 184,
+          "width": 82,
+          "height": 115,
+          "confidence": 0.36747264862060547
+        }
+      ],
+      "image_path": "S:\\Programming\\sih_2026\\backend\\models\\..\\..\\data\\fire_incidents\\2026-08-30\\INC-20260830-070637\\frames\\frame_049.jpg",
+      "metadata_path": "S:\\Programming\\sih_2026\\backend\\models\\..\\..\\data\\fire_incidents\\2026-08-30\\INC-20260830-070637\\metadata\\frame_049.json"
+    }
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "frame_index": 2,
+  "timestamp": 1788053745.7086375,
+  "timestamp_readable": "2026-08-30T07:05:45.708637Z",
+  "confidence": 0.3232870399951935,
+  "bounding_boxes": [
+    {
+      "x": 5,
+      "y": 203,
+      "width": 165,
+      "height": 113,
+      "confidence": 0.3232870399951935
+    }
+  ],
+  "image_path": "S:\\Programming\\sih_2026\\backend\\models\\..\\..\\data\\fire_incidents\\2026-08-30\\INC-20260830-070605\\frames\\frame_002.jpg"
+}
