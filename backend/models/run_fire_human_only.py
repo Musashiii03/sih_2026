@@ -159,20 +159,26 @@ while cap.isOpened():
                 2
             )
     
-    # Frame extraction integration - Requirements 1.1, 1.2, 1.3, 1.4, 4.5
+    # Frame extraction integration with severity classification
     if frame_extractor is not None and frame_selector is not None and storage_manager is not None:
         try:
             current_time = time.time()
             
-            # Fire detection event handler - Requirement 1.1
+            # Fire detection event handler with severity classification
             if fire_count > 0:
-                # Start extraction on fire detection
+                # Classify fire severity and start extraction if appropriate
                 if not frame_extractor.extraction_active:
                     # Get average confidence from all fire detections
                     avg_confidence = sum(bbox['confidence'] for bbox in fire_bboxes) / len(fire_bboxes) if fire_bboxes else 0.0
-                    frame_extractor.on_fire_detected(current_time, frame, avg_confidence, fire_bboxes)
+                    extraction_started, severity = frame_extractor.on_fire_detected(current_time, frame, avg_confidence, fire_bboxes)
+                    
+                    # Log severity classification result
+                    if extraction_started:
+                        print(f"🔥 {severity.value.upper()} fire detected - Frame extraction STARTED")
+                    else:
+                        print(f"ℹ️  {severity.value.upper()} fire detected - Frame extraction SKIPPED (safe level)")
                 
-                # Extract frame if sample interval elapsed - Requirement 1.2
+                # Extract frame if sample interval elapsed and extraction is active
                 if frame_extractor.should_extract_frame(current_time):
                     avg_confidence = sum(bbox['confidence'] for bbox in fire_bboxes) / len(fire_bboxes) if fire_bboxes else 0.0
                     frame_extractor.extract_frame(frame, current_time, avg_confidence, fire_bboxes)
@@ -237,10 +243,31 @@ while cap.isOpened():
     fps = 1.0 / (curr_time - prev_time + 1e-6)
     prev_time = curr_time
 
-    cv2.rectangle(display_frame, (10, 10), (380, 80), (0, 0, 0), -1)
+    # Get current severity for display
+    severity_text = ""
+    severity_color = (255, 255, 255)
+    if frame_extractor is not None:
+        current_severity = frame_extractor.get_current_severity()
+        if current_severity is not None:
+            severity_text = f" ({current_severity.value.upper()})"
+            if current_severity.value == "safe":
+                severity_color = (0, 255, 0)  # Green
+            elif current_severity.value == "moderate":
+                severity_color = (0, 165, 255)  # Orange
+            elif current_severity.value == "critical":
+                severity_color = (0, 0, 255)  # Red
+
+    cv2.rectangle(display_frame, (10, 10), (420, 100), (0, 0, 0), -1)
     cv2.putText(display_frame, f"FPS: {fps:.1f}", (20, 32), cv2.FONT_HERSHEY_SIMPLEX, 0.65, (255, 255, 255), 2)
-    cv2.putText(display_frame, f"Fire Detected: {fire_count}", (20, 54), cv2.FONT_HERSHEY_SIMPLEX, 0.65, (0, 0, 255), 2)
+    
+    # Display fire count with severity indicator
+    fire_text = f"Fire Detected: {fire_count}{severity_text}"
+    cv2.putText(display_frame, fire_text, (20, 54), cv2.FONT_HERSHEY_SIMPLEX, 0.65, severity_color if fire_count > 0 else (0, 0, 255), 2)
     cv2.putText(display_frame, f"Humans Detected: {human_count}", (20, 74), cv2.FONT_HERSHEY_SIMPLEX, 0.65, (255, 255, 0), 2)
+    
+    # Show extraction status
+    if frame_extractor is not None and frame_extractor.extraction_active:
+        cv2.putText(display_frame, "Recording Frames...", (20, 94), cv2.FONT_HERSHEY_SIMPLEX, 0.55, (0, 255, 255), 2)
 
     cv2.imshow("Fire & Human Real-Time Detection", display_frame)
 
