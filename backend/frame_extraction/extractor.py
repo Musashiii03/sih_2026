@@ -2,13 +2,16 @@
 Frame Extractor Module
 
 Responsible for extracting frames from video when fire is detected.
+Frame extraction is triggered only for moderate or critical severity fires.
 """
 
 from dataclasses import dataclass
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any, Optional, Tuple
 import numpy as np
 import logging
 import time
+
+from .severity_classifier import FireSeverity, FireSeverityClassifier, SeverityMetrics
 
 
 # Configure logging for frame extraction module
@@ -74,14 +77,19 @@ class FrameExtractor:
     
     This class monitors fire detection events from the YOLOv8 model and extracts
     frames at a configurable sample rate during a defined time window.
+    
+    Frame extraction is only triggered for fires classified as MODERATE or CRITICAL
+    severity. SAFE fires are ignored to avoid unnecessary storage and processing.
     """
     
-    def __init__(self, sample_rate: float = 3.0, window_duration: int = 30):
+    def __init__(self, sample_rate: float = 3.0, window_duration: int = 30,
+                 severity_classifier: Optional[FireSeverityClassifier] = None):
         """Initialize the FrameExtractor.
         
         Args:
             sample_rate: Frames per second to extract (must be between 2.0 and 5.0)
             window_duration: Extraction window duration in seconds (must be between 30 and 60)
+            severity_classifier: Optional FireSeverityClassifier instance. If None, creates default.
             
         Raises:
             ValueError: If sample_rate or window_duration are outside valid ranges
@@ -97,6 +105,9 @@ class FrameExtractor:
         self.sample_rate = sample_rate
         self.window_duration = window_duration
         
+        # Initialize severity classifier
+        self.severity_classifier = severity_classifier if severity_classifier else FireSeverityClassifier()
+        
         # Extraction state tracking
         self.extraction_active = False
         self.extraction_start_time: Optional[float] = None
@@ -104,14 +115,20 @@ class FrameExtractor:
         self.last_extract_time: float = 0
         self.current_frame_index: int = 0
         
+        # Severity tracking
+        self.current_severity: Optional[FireSeverity] = None
+        self.current_metrics: Optional[SeverityMetrics] = None
+        
         logger.info(f"FrameExtractor initialized: sample_rate={sample_rate} FPS, window_duration={window_duration}s")
+        logger.info("Frame extraction enabled only for MODERATE and CRITICAL severity fires")
     
     def on_fire_detected(self, timestamp: float, frame: np.ndarray, 
-                        confidence: float, bounding_boxes: List[Dict[str, Any]]) -> None:
-        """Triggered when fire is detected. Starts extraction window.
+                        confidence: float, bounding_boxes: List[Dict[str, Any]]) -> Tuple[bool, Optional[FireSeverity]]:
+        """Triggered when fire is detected. Classifies severity and starts extraction window if appropriate.
         
         This method is called by the fire detection pipeline when fire is first detected.
-        It initializes the extraction window and prepares to capture frames.
+        It classifies the fire severity and only initializes the extraction window for
+        MODERATE or CRITICAL fires. SAFE fires are logged but do not trigger extraction.
         
         Args:
             timestamp: Unix timestamp of fire detection event (seconds since epoch)
@@ -120,7 +137,11 @@ class FrameExtractor:
             bounding_boxes: List of fire bounding box dictionaries with keys:
                            x, y, width, height, confidence
         
-        Requirements: 1.1, 1.3, 4.1
+        Returns:
+            Tuple of (extraction_started: bool, severity: FireSeverity or None)
+            extraction_started is True if extraction window was initiated
+        
+        Requirements: 1.1, 1.3, 4.1, Severity Classification
         """
         try:
             # Validate inputs
@@ -130,13 +151,32 @@ class FrameExtractor:
             
             if not isinstance(frame, np.ndarray):
                 logger.error(f"Invalid frame type: {type(frame)}, expected np.ndarray")
-                return
+                return False, None
             
             if not (0.0 <= confidence <= 1.0):
                 logger.warning(f"Invalid confidence {confidence}, clamping to [0.0, 1.0]")
                 confidence = max(0.0, min(1.0, confidence))
             
-            # Start extraction window
+            # Classify fire severity
+            severity, metrics = self.severity_classifier.classify(frame.shape, bounding_boxes)
+            
+            # Store current severity and metrics
+            self.current_severity = severity
+            self.current_metrics = metrics
+            
+            logger.info(f"Fire detected - Severity: {severity.value.upper()}")
+            logger.info(f"  Metrics: {metrics.fire_count} fire(s), "
+                       f"coverage: {metrics.frame_coverage:.2f}%, "
+                       f"confidence: {metrics.max_confidence:.2f}")
+            
+            # Check if extraction should be triggered based on severity
+            should_extract = self.severity_classifier.should_extract_frames(severity)
+            
+            if not should_extract:
+                logger.info(f"Fire severity is {severity.value} - Frame extraction SKIPPED")
+                return False, severity
+            
+            # Start extraction window for MODERATE or CRITICAL fires
             if not self.extraction_active:
                 self.extraction_active = True
                 self.extraction_start_time = timestamp
@@ -144,12 +184,16 @@ class FrameExtractor:
                 self.last_extract_time = 0
                 self.current_frame_index = 0
                 
-                logger.info(f"Fire detection event: Starting frame extraction at timestamp {timestamp}")
+                logger.info(f"Fire severity is {severity.value} - Starting frame extraction at timestamp {timestamp}")
                 logger.info(f"Extraction window: {self.window_duration}s at {self.sample_rate} FPS")
+                return True, severity
+            
+            return False, severity
             
         except Exception as e:
             # Error handling requirement 4.1: Log error and continue without raising exception
             logger.error(f"Error in on_fire_detected: {e}", exc_info=True)
+            return False, None
     
     def should_extract_frame(self, current_time: float) -> bool:
         """Determines if a frame should be extracted based on sample rate timing.
@@ -313,8 +357,9 @@ class FrameExtractor:
         # Create a copy of extracted frames to return
         frames_copy = self.extracted_frames.copy()
         
-        # Log extraction summary
-        logger.info(f"Extraction complete: {len(frames_copy)} frames extracted over {self.window_duration}s window")
+        # Log extraction summary with severity information
+        severity_info = f" (Severity: {self.current_severity.value})" if self.current_severity else ""
+        logger.info(f"Extraction complete: {len(frames_copy)} frames extracted over {self.window_duration}s window{severity_info}")
         
         # Reset extraction state
         self.extraction_active = False
@@ -322,7 +367,25 @@ class FrameExtractor:
         self.extracted_frames = []
         self.last_extract_time = 0
         self.current_frame_index = 0
+        self.current_severity = None
+        self.current_metrics = None
         
         logger.debug("FrameExtractor state reset, ready for next fire detection event")
         
         return frames_copy
+    
+    def get_current_severity(self) -> Optional[FireSeverity]:
+        """Returns the current fire severity classification.
+        
+        Returns:
+            Current FireSeverity or None if no fire detected yet
+        """
+        return self.current_severity
+    
+    def get_current_metrics(self) -> Optional[SeverityMetrics]:
+        """Returns the current severity metrics.
+        
+        Returns:
+            Current SeverityMetrics or None if no fire detected yet
+        """
+        return self.current_metrics

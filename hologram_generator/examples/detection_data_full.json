@@ -1,0 +1,204 @@
+{
+  "incident_id": "INC_2025_08_29_001",
+  "timestamp": "2025-08-29T14:23:45Z",
+  "building": {
+    "name": "Building A",
+    "floor": 1,
+    "room_id": "101",
+    "gps": {
+      "latitude": 28.5355,
+      "longitude": 77.3910
+    }
+  },
+  "room_geometry": {
+    "width_m": 5.0,
+    "depth_m": 4.0,
+    "height_m": 3.0,
+    "scale_unit": "meters"
+  },
+  "fire": {
+    "source": {
+      "x": 2.5,
+      "y": 0.5,
+      "z": 0.3,
+      "confidence": 0.95,
+      "severity": "active"
+    },
+    "spread": [
+      {
+        "x": 2.6,
+        "y": 0.6,
+        "z": 0.4,
+        "intensity": 0.8,
+        "age_seconds": 5
+      },
+      {
+        "x": 2.7,
+        "y": 0.7,
+        "z": 0.5,
+        "intensity": 0.6,
+        "age_seconds": 10
+      },
+      {
+        "x": 2.4,
+        "y": 0.4,
+        "z": 0.35,
+        "intensity": 0.7,
+        "age_seconds": 8
+      }
+    ],
+    "estimated_area_m2": 1.2
+  },
+  "smoke": {
+    "plume_center": {
+      "x": 2.5,
+      "y": 0.5,
+      "z": 1.5
+    },
+    "extent_radius_m": 1.8,
+    "density_0_to_1": 0.65,
+    "spread_direction": {
+      "x": -0.2,
+      "y": 0.3,
+      "z": 0.1
+    },
+    "coverage_region": [
+      {
+        "x": 1.5,
+        "y": 0.2,
+        "z": 1.0
+      },
+      {
+        "x": 3.5,
+        "y": 0.8,
+        "z": 2.2
+      }
+    ]
+  },
+  "persons": [
+    {
+      "person_id": "P_001",
+      "x": 1.0,
+      "y": 3.0,
+      "z": 1.7,
+      "state": "stationary",
+      "motion_trail": [
+        {
+          "x": 1.0,
+          "y": 3.0,
+          "z": 1.7
+        },
+        {
+          "x": 1.0,
+          "y": 2.9,
+          "z": 1.7
+        }
+      ],
+      "confidence": 0.92
+    },
+    {
+      "person_id": "P_002",
+      "x": 3.8,
+      "y": 2.5,
+      "z": 1.7,
+      "state": "moving",
+      "motion_trail": [
+        {
+          "x": 3.5,
+          "y": 2.0,
+          "z": 1.7
+        },
+        {
+          "x": 3.6,
+          "y": 2.2,
+          "z": 1.7
+        },
+        {
+          "x": 3.7,
+          "y": 2.4,
+          "z": 1.7
+        },
+        {
+          "x": 3.8,
+          "y": 2.5,
+          "z": 1.7
+        }
+      ],
+      "confidence": 0.89
+    }
+  ],
+  "furniture": [
+    {
+      "object_id": "OBJ_001",
+      "type": "bed",
+      "x": 1.5,
+      "y": 1.0,
+      "z": 0.25,
+      "width_m": 1.6,
+      "depth_m": 2.0,
+      "height_m": 0.5,
+      "confidence": 0.85,
+      "material": "generic"
+    },
+    {
+      "object_id": "OBJ_002",
+      "type": "cabinet",
+      "x": 4.2,
+      "y": 0.5,
+      "z": 0.8,
+      "width_m": 0.8,
+      "depth_m": 0.4,
+      "height_m": 1.6,
+      "confidence": 0.78,
+      "material": "generic"
+    },
+    {
+      "object_id": "OBJ_003",
+      "type": "table",
+      "x": 2.5,
+      "y": 2.5,
+      "z": 0.4,
+      "width_m": 1.0,
+      "depth_m": 0.6,
+      "height_m": 0.8,
+      "confidence": 0.81,
+      "material": "generic"
+    }
+  ],
+  "ventilation": {
+    "doors": [
+      {
+        "position": "north",
+        "x": 2.5,
+        "y": 4.0,
+        "z": 0.0,
+        "width": 0.9,
+        "height": 2.1,
+        "state": "closed"
+      }
+    ],
+    "windows": [
+      {
+        "position": "east",
+        "x": 5.0,
+        "y": 2.0,
+        "z": 1.2,
+        "width": 1.0,
+        "height": 1.0
+      },
+      {
+        "position": "west",
+        "x": 0.0,
+        "y": 2.0,
+        "z": 1.2,
+        "width": 0.8,
+        "height": 0.8
+      }
+    ]
+  },
+  "metadata": {
+    "source_camera": "CCTV_101_A",
+    "detection_model": "YOLOv8_fire_v2.1",
+    "processing_time_ms": 245
+  }
+}

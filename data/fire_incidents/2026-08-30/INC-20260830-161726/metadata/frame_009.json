@@ -1,0 +1,22 @@
+{
+  "frame_index": 9,
+  "timestamp": 1788086814.5724518,
+  "timestamp_readable": "2026-08-30T16:16:54.572452Z",
+  "fire": {
+    "detected": false,
+    "count": 0,
+    "confidence": 0.4525386840105057,
+    "bounding_boxes": []
+  },
+  "humans": {
+    "detected": false,
+    "count": 0,
+    "bounding_boxes": []
+  },
+  "objects": {
+    "detected": false,
+    "count": 0,
+    "bounding_boxes": []
+  },
+  "image_path": "S:\\Programming\\sih_2026\\backend\\models\\..\\..\\data\\fire_incidents\\2026-08-30\\INC-20260830-161726\\frames\\frame_009.jpg"
+}

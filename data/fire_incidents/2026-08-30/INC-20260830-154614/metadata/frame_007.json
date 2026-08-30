@@ -1,0 +1,56 @@
+{
+  "frame_index": 7,
+  "timestamp": 1788084943.4505305,
+  "timestamp_readable": "2026-08-30T15:45:43.450531Z",
+  "fire": {
+    "detected": true,
+    "count": 2,
+    "confidence": 0.46612368524074554,
+    "bounding_boxes": [
+      {
+        "x": 488,
+        "y": 1155,
+        "width": 68,
+        "height": 77,
+        "confidence": 0.477528840303421,
+        "class": "fire"
+      },
+      {
+        "x": 253,
+        "y": 202,
+        "width": 174,
+        "height": 123,
+        "confidence": 0.3636205494403839,
+        "class": "fire"
+      }
+    ]
+  },
+  "humans": {
+    "detected": false,
+    "count": 0,
+    "bounding_boxes": []
+  },
+  "objects": {
+    "detected": true,
+    "count": 2,
+    "bounding_boxes": [
+      {
+        "x": 529,
+        "y": 540,
+        "width": 158,
+        "height": 138,
+        "confidence": 0.9131386876106262,
+        "class": "tv"
+      },
+      {
+        "x": 1,
+        "y": 630,
+        "width": 342,
+        "height": 335,
+        "confidence": 0.735155463218689,
+        "class": "couch"
+      }
+    ]
+  },
+  "image_path": "S:\\Programming\\sih_2026\\backend\\models\\..\\..\\data\\fire_incidents\\2026-08-30\\INC-20260830-154614\\frames\\frame_007.jpg"
+}

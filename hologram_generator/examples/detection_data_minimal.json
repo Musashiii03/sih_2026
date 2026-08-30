@@ -1,0 +1,89 @@
+{
+  "incident_id": "INC_2025_08_30_MIN",
+  "timestamp": "2025-08-30T10:15:30Z",
+  "building": {
+    "name": "Building B",
+    "floor": 2,
+    "room_id": "202",
+    "gps": {
+      "latitude": 28.5400,
+      "longitude": 77.4000
+    }
+  },
+  "room_geometry": {
+    "width_m": 4.0,
+    "depth_m": 3.0,
+    "height_m": 2.8,
+    "scale_unit": "meters"
+  },
+  "fire": {
+    "source": {
+      "x": 2.0,
+      "y": 1.5,
+      "z": 0.2,
+      "confidence": 0.88,
+      "severity": "active"
+    },
+    "spread": [],
+    "estimated_area_m2": 0.5
+  },
+  "smoke": {
+    "plume_center": {
+      "x": 2.0,
+      "y": 1.5,
+      "z": 1.2
+    },
+    "extent_radius_m": 1.0,
+    "density_0_to_1": 0.45,
+    "spread_direction": {
+      "x": 0.1,
+      "y": 0.1,
+      "z": 0.5
+    },
+    "coverage_region": []
+  },
+  "persons": [
+    {
+      "person_id": "P_001",
+      "x": 0.5,
+      "y": 0.5,
+      "z": 1.7,
+      "state": "stationary",
+      "motion_trail": [],
+      "confidence": 0.90
+    }
+  ],
+  "furniture": [
+    {
+      "object_id": "OBJ_001",
+      "type": "desk",
+      "x": 2.0,
+      "y": 1.0,
+      "z": 0.4,
+      "width_m": 1.2,
+      "depth_m": 0.6,
+      "height_m": 0.8,
+      "confidence": 0.82,
+      "material": "generic"
+    }
+  ],
+  "ventilation": {
+    "doors": [
+      {
+        "position": "south",
+        "x": 2.0,
+        "y": 0.0,
+        "z": 0.0,
+        "width": 0.9,
+        "height": 2.0,
+        "state": "open"
+      }
+    ],
+    "windows": []
+  },
+  "metadata": {
+    "source_camera": "CCTV_202_B",
+    "detection_model": "YOLOv8_fire_v2.1",
+    "processing_time_ms": 198
+  }
+}
