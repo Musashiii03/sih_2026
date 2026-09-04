@@ -3,9 +3,10 @@ import { BrowserRouter, Routes, Route, NavLink, useNavigate, useLocation } from 
 import OwnerConsole from './components/OwnerConsole';
 import DispatchConsole from './components/DispatchConsole';
 import IncidentDashboard from './components/IncidentDashboard';
+import LoginPage from './components/LoginPage';
 
 // ══════════════════════════════════════════════════
-// OWNER SIDEBAR — only visible on /owner routes
+// OWNER SIDEBAR — visible on /owner routes
 // ══════════════════════════════════════════════════
 function OwnerSidebar() {
   return (
@@ -23,8 +24,57 @@ function OwnerSidebar() {
       <ul className="sidebar-nav">
         <li>
           <NavLink to="/owner" end className={({ isActive }) => `sidebar-nav-btn${isActive ? ' active' : ''}`}>
-            <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>admin_panel_settings</span>
-            <span className="sidebar-nav-label">Owner Console</span>
+            <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>dashboard</span>
+            <span className="sidebar-nav-label">Overview</span>
+          </NavLink>
+        </li>
+        <li>
+          <NavLink to="/owner" end className={({ isActive }) => `sidebar-nav-btn${isActive ? ' active' : ''}`}>
+            <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>local_fire_department</span>
+            <span className="sidebar-nav-label">Incidents</span>
+            <span className="sidebar-alert-dot" />
+          </NavLink>
+        </li>
+        <li>
+          <NavLink to="/owner" end className={({ isActive }) => `sidebar-nav-btn${isActive ? ' active' : ''}`}>
+            <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>videocam</span>
+            <span className="sidebar-nav-label">Cameras</span>
+          </NavLink>
+        </li>
+        <li>
+          <NavLink to="/owner" end className={({ isActive }) => `sidebar-nav-btn${isActive ? ' active' : ''}`}>
+            <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>apartment</span>
+            <span className="sidebar-nav-label">Buildings</span>
+          </NavLink>
+        </li>
+        <li>
+          <NavLink to="/owner" end className={({ isActive }) => `sidebar-nav-btn${isActive ? ' active' : ''}`}>
+            <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>groups</span>
+            <span className="sidebar-nav-label">People Safety</span>
+          </NavLink>
+        </li>
+        <li>
+          <NavLink to="/owner" end className={({ isActive }) => `sidebar-nav-btn${isActive ? ' active' : ''}`}>
+            <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>analytics</span>
+            <span className="sidebar-nav-label">Analytics</span>
+          </NavLink>
+        </li>
+        <li>
+          <NavLink to="/owner" end className={({ isActive }) => `sidebar-nav-btn${isActive ? ' active' : ''}`}>
+            <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>report</span>
+            <span className="sidebar-nav-label">Complaints</span>
+          </NavLink>
+        </li>
+        <li>
+          <NavLink to="/owner" end className={({ isActive }) => `sidebar-nav-btn${isActive ? ' active' : ''}`}>
+            <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>notifications</span>
+            <span className="sidebar-nav-label">Alerts</span>
+          </NavLink>
+        </li>
+        <li>
+          <NavLink to="/owner" end className={({ isActive }) => `sidebar-nav-btn${isActive ? ' active' : ''}`}>
+            <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>summarize</span>
+            <span className="sidebar-nav-label">Reports</span>
           </NavLink>
         </li>
       </ul>
@@ -121,44 +171,13 @@ function DispatchLayout() {
 }
 
 // ══════════════════════════════════════════════════
-// ROOT — landing page router
-// ══════════════════════════════════════════════════
-function Landing() {
-  return (
-    <div className="landing-root">
-      <div className="landing-logo">
-        <span className="material-symbols-outlined" style={{ fontSize: 52, color: 'var(--accent)', fontVariationSettings: "'FILL' 1" }}>shield</span>
-      </div>
-      <h1 className="landing-title"><em>Atma</em>rakshak</h1>
-      <p className="landing-sub">आत्मरक्षक · Emergency Detection &amp; Dispatch System</p>
-      <div className="landing-cards">
-        <a href="/owner" className="landing-card">
-          <span className="material-symbols-outlined lc-icon" style={{ color: 'var(--accent)', fontVariationSettings: "'FILL' 1" }}>admin_panel_settings</span>
-          <div className="lc-title">Owner Portal</div>
-          <div className="lc-desc">Monitor your property, receive fire alerts, and manage incident responses for your building.</div>
-          <div className="lc-arrow">Access Portal →</div>
-        </a>
-        <a href="/dispatch" className="landing-card dispatch-card">
-          <span className="material-symbols-outlined lc-icon" style={{ color: 'var(--critical)', fontVariationSettings: "'FILL' 1" }}>local_fire_department</span>
-          <div className="lc-title">Fire Dispatch</div>
-          <div className="lc-desc">ERSS / 112 operator console — manage active incidents, dispatch units, and coordinate response.</div>
-          <div className="lc-badge">2 Active</div>
-          <div className="lc-arrow" style={{ color: 'var(--critical)' }}>Enter Dispatch →</div>
-        </a>
-      </div>
-      <p className="landing-version">Atmarakshak v2.4 · YOLOv8x Detection · ERSS/112 Integration</p>
-    </div>
-  );
-}
-
-// ══════════════════════════════════════════════════
 // APP ROOT
 // ══════════════════════════════════════════════════
 export default function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/"           element={<Landing />} />
+        <Route path="/"           element={<LoginPage />} />
         <Route path="/owner/*"    element={<OwnerLayout />} />
         <Route path="/dispatch/*" element={<DispatchLayout />} />
       </Routes>

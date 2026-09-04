@@ -16,7 +16,7 @@ const router = express.Router();
 // Configured relative to backend directory or via environment variable
 const INCIDENTS_BASE_PATH = process.env.FRAME_STORAGE_PATH
   ? path.join(__dirname, '../..', process.env.FRAME_STORAGE_PATH)
-  : path.join(__dirname, '../../data/fire_incidents');
+  : path.join(__dirname, '../data/fire_incidents');
 
 // ============================================================================
 // HELPER FUNCTIONS

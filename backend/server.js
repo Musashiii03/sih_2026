@@ -49,7 +49,7 @@ app.use((req, res, next) => {
 
 // Serve static frame images and hologram files directly from data directory
 // GET /data/fire_incidents/... → data/ folder
-const DATA_PATH = path.join(__dirname, '..', 'data');
+const DATA_PATH = path.join(__dirname, 'data');
 app.use('/data', express.static(DATA_PATH, {
   setHeaders: (res, filePath) => {
     if (filePath.endsWith('.jpg') || filePath.endsWith('.jpeg')) {
@@ -81,6 +81,69 @@ app.get('/api/incidents/:incidentId/hologram', async (req, res) => {
       } catch (_) { continue; }
     }
     return res.status(404).json({ error: 'NotFound', message: `Hologram not found for ${incidentId}` });
+  } catch (err) {
+    return res.status(500).json({ error: 'InternalServerError', message: err.message });
+  }
+});
+
+// Human detection endpoint — aggregates human counts from per-frame metadata JSONs
+// Returns: { peak_human_count, total_human_detections, frames_with_humans, peak_frame }
+app.get('/api/incidents/:incidentId/humans', async (req, res) => {
+  const fs = require('fs').promises;
+  const { incidentId } = req.params;
+  const incidentBasePath = path.join(DATA_PATH, 'fire_incidents');
+  try {
+    // Find incident directory
+    let metadataDir = null;
+    const dateDirs = await fs.readdir(incidentBasePath, { withFileTypes: true });
+    for (const dateDir of dateDirs) {
+      if (!dateDir.isDirectory()) continue;
+      const candidate = path.join(incidentBasePath, dateDir.name, incidentId, 'metadata');
+      try { await fs.access(candidate); metadataDir = candidate; break; } catch (_) {}
+    }
+
+    if (!metadataDir) {
+      // Fall back to summary.json human_count fields
+      return res.status(404).json({ error: 'NotFound', message: `Metadata not found for ${incidentId}` });
+    }
+
+    // Read all frame metadata JSONs
+    const files = (await fs.readdir(metadataDir)).filter(f => f.endsWith('.json'));
+    let peakHumanCount = 0;
+    let totalHumanDetections = 0;
+    let framesWithHumans = [];
+    let peakFrame = null;
+
+    for (const file of files) {
+      const content = JSON.parse(await fs.readFile(path.join(metadataDir, file), 'utf8'));
+      const humansBlock = content.humans || {};
+      const count = humansBlock.count ?? 0;
+      const bboxes = humansBlock.bounding_boxes ?? [];
+      totalHumanDetections += count;
+
+      if (count > 0) {
+        framesWithHumans.push({
+          frame_index: content.frame_index,
+          timestamp_readable: content.timestamp_readable,
+          human_count: count,
+          bounding_boxes: bboxes,
+        });
+        if (count > peakHumanCount) {
+          peakHumanCount = count;
+          peakFrame = { frame_index: content.frame_index, human_count: count, bounding_boxes: bboxes };
+        }
+      }
+    }
+
+    return res.json({
+      incident_id: incidentId,
+      peak_human_count: peakHumanCount,
+      total_human_detections: totalHumanDetections,
+      frames_with_humans: framesWithHumans.length,
+      peak_frame: peakFrame,
+      // If no humans detected, explicitly say so — this is real data, not a gap
+      data_source: 'per_frame_metadata',
+    });
   } catch (err) {
     return res.status(500).json({ error: 'InternalServerError', message: err.message });
   }
