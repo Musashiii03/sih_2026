@@ -1,58 +1,45 @@
 /**
  * useIncidentData
  *
- * Fetches all data from the backend API:
- *  - /api/incidents               → incident list
- *  - /api/incidents/:id/summary   → detailed summary with frame metadata
- *  - /api/incidents/:id/hologram  → hologram_data JSON (3D coords)
- *  - /api/incidents/:id/metadata  → per-frame metadata JSON aggregated human counts
- *  - /api/incidents/:id/frames/:n → JPEG image URL (used directly as img src)
+ * Fetches all real data from the backend API:
+ *  GET /api/incidents                       → incident list
+ *  GET /api/incidents/:id/summary           → summary.json (frame-level fire/human/object counts)
+ *  GET /api/incidents/:id/hologram          → hologram_data JSON (3D coordinates)
+ *  GET /api/incidents/:id/humans            → aggregated human detections from per-frame metadata
+ *  GET /api/incidents/:id/frames/:n         → JPEG image (used directly as <img src>)
  *
- * Returns consistent shape consumed by OwnerConsole and DispatchConsole.
+ * Human count priority (most authoritative first):
+ *   1. /humans endpoint  → reads per-frame metadata JSONs, returns peak_human_count
+ *   2. summary.statistics.total_human_detections  → aggregate from summary
+ *   3. max(frame.human_count) across summary.frames  → per-frame peak from summary
+ *   4. hologram.persons.length  → count of persons mapped to 3D space
+ *   5. 0 (confirmed zero — video had no people)
  */
 
 import { useState, useEffect, useCallback } from 'react';
 
-const API = ''; // proxied via Vite → localhost:3001
-
-// ── Helpers ────────────────────────────────────────────────────────────────
-
-/** Absolute URL for a frame image (proxied) */
-export function frameImageUrl(incidentId, frameIndex) {
-  return `${API}/api/incidents/${incidentId}/frames/${frameIndex}`;
-}
-
 async function fetchJson(url) {
   const res = await fetch(url);
-  if (!res.ok) throw new Error(`${res.status} ${res.statusText} — ${url}`);
+  if (!res.ok) throw new Error(`${res.status} — ${url}`);
   return res.json();
 }
 
+/** Absolute URL for a frame JPEG served via backend proxy */
+export function frameImageUrl(incidentId, frameIndex) {
+  return `/api/incidents/${incidentId}/frames/${frameIndex}`;
+}
+
 // ── Main hook ──────────────────────────────────────────────────────────────
-
-/**
- * @returns {{
- *   incidents: Array,           // list from /api/incidents
- *   loading: boolean,
- *   error: string|null,
- *   selectedId: string|null,
- *   setSelectedId: fn,
- *   summary: object|null,       // full summary.json for selectedId (metadata-enriched)
- *   hologram: object|null,      // hologram_data JSON for selectedId
- *   metadataStats: object|null, // aggregated per-frame metadata → authoritative human counts
- *   refresh: fn,
- * }}
- */
 export function useIncidentData() {
-  const [incidents, setIncidents]         = useState([]);
-  const [selectedId, setSelectedId]       = useState(null);
-  const [summary, setSummary]             = useState(null);
-  const [hologram, setHologram]           = useState(null);
-  const [metadataStats, setMetadataStats] = useState(null);
-  const [loading, setLoading]             = useState(true);
-  const [error, setError]                 = useState(null);
+  const [incidents,   setIncidents]   = useState([]);
+  const [selectedId,  setSelectedId]  = useState(null);
+  const [summary,     setSummary]     = useState(null);
+  const [hologram,    setHologram]    = useState(null);
+  const [humanData,   setHumanData]   = useState(null); // from /humans endpoint
+  const [loading,     setLoading]     = useState(true);
+  const [error,       setError]       = useState(null);
 
-  // Fetch incident list once
+  // ── Load incident list ─────────────────────────────────────────────────
   const loadIncidents = useCallback(async () => {
     try {
       setLoading(true);
@@ -60,7 +47,6 @@ export function useIncidentData() {
       const data = await fetchJson('/api/incidents');
       const list = data.incidents || [];
       setIncidents(list);
-      // Auto-select the most recent (first) incident
       if (list.length > 0 && !selectedId) {
         setSelectedId(list[0].incident_id);
       }
@@ -73,22 +59,21 @@ export function useIncidentData() {
 
   useEffect(() => { loadIncidents(); }, [loadIncidents]);
 
-  // Fetch summary + hologram + per-frame metadata whenever selectedId changes
+  // ── Load detail data whenever selectedId changes ───────────────────────
   useEffect(() => {
     if (!selectedId) return;
     setSummary(null);
     setHologram(null);
-    setMetadataStats(null);
+    setHumanData(null);
 
     Promise.all([
       fetchJson(`/api/incidents/${selectedId}/summary`).catch(() => null),
       fetchJson(`/api/incidents/${selectedId}/hologram`).catch(() => null),
-      // /metadata reads every metadata/frame_NNN.json — authoritative human counts
-      fetchJson(`/api/incidents/${selectedId}/metadata`).catch(() => null),
-    ]).then(([sum, holo, meta]) => {
+      fetchJson(`/api/incidents/${selectedId}/humans`).catch(() => null),
+    ]).then(([sum, holo, humans]) => {
       setSummary(sum);
       setHologram(holo);
-      setMetadataStats(meta);
+      setHumanData(humans);
     });
   }, [selectedId]);
 
@@ -100,61 +85,72 @@ export function useIncidentData() {
     setSelectedId,
     summary,
     hologram,
-    metadataStats,
+    humanData,        // { peak_human_count, total_human_detections, frames_with_humans, peak_frame }
+    metadataStats: humanData, // alias — consumed by useOwnerData and DispatchConsole
     refresh: loadIncidents,
   };
 }
 
-// ── Derived helpers used by components ────────────────────────────────────
+// ── Derived helpers ────────────────────────────────────────────────────────
 
 /**
- * From a summary object, return severity level string
+ * Derive severity from real summary statistics
  */
 export function deriveSeverity(summary) {
   if (!summary) return 'UNKNOWN';
   const avgConf = summary.statistics?.avg_fire_confidence ?? 0;
   const maxFire = Math.max(...(summary.frames || []).map(f => f.fire_count ?? 0), 0);
   if (avgConf >= 0.65 || maxFire >= 3) return 'CRITICAL';
-  if (avgConf >= 0.40) return 'MODERATE';
+  if (avgConf >= 0.35) return 'MODERATE';
   return 'LOW';
 }
 
 /**
- * Return frame objects for evidence strip (all available frames)
+ * Return frame objects that have fire detections (for evidence strip)
  */
-export function getEvidenceFrames(summary, maxCount = 999) {
+export function getEvidenceFrames(summary, maxCount = 6) {
   if (!summary?.frames) return [];
-  return summary.frames.slice(0, maxCount);
+  return summary.frames
+    .filter(f => (f.fire_count ?? 0) > 0)
+    .slice(0, maxCount);
 }
 
 /**
- * Aggregate stats from summary + optional metadataStats.
+ * Aggregate real stats from summary + humanData.
  *
- * Human count precedence (most authoritative first):
- *   1. metadataStats.peak_human_count       — from per-frame metadata/frame_NNN.json files
- *   2. summary.statistics.peak_human_count  — if backend enriched the summary endpoint
- *   3. summary.statistics.total_human_detections — raw fallback
- *
- * @param {object|null} summary
- * @param {object|null} metadataStats  - from /api/incidents/:id/metadata
+ * Human count resolution (most → least authoritative):
+ *  1. humanData.peak_human_count  (from per-frame metadata JSONs via /humans API)
+ *  2. summary.statistics.total_human_detections
+ *  3. Math.max of frame.human_count across all frames
+ *  4. hologram.persons.length
+ *  5. 0
  */
-export function aggregateStats(summary, metadataStats) {
-  if (!summary) return { fireCount: 0, humanCount: 0, peakHumanCount: 0, totalHumanDetections: 0, framesWithHumans: 0, objectCount: 0, avgConf: 0, frameCount: 0 };
+export function aggregateStats(summary, humanData = null, hologram = null) {
+  if (!summary) return { fireCount: 0, humanCount: 0, objectCount: 0, avgConf: 0, frameCount: 0 };
+
   const stats = summary.statistics || {};
 
-  // per-frame metadata JSON files are the authoritative human-count source
-  const peakHumanCount       = metadataStats?.peak_human_count        ?? stats.peak_human_count        ?? 0;
-  const totalHumanDetections = metadataStats?.total_human_detections   ?? stats.total_human_detections  ?? 0;
-  const framesWithHumans     = metadataStats?.frames_with_humans       ?? stats.frames_with_humans      ?? 0;
+  // Human count — read from real metadata via /humans endpoint (most authoritative)
+  let humanCount = 0;
+  if (humanData && typeof humanData.peak_human_count === 'number') {
+    humanCount = humanData.peak_human_count;
+  } else if (typeof stats.total_human_detections === 'number' && stats.total_human_detections > 0) {
+    humanCount = stats.total_human_detections;
+  } else if (summary.frames?.length) {
+    humanCount = Math.max(...summary.frames.map(f => f.human_count ?? 0), 0);
+  } else if (hologram?.persons?.length) {
+    humanCount = hologram.persons.length;
+  }
 
   return {
-    fireCount:             stats.total_fire_detections   ?? 0,
-    humanCount:            peakHumanCount,      // "People at Risk" = peak simultaneous humans
-    totalHumanDetections,                       // cumulative across all frames
-    framesWithHumans,
-    peakHumanCount,
-    objectCount:           stats.total_object_detections ?? 0,
-    avgConf:               stats.avg_fire_confidence     ?? 0,
-    frameCount:            summary.frame_count           ?? 0,
+    fireCount:   stats.total_fire_detections   ?? 0,
+    humanCount,
+    objectCount: stats.total_object_detections ?? 0,
+    avgConf:     stats.avg_fire_confidence     ?? 0,
+    frameCount:  summary.frame_count           ?? 0,
+    // Extra human detail fields from /humans endpoint
+    humanFrames: humanData?.frames_with_humans  ?? 0,
+    humanTotal:  humanData?.total_human_detections ?? 0,
+    humanSource: humanData?.data_source ?? 'summary',
   };
 }
