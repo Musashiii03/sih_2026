@@ -6,24 +6,13 @@ const cors = require('cors');
 const path = require('path');
 require('dotenv').config();
 
-// Import API routes (will be created separately)
-// The frame_api module will be imported once it's created
-let frameRouter;
-try {
-  frameRouter = require('./api/frame_api');
-} catch (error) {
-  console.warn('⚠️  Frame API routes not yet available. Server will start without frame endpoints.');
-  frameRouter = null;
-}
+// Import database utilities
+const { testConnection, syncDatabase, closeConnection } = require('./src/config/sequelize');
+const db = require('./src/models');
 
-// Import nearest station API routes
-let nearestStationRouter;
-try {
-  nearestStationRouter = require('./api/nearest_station_api');
-} catch (error) {
-  console.warn('⚠️  Nearest station API routes not yet available.');
-  nearestStationRouter = null;
-}
+// Import API routes
+const { frameRoutes, stationRoutes } = require('./src/routes');
+
 
 const app = express();
 const PORT = process.env.API_PORT || 3001;
@@ -161,41 +150,41 @@ app.get('/api/incidents/:incidentId/humans', async (req, res) => {
 });
 
 // Mount frame API routes at /api
-if (frameRouter) {
-  app.use('/api', frameRouter);
-  console.log('✅ Frame API routes mounted at /api');
-} else {
-  // Placeholder route when frame_api is not available
-  app.get('/api/*', (req, res) => {
-    res.status(503).json({
-      error: 'Frame API not available',
-      message: 'Frame API routes have not been implemented yet'
-    });
-  });
-}
+app.use('/api', frameRoutes);
+console.log('✅ Frame API routes mounted at /api');
 
 // Mount nearest station API routes at /api
-if (nearestStationRouter) {
-  app.use('/api', nearestStationRouter);
-  console.log('✅ Nearest station API routes mounted at /api');
-} else {
-  app.get('/api/nearest-station', (req, res) => {
-    res.status(503).json({
-      error: 'Nearest station API not available',
-      message: 'Nearest station API routes have not been implemented yet'
-    });
-  });
-}
+app.use('/api', stationRoutes);
+console.log('✅ Nearest station API routes mounted at /api');
 
-// Health check endpoint
-app.get('/health', (req, res) => {
-  res.json({
-    status: 'ok',
-    timestamp: Date.now(),
-    uptime: process.uptime(),
-    environment: process.env.NODE_ENV || 'development',
-    version: '1.0.0'
-  });
+// Health check endpoint (includes database status)
+app.get('/health', async (req, res) => {
+  const { checkDatabaseHealth } = require('./src/utils/database');
+  
+  try {
+    const dbHealth = await checkDatabaseHealth();
+    
+    res.json({
+      status: dbHealth.status === 'healthy' ? 'ok' : 'degraded',
+      timestamp: Date.now(),
+      uptime: process.uptime(),
+      environment: process.env.NODE_ENV || 'development',
+      version: '1.0.0',
+      database: dbHealth
+    });
+  } catch (error) {
+    res.status(503).json({
+      status: 'error',
+      timestamp: Date.now(),
+      uptime: process.uptime(),
+      environment: process.env.NODE_ENV || 'development',
+      version: '1.0.0',
+      database: {
+        status: 'unhealthy',
+        error: error.message
+      }
+    });
+  }
 });
 
 // Root endpoint
@@ -244,34 +233,84 @@ app.use((err, req, res, next) => {
 // SERVER STARTUP
 // ============================================================================
 
+/**
+ * Initialize database and start server
+ */
+const startServer = async () => {
+  try {
+    // Test database connection
+    const connected = await testConnection();
+    
+    if (!connected) {
+      console.error('❌ Failed to connect to database. Server will start but database operations will fail.');
+      console.error('💡 Please check your database configuration and ensure the database server is running.');
+    } else {
+      // Sync database models (creates tables if they don't exist)
+      await syncDatabase({
+        alter: process.env.NODE_ENV === 'development',
+        force: false
+      });
+      
+      // Log registered models
+      const modelCount = db.getModelCount();
+      if (modelCount > 0) {
+        console.log(`📦 Registered models (${modelCount}):`, db.getModelNames().join(', '));
+      } else {
+        console.log('📦 No models registered yet. Add models to /models directory.');
+      }
+    }
+    
+    // Start the server
+    const server = app.listen(PORT, () => {
+      console.log('\n🔥 Fire Detection Frame API Server');
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      console.log(`🚀 Server running on port ${PORT}`);
+      console.log(`🌐 Environment: ${process.env.NODE_ENV || 'development'}`);
+      console.log(`🔗 Health check: http://localhost:${PORT}/health`);
+      console.log(`📡 API endpoints: http://localhost:${PORT}/api`);
+      console.log(`🎯 CORS origin: ${CORS_ORIGIN}`);
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
+    });
+    
+    return server;
+  } catch (error) {
+    console.error('❌ Failed to start server:', error.message);
+    process.exit(1);
+  }
+};
+
 // Start the server
-const server = app.listen(PORT, () => {
-  console.log('\n🔥 Fire Detection Frame API Server');
-  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-  console.log(`🚀 Server running on port ${PORT}`);
-  console.log(`🌐 Environment: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`🔗 Health check: http://localhost:${PORT}/health`);
-  console.log(`📡 API endpoints: http://localhost:${PORT}/api`);
-  console.log(`🎯 CORS origin: ${CORS_ORIGIN}`);
-  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
-});
+let server;
+startServer().then(s => { server = s; });
 
 // Graceful shutdown handler
-process.on('SIGTERM', () => {
-  console.log('\n⏸️  SIGTERM signal received: closing HTTP server');
-  server.close(() => {
-    console.log('✅ HTTP server closed');
+const gracefulShutdown = async (signal) => {
+  console.log(`\n⏸️  ${signal} signal received: closing server gracefully`);
+  
+  if (server) {
+    server.close(async () => {
+      console.log('✅ HTTP server closed');
+      
+      // Close database connection
+      await closeConnection();
+      
+      console.log('👋 Shutdown complete');
+      process.exit(0);
+    });
+    
+    // Force close after 10 seconds
+    setTimeout(() => {
+      console.error('❌ Forced shutdown after timeout');
+      process.exit(1);
+    }, 10000);
+  } else {
+    await closeConnection();
     process.exit(0);
-  });
-});
+  }
+};
 
-process.on('SIGINT', () => {
-  console.log('\n⏸️  SIGINT signal received: closing HTTP server');
-  server.close(() => {
-    console.log('✅ HTTP server closed');
-    process.exit(0);
-  });
-});
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 
 // Handle uncaught exceptions
 process.on('uncaughtException', (err) => {

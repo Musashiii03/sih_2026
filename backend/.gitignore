@@ -1,1 +1,34 @@
 node_modules/
+
+# Environment variables (contains database credentials)
+.env
+
+# Sequelize CLI files
+.sequelizerc
+
+# Database backup files
+*.sql
+*.dump
+
+# IDE and OS files
+.DS_Store
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Test coverage
+coverage/
+.nyc_output/
+
+# Temporary files
+tmp/
+temp/

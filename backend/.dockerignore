@@ -1,0 +1,15 @@
+node_modules
+npm-debug.log
+.env
+.git
+.gitignore
+README.md
+.vscode
+.idea
+*.log
+coverage
+.pytest_cache
+__pycache__
+*.pyc
+data/fire_incidents
+data/video_data
