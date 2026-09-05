@@ -7,9 +7,9 @@
 module.exports = (sequelize, DataTypes) => {
   const Incident = sequelize.define('Incident', {
     id: {
-      type: DataTypes.UUID,
-      defaultValue: DataTypes.UUIDV4,
-      primaryKey: true
+      type: DataTypes.INTEGER,
+      primaryKey: true,
+      autoIncrement: true
     },
     incident_number: {
       type: DataTypes.STRING(30),
@@ -56,7 +56,7 @@ module.exports = (sequelize, DataTypes) => {
       }
     },
     building_id: {
-      type: DataTypes.UUID,
+      type: DataTypes.INTEGER,
       allowNull: true,
       references: {
         model: 'buildings',
@@ -64,7 +64,7 @@ module.exports = (sequelize, DataTypes) => {
       }
     },
     building_unit_id: {
-      type: DataTypes.UUID,
+      type: DataTypes.INTEGER,
       allowNull: true,
       references: {
         model: 'building_units',
@@ -72,7 +72,7 @@ module.exports = (sequelize, DataTypes) => {
       }
     },
     reported_by_user_id: {
-      type: DataTypes.UUID,
+      type: DataTypes.INTEGER,
       allowNull: true,
       references: {
         model: 'users',
@@ -80,7 +80,7 @@ module.exports = (sequelize, DataTypes) => {
       }
     },
     detected_by_camera_id: {
-      type: DataTypes.UUID,
+      type: DataTypes.INTEGER,
       allowNull: true,
       references: {
         model: 'cameras',
@@ -218,3 +218,4 @@ module.exports = (sequelize, DataTypes) => {
 
   return Incident;
 };
+

@@ -7,21 +7,17 @@
 module.exports = (sequelize, DataTypes) => {
   const Ownership = sequelize.define('Ownership', {
     id: {
-      type: DataTypes.UUID,
-      defaultValue: DataTypes.UUIDV4,
-      primaryKey: true
+      type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true
     },
     building_id: {
-      type: DataTypes.UUID,
-      allowNull: false,
+      type: DataTypes.INTEGER, allowNull: false,
       references: {
         model: 'buildings',
         key: 'id'
       }
     },
     owner_id: {
-      type: DataTypes.UUID,
-      allowNull: false,
+      type: DataTypes.INTEGER, allowNull: false,
       references: {
         model: 'owners',
         key: 'id'
@@ -91,3 +87,4 @@ module.exports = (sequelize, DataTypes) => {
 
   return Ownership;
 };
+

@@ -7,13 +7,10 @@
 module.exports = (sequelize, DataTypes) => {
   const IncidentTimeline = sequelize.define('IncidentTimeline', {
     id: {
-      type: DataTypes.UUID,
-      defaultValue: DataTypes.UUIDV4,
-      primaryKey: true
+      type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true
     },
     incident_id: {
-      type: DataTypes.UUID,
-      allowNull: false,
+      type: DataTypes.INTEGER, allowNull: false,
       references: {
         model: 'incidents',
         key: 'id'
@@ -44,8 +41,7 @@ module.exports = (sequelize, DataTypes) => {
       }
     },
     actor_user_id: {
-      type: DataTypes.UUID,
-      allowNull: true,
+      type: DataTypes.INTEGER, allowNull: true,
       references: {
         model: 'users',
         key: 'id'
@@ -94,3 +90,4 @@ module.exports = (sequelize, DataTypes) => {
 
   return IncidentTimeline;
 };
+

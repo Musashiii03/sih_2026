@@ -7,9 +7,7 @@
 module.exports = (sequelize, DataTypes) => {
   const User = sequelize.define('User', {
     id: {
-      type: DataTypes.UUID,
-      defaultValue: DataTypes.UUIDV4,
-      primaryKey: true
+      type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true
     },
     first_name: {
       type: DataTypes.STRING(100),
@@ -112,3 +110,4 @@ module.exports = (sequelize, DataTypes) => {
 
   return User;
 };
+
