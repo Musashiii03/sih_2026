@@ -7,13 +7,10 @@
 module.exports = (sequelize, DataTypes) => {
   const AuditLog = sequelize.define('AuditLog', {
     id: {
-      type: DataTypes.UUID,
-      defaultValue: DataTypes.UUIDV4,
-      primaryKey: true
+      type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true
     },
     actor_user_id: {
-      type: DataTypes.UUID,
-      allowNull: true,
+      type: DataTypes.INTEGER, allowNull: true,
       references: {
         model: 'users',
         key: 'id'
@@ -30,8 +27,7 @@ module.exports = (sequelize, DataTypes) => {
       comment: 'e.g., USER, BUILDING, INCIDENT, CAMERA'
     },
     entity_id: {
-      type: DataTypes.UUID,
-      allowNull: false
+      type: DataTypes.INTEGER, allowNull: false
     },
     old_values: {
       type: DataTypes.JSONB,
@@ -82,3 +78,4 @@ module.exports = (sequelize, DataTypes) => {
 
   return AuditLog;
 };
+

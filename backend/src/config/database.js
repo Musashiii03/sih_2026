@@ -23,8 +23,8 @@ const config = {
     port: parseInt(process.env.DB_PORT || '5432', 10),
     dialect: 'postgres',
     
-    // Logging configuration - verbose in development
-    logging: console.log,
+    // Logging configuration - controlled by DB_LOGGING env var
+    logging: process.env.DB_LOGGING === 'true' ? console.log : false,
     
     // Connection pool configuration
     pool: {

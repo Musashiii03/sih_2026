@@ -7,12 +7,12 @@
 module.exports = (sequelize, DataTypes) => {
   const IncidentDetection = sequelize.define('IncidentDetection', {
     id: {
-      type: DataTypes.UUID,
-      defaultValue: DataTypes.UUIDV4,
-      primaryKey: true
+      type: DataTypes.INTEGER,
+      primaryKey: true,
+      autoIncrement: true
     },
     incident_id: {
-      type: DataTypes.UUID,
+      type: DataTypes.INTEGER,
       allowNull: false,
       references: {
         model: 'incidents',
@@ -20,7 +20,7 @@ module.exports = (sequelize, DataTypes) => {
       }
     },
     camera_id: {
-      type: DataTypes.UUID,
+      type: DataTypes.INTEGER,
       allowNull: false,
       references: {
         model: 'cameras',
@@ -62,6 +62,35 @@ module.exports = (sequelize, DataTypes) => {
     frame_number: {
       type: DataTypes.INTEGER,
       allowNull: true
+    },
+    frame_index: {
+      type: DataTypes.INTEGER,
+      allowNull: true
+    },
+    fire_count: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      defaultValue: 0
+    },
+    human_count: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      defaultValue: 0
+    },
+    object_count: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      defaultValue: 0
+    },
+    image_path: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+      comment: 'Path to the frame image'
+    },
+    metadata_path: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+      comment: 'Path to the detection metadata JSON'
     },
     model_name: {
       type: DataTypes.STRING(100),
@@ -114,3 +143,4 @@ module.exports = (sequelize, DataTypes) => {
 
   return IncidentDetection;
 };
+

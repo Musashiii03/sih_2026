@@ -100,26 +100,23 @@ const testConnection = async () => {
 const syncDatabase = async (options = {}) => {
   try {
     const defaultOptions = {
-      alter: env === 'development', // Auto-alter tables in development
-      force: false // Never drop tables unless explicitly set
+      alter: env === 'development', // Auto-alter tables in development (preserves data)
+      force: false // Never drop tables by default
     };
     
     const syncOptions = { ...defaultOptions, ...options };
     
     if (syncOptions.force) {
-      console.warn('⚠️  WARNING: Using force:true will DROP all tables!');
+      console.warn('⚠️  WARNING: Using force:true will DROP all tables and DELETE all data!');
     }
     
     await sequelize.sync(syncOptions);
-    console.log('✅ Database synchronized successfully');
     
-    // Log sync mode
-    if (syncOptions.force) {
-      console.log('🔄 Mode: FORCE (tables dropped and recreated)');
-    } else if (syncOptions.alter) {
-      console.log('🔄 Mode: ALTER (tables updated to match models)');
-    } else {
-      console.log('🔄 Mode: SAFE (only create missing tables)');
+    if (env === 'development') {
+      console.log('✅ Database synchronized successfully');
+      if (syncOptions.alter) {
+        console.log('🔄 Mode: ALTER (tables updated, data preserved)');
+      }
     }
   } catch (error) {
     console.error('❌ Database synchronization failed:', error.message);

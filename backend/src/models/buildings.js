@@ -7,9 +7,9 @@
 module.exports = (sequelize, DataTypes) => {
   const Building = sequelize.define('Building', {
     id: {
-      type: DataTypes.UUID,
-      defaultValue: DataTypes.UUIDV4,
-      primaryKey: true
+      type: DataTypes.INTEGER,
+      primaryKey: true,
+      autoIncrement: true
     },
     building_code: {
       type: DataTypes.STRING(50),
@@ -31,7 +31,7 @@ module.exports = (sequelize, DataTypes) => {
       }
     },
     address_id: {
-      type: DataTypes.UUID,
+      type: DataTypes.INTEGER,
       allowNull: false,
       references: {
         model: 'addresses',
@@ -157,3 +157,4 @@ module.exports = (sequelize, DataTypes) => {
 
   return Building;
 };
+

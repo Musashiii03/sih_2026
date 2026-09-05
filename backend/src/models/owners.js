@@ -7,9 +7,7 @@
 module.exports = (sequelize, DataTypes) => {
   const Owner = sequelize.define('Owner', {
     id: {
-      type: DataTypes.UUID,
-      defaultValue: DataTypes.UUIDV4,
-      primaryKey: true
+      type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true
     },
     owner_type: {
       type: DataTypes.STRING(30),
@@ -19,16 +17,14 @@ module.exports = (sequelize, DataTypes) => {
       }
     },
     user_id: {
-      type: DataTypes.UUID,
-      allowNull: true,
+      type: DataTypes.INTEGER, allowNull: true,
       references: {
         model: 'users',
         key: 'id'
       }
     },
     organization_id: {
-      type: DataTypes.UUID,
-      allowNull: true,
+      type: DataTypes.INTEGER, allowNull: true,
       references: {
         model: 'organizations',
         key: 'id'
@@ -82,3 +78,4 @@ module.exports = (sequelize, DataTypes) => {
 
   return Owner;
 };
+

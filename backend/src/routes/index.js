@@ -7,8 +7,12 @@
 
 const frameRoutes = require('./frame.routes');
 const stationRoutes = require('./station.routes');
+const incidentRoutes = require('./incident.routes');
+const buildingRoutes = require('./building.routes');
 
 module.exports = {
   frameRoutes,
-  stationRoutes
+  stationRoutes,
+  incidentRoutes,
+  buildingRoutes
 };

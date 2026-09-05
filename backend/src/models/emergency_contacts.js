@@ -7,21 +7,17 @@
 module.exports = (sequelize, DataTypes) => {
   const EmergencyContact = sequelize.define('EmergencyContact', {
     id: {
-      type: DataTypes.UUID,
-      defaultValue: DataTypes.UUIDV4,
-      primaryKey: true
+      type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true
     },
     organization_id: {
-      type: DataTypes.UUID,
-      allowNull: false,
+      type: DataTypes.INTEGER, allowNull: false,
       references: {
         model: 'organizations',
         key: 'id'
       }
     },
     station_id: {
-      type: DataTypes.UUID,
-      allowNull: true,
+      type: DataTypes.INTEGER, allowNull: true,
       references: {
         model: 'fire_stations',
         key: 'id'
@@ -113,3 +109,4 @@ module.exports = (sequelize, DataTypes) => {
 
   return EmergencyContact;
 };
+

@@ -7,9 +7,7 @@
 module.exports = (sequelize, DataTypes) => {
   const FireStation = sequelize.define('FireStation', {
     id: {
-      type: DataTypes.UUID,
-      defaultValue: DataTypes.UUIDV4,
-      primaryKey: true
+      type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true
     },
     station_code: {
       type: DataTypes.STRING(50),
@@ -26,8 +24,7 @@ module.exports = (sequelize, DataTypes) => {
       comment: 'e.g., MAIN, SATELLITE, VOLUNTEER'
     },
     address_id: {
-      type: DataTypes.UUID,
-      allowNull: false,
+      type: DataTypes.INTEGER, allowNull: false,
       references: {
         model: 'addresses',
         key: 'id'
@@ -112,3 +109,4 @@ module.exports = (sequelize, DataTypes) => {
 
   return FireStation;
 };
+

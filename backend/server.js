@@ -11,7 +11,7 @@ const { testConnection, syncDatabase, closeConnection } = require('./src/config/
 const db = require('./src/models');
 
 // Import API routes
-const { frameRoutes, stationRoutes } = require('./src/routes');
+const { frameRoutes, stationRoutes, incidentRoutes, buildingRoutes } = require('./src/routes');
 
 
 const app = express();
@@ -62,7 +62,6 @@ app.use('/data', express.static(DATA_PATH, {
     res.setHeader('Cache-Control', 'no-cache');
   }
 }));
-console.log(`✅ Static data files served from ${DATA_PATH} at /data`);
 
 // Also expose hologram endpoint that serves the hologram JSON data for a given incident
 app.get('/api/incidents/:incidentId/hologram', async (req, res) => {
@@ -88,11 +87,15 @@ app.get('/api/incidents/:incidentId/hologram', async (req, res) => {
 
 // Mount frame API routes at /api
 app.use('/api', frameRoutes);
-console.log('✅ Frame API routes mounted at /api');
 
 // Mount nearest station API routes at /api
 app.use('/api', stationRoutes);
-console.log('✅ Nearest station API routes mounted at /api');
+
+// Mount incident API routes at /api
+app.use('/api/incidents', incidentRoutes);
+
+// Mount building API routes at /api
+app.use('/api/buildings', buildingRoutes);
 
 // Health check endpoint (includes database status)
 app.get('/health', async (req, res) => {
@@ -175,37 +178,29 @@ app.use((err, req, res, next) => {
  */
 const startServer = async () => {
   try {
-    // Test database connection
+    // Test database connection only
     const connected = await testConnection();
     
     if (!connected) {
-      console.error('❌ Failed to connect to database. Server will start but database operations will fail.');
-      console.error('💡 Please check your database configuration and ensure the database server is running.');
+      console.warn('⚠️  Database connection failed. Server will start but database operations will not work.');
+      console.warn('💡 Run "npm run db:setup" to initialize the database.');
     } else {
-      // Sync database models (creates tables if they don't exist)
-      await syncDatabase({
-        alter: process.env.NODE_ENV === 'development',
-        force: false
-      });
+      console.log('✅ Database connected');
       
-      // Log registered models
+      // Log registered models count
       const modelCount = db.getModelCount();
       if (modelCount > 0) {
-        console.log(`📦 Registered models (${modelCount}):`, db.getModelNames().join(', '));
-      } else {
-        console.log('📦 No models registered yet. Add models to /models directory.');
+        console.log(`📦 ${modelCount} models registered`);
       }
     }
     
     // Start the server
     const server = app.listen(PORT, () => {
-      console.log('\n🔥 Fire Detection Frame API Server');
+      console.log('\n🔥 Fire Detection API Server');
       console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
       console.log(`🚀 Server running on port ${PORT}`);
       console.log(`🌐 Environment: ${process.env.NODE_ENV || 'development'}`);
-      console.log(`🔗 Health check: http://localhost:${PORT}/health`);
-      console.log(`📡 API endpoints: http://localhost:${PORT}/api`);
-      console.log(`🎯 CORS origin: ${CORS_ORIGIN}`);
+      console.log(`🔗 API: http://localhost:${PORT}`);
       console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
     });
     
