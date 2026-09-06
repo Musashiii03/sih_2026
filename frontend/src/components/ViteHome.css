@@ -1,0 +1,1448 @@
+/* ═════════════════════════════════════════════════════════════════
+   ATMARAKSHAK — VITE.DEV UI WITH GRUVBOX DARK PALETTE
+   Gruvbox Dark: bg0_h #1d2021 · bg #282828 · bg0_s #32302f · bg1 #3c3836
+                 bg2 #504945 · bg3 #665c54 · gray #928374
+                 fg4 #a89984 · fg3 #bdae93 · fg2 #d5c4a1 · fg1 #ebdbb2 · fg0 #fbf1c7
+                 red #fb4934 · green #b8bb26 · yellow #fabd2f · blue #83a598
+                 purple #d3869b · aqua #8ec07c · orange #fe8019
+   ═════════════════════════════════════════════════════════════════ */
+
+.vite-marketing-root {
+  /* ── Gruvbox Dark Palette ── */
+  --color-primary: #282828;      /* bg main canvas */
+  --color-midnight: #1d2021;     /* bg0_h deepest */
+  --color-soft: #32302f;         /* bg0_s inputs / soft */
+  --color-slate: #3c3836;        /* bg1 elevated card surface */
+  --color-card-hover: #504945;   /* bg2 hover */
+  --color-nickel: #504945;       /* bg2 default borders & signature ticks */
+  --color-stroke: #665c54;       /* bg3 emphasized borders */
+  --color-border-strong: #7c6f64;/* bg4 strong borders */
+
+  /* Text */
+  --color-white: #ebdbb2;        /* fg1 primary text */
+  --color-bright: #fbf1c7;       /* fg0 brightest headline text */
+  --color-grey: #d5c4a1;         /* fg2 secondary text */
+  --color-dim: #bdae93;          /* fg3 muted text */
+  --color-faint: #928374;        /* gray faint */
+
+  /* Gruvbox Accents */
+  --color-brand: #fabd2f;        /* yellow — primary accent */
+  --color-brand-orange: #fe8019; /* orange — secondary accent */
+  --color-brand-cyan: #8ec07c;   /* aqua — signal */
+  --color-electric: #83a598;     /* blue — info */
+  --color-vite: #fabd2f;         /* yellow highlight */
+  --color-zest: #b8bb26;         /* green — safe / ok */
+  --color-critical: #fb4934;     /* red — critical / fire */
+  --color-purple: #d3869b;       /* purple */
+
+  /* Typography */
+  --font-sans: 'Inter', 'Manrope', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+
+  font-family: var(--font-sans);
+  background-color: var(--color-primary);
+  color: var(--color-white);
+  min-height: 100vh;
+  margin: 0;
+  padding: 0;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+  position: relative;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Gruvbox Light Mode Option (Gruvbox Light) */
+.vite-marketing-root[data-theme="light"] {
+  --color-primary: #fbf1c7;      /* Gruvbox light bg0 */
+  --color-midnight: #f2e5bc;     /* Gruvbox light bg0_s */
+  --color-soft: #ebdbb2;         /* Gruvbox light bg1 */
+  --color-slate: #ebdbb2;        /* card surface */
+  --color-card-hover: #d5c4a1;
+  --color-nickel: #d5c4a1;       /* border & ticks */
+  --color-stroke: #bdae93;
+  --color-border-strong: #a89984;
+
+  --color-white: #282828;        /* primary dark text */
+  --color-bright: #1d2021;       /* headline text */
+  --color-grey: #3c3836;         /* secondary text */
+  --color-dim: #504945;          /* muted */
+  --color-faint: #7c6f64;
+
+  --color-brand: #b57614;        /* dark yellow */
+  --color-brand-orange: #af3a03; /* dark orange */
+  --color-brand-cyan: #427b58;   /* dark aqua */
+  --color-electric: #076678;     /* dark blue */
+  --color-vite: #b57614;
+  --color-zest: #79740e;         /* dark green */
+  --color-critical: #9d0006;     /* dark red */
+  --color-purple: #8f3f71;
+}
+
+.vite-marketing-root * {
+  box-sizing: border-box;
+}
+
+/* ─── Top Banner ─── */
+.vite-top-banner {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+  background: #1d2021;
+  border-bottom: 1px solid var(--color-nickel);
+  z-index: 60;
+}
+
+.vite-banner-link {
+  display: block;
+  position: relative;
+  width: 100%;
+  text-decoration: none;
+  color: var(--color-bright);
+}
+
+.vite-banner-bg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0.2;
+  pointer-events: none;
+}
+
+.vite-banner-inner {
+  position: relative;
+  z-index: 10;
+  width: 100%;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 0 16px;
+  font-size: 0.78rem;
+  font-family: var(--font-mono);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.vite-banner-inner:hover .vite-banner-arrow {
+  transform: translateX(3px);
+}
+
+.vite-banner-arrow {
+  transition: transform 0.2s ease;
+  color: var(--color-brand);
+}
+
+.vite-banner-close {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: transparent;
+  border: none;
+  color: var(--color-dim);
+  cursor: pointer;
+  padding: 6px;
+  opacity: 0.7;
+  transition: opacity 0.2s ease;
+  z-index: 20;
+}
+
+.vite-banner-close:hover {
+  opacity: 1;
+  color: var(--color-bright);
+}
+
+/* ─── Wrapper & Signature Ticks ─── */
+.vite-wrapper {
+  margin-inline: auto;
+  position: relative;
+  max-width: 90rem;
+  width: 100%;
+  border-left: 1px solid var(--color-nickel);
+  border-right: 1px solid var(--color-nickel);
+}
+
+.vite-wrapper--ticks {
+  position: relative;
+}
+
+.vite-wrapper--ticks::before {
+  content: "";
+  border-top: 5px solid transparent;
+  border-bottom: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-left: 5px solid var(--color-nickel);
+  width: 0;
+  height: 0;
+  position: absolute;
+  top: -5px;
+  left: 0;
+  z-index: 2;
+}
+
+.vite-wrapper--ticks::after {
+  content: "";
+  border-top: 5px solid transparent;
+  border-right: 5px solid var(--color-nickel);
+  border-bottom: 5px solid transparent;
+  border-left: 5px solid transparent;
+  width: 0;
+  height: 0;
+  position: absolute;
+  top: -5px;
+  right: 0;
+  z-index: 2;
+}
+
+.vite-border-t {
+  border-top: 1px solid var(--color-nickel);
+}
+
+/* ─── Header / Navigation Bar (Floating Glass Dock) ─── */
+.vite-header-wrap {
+  position: sticky;
+  top: 14px;
+  z-index: 100;
+  width: 100%;
+  max-width: 88rem;
+  margin: 12px auto 0;
+  padding: 0 20px;
+  box-sizing: border-box;
+  background: transparent;
+  pointer-events: none;
+}
+
+.vite-header {
+  pointer-events: auto;
+  padding: 10px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  margin: 0 auto;
+  background: transparent;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(235, 219, 178, 0.1);
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.vite-header:hover {
+  background: rgba(29, 32, 33, 0.25);
+  border-color: rgba(250, 189, 47, 0.25);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
+}
+
+.vite-marketing-root[data-theme="light"] .vite-header-wrap {
+  background: transparent;
+}
+
+.vite-marketing-root[data-theme="light"] .vite-header {
+  background: transparent;
+  border: 1px solid rgba(60, 56, 54, 0.1);
+  box-shadow: 0 4px 20px rgba(60, 56, 54, 0.05);
+}
+
+.vite-marketing-root[data-theme="light"] .vite-header:hover {
+  background: rgba(251, 241, 199, 0.35);
+  border-color: rgba(60, 56, 54, 0.2);
+}
+
+.vite-logo-link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+  color: var(--color-bright);
+  font-weight: 700;
+  font-size: 1.15rem;
+  letter-spacing: -0.02em;
+}
+
+.vite-nav-links {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.vite-nav-item {
+  position: relative;
+}
+
+.vite-nav-link {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 8px 14px;
+  font-size: 0.92rem;
+  font-weight: 500;
+  color: var(--color-white);
+  text-decoration: none;
+  border-radius: 6px;
+  transition: opacity 0.2s, background-color 0.2s;
+  cursor: pointer;
+  background: transparent;
+  border: none;
+}
+
+.vite-nav-link:hover {
+  color: var(--color-bright);
+  background-color: rgba(250, 189, 47, 0.12);
+}
+
+.vite-dropdown-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  background: rgba(29, 32, 33, 0.84);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border: 1px solid rgba(235, 219, 178, 0.14);
+  border-radius: 10px;
+  padding: 8px;
+  min-width: 220px;
+  box-shadow: 0 20px 48px rgba(0, 0, 0, 0.65), inset 0 1px 0 rgba(255, 255, 255, 0.07);
+  z-index: 100;
+  animation: viteFadeDown 0.15s ease-out;
+}
+
+.vite-dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 12px;
+  font-size: 0.88rem;
+  color: var(--color-white);
+  text-decoration: none;
+  border-radius: 6px;
+  transition: background-color 0.15s;
+}
+
+.vite-dropdown-item:hover {
+  background-color: rgba(250, 189, 47, 0.15);
+  color: var(--color-brand);
+}
+
+.vite-header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* Search Button */
+.vite-search-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(50, 48, 47, 0.55);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(235, 219, 178, 0.12);
+  border-radius: 20px;
+  padding: 6px 14px;
+  font-size: 0.85rem;
+  color: var(--color-dim);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.vite-search-btn:hover {
+  border-color: rgba(250, 189, 47, 0.4);
+  color: var(--color-bright);
+  background: rgba(250, 189, 47, 0.12);
+}
+
+.vite-search-kbd {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid var(--color-nickel);
+  border-radius: 4px;
+  padding: 2px 6px;
+  color: var(--color-brand);
+}
+
+/* Version Pill */
+.vite-version-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 10px;
+  border-radius: 6px;
+  font-size: 0.82rem;
+  font-family: var(--font-mono);
+  color: var(--color-brand);
+  background: rgba(250, 189, 47, 0.1);
+  border: 1px solid rgba(250, 189, 47, 0.25);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.vite-version-btn:hover {
+  background: rgba(250, 189, 47, 0.2);
+  border-color: var(--color-brand);
+}
+
+/* Theme Switcher */
+.vite-theme-toggle {
+  width: 40px;
+  height: 22px;
+  border-radius: 11px;
+  background: var(--color-soft);
+  border: 1px solid var(--color-nickel);
+  position: relative;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  padding: 2px;
+  transition: background 0.25s;
+}
+
+.vite-theme-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--color-brand);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+  transform: translateX(0);
+  transition: transform 0.25s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #1d2021;
+  font-size: 10px;
+}
+
+.vite-theme-thumb.active-dark {
+  transform: translateX(18px);
+  background: #1d2021;
+  color: var(--color-brand);
+}
+
+/* ─── Buttons ─── */
+.vite-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border-radius: 8px;
+  padding: 10px 22px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  user-select: none;
+  border: 1px solid var(--color-nickel);
+  background: transparent;
+  color: var(--color-white);
+  position: relative;
+  overflow: hidden;
+}
+
+.vite-btn:hover {
+  transform: translateY(-2.5px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
+}
+
+.vite-btn:active {
+  transform: translateY(0);
+}
+
+/* Primary CTA Button: Modern Aqua / Emerald Safety */
+.vite-btn-primary {
+  background: linear-gradient(135deg, #8ec07c 0%, #b8bb26 100%);
+  color: #1d2021;
+  border: 1px solid rgba(142, 192, 124, 0.7);
+  font-weight: 700;
+  box-shadow: 0 4px 18px rgba(142, 192, 124, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.35);
+}
+
+.vite-btn-primary:hover {
+  background: linear-gradient(135deg, #a4d394 0%, #c9cb39 100%);
+  border-color: #a4d394;
+  color: #1d2021;
+  box-shadow: 0 8px 30px rgba(142, 192, 124, 0.55), 0 0 16px rgba(184, 187, 38, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.5);
+  transform: translateY(-2.5px);
+}
+
+/* Navbar Accent Button */
+.vite-btn-nav-accent {
+  background: linear-gradient(135deg, #8ec07c 0%, #b8bb26 100%);
+  color: #1d2021;
+  font-weight: 700;
+  font-size: 0.82rem;
+  border-radius: 20px;
+  padding: 6px 14px;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 2px 10px rgba(142, 192, 124, 0.35);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  user-select: none;
+}
+
+.vite-btn-nav-accent:hover {
+  transform: translateY(-1.5px);
+  box-shadow: 0 4px 18px rgba(142, 192, 124, 0.55);
+  background: linear-gradient(135deg, #a4d394 0%, #c9cb39 100%);
+}
+
+.vite-btn-brand {
+  background: linear-gradient(135deg, #fabd2f 0%, #fe8019 100%);
+  color: #1d2021;
+  border: 1px solid rgba(254, 128, 25, 0.5);
+  font-weight: 700;
+  box-shadow: 0 4px 18px rgba(250, 189, 47, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+
+.vite-btn-brand:hover {
+  background: linear-gradient(135deg, #fcd05b 0%, #ff9533 100%);
+  border-color: #fe8019;
+  box-shadow: 0 8px 26px rgba(254, 128, 25, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.4);
+  color: #1d2021;
+  transform: translateY(-2.5px);
+}
+
+.vite-btn-ghost {
+  background: rgba(50, 48, 47, 0.65);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border-color: var(--color-nickel);
+  color: var(--color-bright);
+}
+
+.vite-btn-ghost:hover {
+  background: rgba(60, 56, 54, 0.85);
+  border-color: var(--color-brand);
+  color: var(--color-brand);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
+  transform: translateY(-2.5px);
+}
+
+/* ─── Hero Section ─── */
+.vite-hero-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  width: 100%;
+}
+
+@media (min-width: 900px) {
+  .vite-hero-grid {
+    grid-template-columns: 1fr 1fr;
+    divide-x: 1px solid var(--color-nickel);
+  }
+}
+
+.vite-hero-left {
+  padding: 48px 40px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 40px;
+}
+
+@media (min-width: 768px) {
+  .vite-hero-left {
+    padding: 60px 48px;
+  }
+}
+
+.vite-voidzero-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+  margin-bottom: 20px;
+}
+
+.vite-hero-title {
+  font-size: clamp(2.4rem, 4.8vw, 3.8rem);
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: -0.03em;
+  color: var(--color-bright);
+  margin: 0 0 20px 0;
+}
+
+.vite-gradient-text {
+  background: linear-gradient(120deg, #fabd2f 20%, #fe8019 60%, #fb4934 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  display: inline;
+}
+
+.vite-hero-sub {
+  font-size: clamp(1.05rem, 2vw, 1.2rem);
+  color: var(--color-grey);
+  line-height: 1.65;
+  max-width: 32rem;
+  margin: 0 0 28px 0;
+}
+
+.vite-hero-cta-group {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-bottom: 32px;
+}
+
+/* ─── Code Group / Terminal Tabs ─── */
+.vite-code-group {
+  background: var(--color-midnight);
+  border: 1px solid var(--color-nickel);
+  border-radius: 8px;
+  overflow: hidden;
+  margin-top: 16px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+
+.vite-code-tabs {
+  display: flex;
+  border-bottom: 1px solid var(--color-nickel);
+  background: rgba(0, 0, 0, 0.35);
+  overflow-x: auto;
+}
+
+.vite-code-tab {
+  padding: 8px 18px;
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: var(--color-dim);
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.vite-code-tab:hover {
+  color: var(--color-bright);
+}
+
+.vite-code-tab.active {
+  color: var(--color-brand);
+  border-bottom-color: var(--color-brand);
+  background: var(--color-midnight);
+  font-weight: 700;
+}
+
+.vite-code-body {
+  padding: 14px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-family: var(--font-mono);
+  font-size: 0.92rem;
+}
+
+.vite-code-prompt {
+  color: var(--color-brand);
+  user-select: none;
+  margin-right: 8px;
+  font-weight: 700;
+}
+
+.vite-code-text {
+  color: var(--color-bright);
+}
+
+.vite-copy-btn {
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--color-dim);
+  border-radius: 6px;
+  padding: 6px 10px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.78rem;
+  transition: all 0.2s;
+}
+
+.vite-copy-btn:hover {
+  border-color: var(--color-nickel);
+  color: var(--color-brand);
+  background: rgba(250, 189, 47, 0.1);
+}
+
+.vite-copy-btn.copied {
+  color: var(--color-zest);
+}
+
+/* ─── Hero Canvas (3D Room / Sensor Mesh) ─── */
+.vite-hero-right {
+  position: relative;
+  min-height: 540px;
+  height: 100%;
+  width: 100%;
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+  overflow: hidden;
+  border-left: 1px solid var(--color-nickel);
+  background: radial-gradient(circle at center, rgba(250, 189, 47, 0.05) 0%, transparent 70%);
+}
+
+@media (max-width: 899px) {
+  .vite-hero-right {
+    min-height: 450px;
+    border-left: none;
+    border-top: 1px solid var(--color-nickel);
+  }
+}
+
+.vite-canvas-glow {
+  position: absolute;
+  width: 340px;
+  height: 340px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(250, 189, 47, 0.2) 0%, rgba(254, 128, 25, 0.15) 45%, transparent 75%);
+  filter: blur(50px);
+  pointer-events: none;
+  animation: gruvPulseGlow 5s infinite alternate ease-in-out;
+}
+
+@keyframes gruvPulseGlow {
+  0% { transform: scale(0.9) translate(0, 0); opacity: 0.65; }
+  100% { transform: scale(1.15) translate(10px, -10px); opacity: 0.95; }
+}
+
+.vite-3d-canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+  cursor: grab;
+}
+
+.vite-3d-canvas:active {
+  cursor: grabbing;
+}
+
+/* ─── Trusted By Section ─── */
+.vite-trusted-header {
+  padding: 24px 40px;
+}
+
+.vite-trusted-title {
+  font-size: 0.85rem;
+  font-family: var(--font-mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-brand);
+  margin: 0;
+}
+
+.vite-trusted-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  flex-wrap: wrap;
+  padding: 24px;
+  gap: 28px;
+}
+
+.vite-trusted-item {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.75;
+  transition: all 0.25s ease;
+  color: var(--color-grey);
+}
+
+.vite-trusted-item:hover {
+  opacity: 1;
+  color: var(--color-brand);
+  transform: translateY(-2px);
+}
+
+/* ─── Section Dividers & Headings ─── */
+.vite-section-header {
+  padding: 80px 24px 50px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+}
+
+.vite-section-title {
+  font-size: clamp(2rem, 4vw, 2.9rem);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: var(--color-bright);
+  margin: 0;
+  max-width: 44rem;
+  background: linear-gradient(135deg, #fbf1c7 30%, #fabd2f 80%, #fe8019 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  transition: all 0.3s ease;
+}
+
+.vite-section-desc {
+  font-size: 1.05rem;
+  color: var(--color-grey);
+  max-width: 38rem;
+  margin: 0;
+  line-height: 1.65;
+}
+
+/* ─── Feature Panels Grid ─── */
+.vite-feature-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 992px) {
+  .vite-feature-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+  .vite-feature-grid > :nth-child(odd) {
+    border-right: 1px solid var(--color-nickel);
+  }
+}
+
+.vite-feature-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--color-nickel);
+  overflow: hidden;
+  background: var(--color-primary);
+  transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+}
+
+.vite-feature-card:hover {
+  background: rgba(45, 43, 42, 0.75);
+  box-shadow: inset 0 0 0 1px rgba(250, 189, 47, 0.22), 0 12px 36px rgba(0, 0, 0, 0.45);
+}
+
+.vite-feature-text {
+  padding: 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  transition: transform 0.3s ease;
+}
+
+.vite-feature-card:hover .vite-feature-text {
+  transform: translateY(-2px);
+}
+
+.vite-feature-title {
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: var(--color-bright);
+  margin: 0;
+  transition: color 0.25s ease;
+}
+
+.vite-feature-card:hover .vite-feature-title {
+  color: var(--color-brand);
+}
+
+.vite-feature-desc {
+  font-size: 0.95rem;
+  color: var(--color-grey);
+  line-height: 1.65;
+  margin: 0;
+  max-width: 28rem;
+}
+
+.vite-feature-visual {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  padding: 34px 28px;
+  background: var(--color-midnight);
+}
+
+/* Borderless Telemetry with Smooth Ambient Fade Animation */
+.vite-telemetry-box,
+.vite-arch-box {
+  background: transparent !important;
+  border: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  padding: 16px 20px;
+  width: 100%;
+  max-width: 460px;
+  font-family: var(--font-mono);
+  font-size: 0.88rem;
+  line-height: 1.85;
+  position: relative;
+  animation: telemetryAmbientFade 4.5s ease-in-out infinite;
+}
+
+@keyframes telemetryAmbientFade {
+  0%, 100% {
+    opacity: 0.88;
+    transform: translateY(0);
+  }
+  50% {
+    opacity: 1;
+    transform: translateY(-2px);
+    filter: drop-shadow(0 0 14px rgba(142, 192, 124, 0.2));
+  }
+}
+
+.vite-telemetry-row {
+  color: var(--color-white);
+  transition: all 0.25s ease;
+  padding: 2px 0;
+}
+
+.vite-telemetry-row:hover {
+  color: var(--color-bright);
+  transform: translateX(4px);
+}
+
+/* Card 1: Sensor Critical Alert Pulse */
+.vite-sensor-box {
+  background: transparent;
+  border: none;
+}
+
+.vite-sensor-dot {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #fb4934;
+  box-shadow: 0 0 12px #fb4934;
+  margin-right: 8px;
+  animation: sensorLivePing 1.8s ease-in-out infinite;
+}
+
+@keyframes sensorLivePing {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.4);
+    opacity: 0.65;
+  }
+}
+
+/* Card 2: CCTV Scanning Beam */
+.vite-cctv-box {
+  position: relative;
+  background: transparent;
+  border: none;
+}
+
+.vite-cctv-box::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, rgba(142, 192, 124, 0.95), transparent);
+  box-shadow: 0 0 14px rgba(142, 192, 124, 0.9);
+  animation: cctvScanLine 3.4s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  pointer-events: none;
+}
+
+@keyframes cctvScanLine {
+  0% {
+    top: 0%;
+    opacity: 0;
+  }
+  15% {
+    opacity: 1;
+  }
+  85% {
+    opacity: 1;
+  }
+  100% {
+    top: 100%;
+    opacity: 0;
+  }
+}
+
+/* Card 3: IoT Mesh Chips */
+.vite-iot-chip {
+  background: var(--color-slate);
+  border: 1px solid var(--color-nickel);
+  border-radius: 6px;
+  padding: 8px 14px;
+  font-size: 0.85rem;
+  font-family: var(--font-mono);
+  color: var(--color-brand);
+  display: inline-block;
+  cursor: default;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.vite-iot-chip:hover {
+  transform: translateY(-3px) scale(1.03);
+  box-shadow: 0 8px 20px rgba(250, 189, 47, 0.25);
+  border-color: var(--color-brand);
+  background: rgba(250, 189, 47, 0.16);
+  color: #fbf1c7;
+}
+
+/* Card 4: ERSS 112 Auto-Dispatch Beacon */
+.vite-erss-box {
+  background: transparent;
+  border: none;
+}
+
+/* Architecture Layer Boxes */
+.vite-arch-box:hover {
+  transform: translateY(-2px);
+  filter: drop-shadow(0 0 16px rgba(142, 192, 124, 0.25));
+}
+
+/* ─── Facilities Showcase ─── */
+.vite-framework-section {
+  padding: 60px 40px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 36px;
+}
+
+.vite-framework-chips {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
+  max-width: 840px;
+}
+
+.vite-framework-chip {
+  padding: 9px 20px;
+  border-radius: 20px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  background: var(--color-slate);
+  border: 1px solid var(--color-nickel);
+  color: var(--color-white);
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.vite-framework-chip:hover, .vite-framework-chip.active {
+  border-color: var(--color-brand);
+  background: rgba(250, 189, 47, 0.15);
+  color: var(--color-brand);
+  transform: translateY(-2px);
+}
+
+/* ─── Community Numbers & Testimonials ─── */
+.vite-community-stats {
+  padding: 60px 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 48px;
+}
+
+@media (min-width: 768px) {
+  .vite-community-stats {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+  }
+}
+
+.vite-stat-pair {
+  display: flex;
+  gap: 40px;
+  flex-wrap: wrap;
+}
+
+.vite-stat-val {
+  font-size: 3.2rem;
+  font-weight: 800;
+  line-height: 1;
+  color: var(--color-brand);
+  letter-spacing: -0.04em;
+}
+
+.vite-stat-label {
+  font-size: 0.85rem;
+  color: var(--color-dim);
+  margin-top: 8px;
+  font-family: var(--font-mono);
+  letter-spacing: 0.05em;
+}
+
+/* Testimonials Grid */
+.vite-testimonials-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 20px;
+  padding: 0 40px 80px;
+}
+
+@media (min-width: 768px) {
+  .vite-testimonials-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1100px) {
+  .vite-testimonials-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.vite-testimonial-card {
+  background: var(--color-slate);
+  border: 1px solid var(--color-nickel);
+  border-radius: 12px;
+  padding: 28px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 20px;
+  transition: all 0.25s ease;
+}
+
+.vite-testimonial-card:hover {
+  border-color: var(--color-brand);
+  transform: translateY(-3px);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4);
+}
+
+.vite-testimonial-quote {
+  font-size: 0.94rem;
+  color: var(--color-white);
+  line-height: 1.65;
+}
+
+.vite-testimonial-author {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.vite-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 1px solid var(--color-nickel);
+  background: var(--color-midnight);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: var(--color-brand);
+}
+
+.vite-author-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.vite-author-name {
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: var(--color-bright);
+}
+
+.vite-author-handle {
+  font-size: 0.8rem;
+  font-family: var(--font-mono);
+  color: var(--color-dim);
+}
+
+/* ─── Interactive Telemetry Simulator ─── */
+.vite-simulator {
+  margin: 0 40px 60px;
+  background: var(--color-midnight);
+  border: 1px solid var(--color-nickel);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.6);
+}
+
+.vite-sim-header {
+  padding: 12px 18px;
+  background: var(--color-soft);
+  border-bottom: 1px solid var(--color-nickel);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.vite-sim-dots {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.vite-sim-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+.vite-sim-controls {
+  display: flex;
+  gap: 8px;
+}
+
+.vite-sim-btn {
+  background: var(--color-slate);
+  border: 1px solid var(--color-nickel);
+  color: var(--color-white);
+  border-radius: 6px;
+  padding: 5px 12px;
+  font-size: 0.78rem;
+  font-family: var(--font-mono);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.vite-sim-btn:hover {
+  border-color: var(--color-brand);
+  background: rgba(250, 189, 47, 0.15);
+  color: var(--color-brand);
+}
+
+.vite-sim-terminal {
+  padding: 24px;
+  font-family: var(--font-mono);
+  font-size: 0.88rem;
+  line-height: 1.8;
+  color: var(--color-white);
+}
+
+.vite-sim-green {
+  color: var(--color-zest);
+  font-weight: 700;
+}
+
+.vite-sim-cyan {
+  color: var(--color-brand-cyan);
+}
+
+.vite-sim-purple {
+  color: var(--color-purple);
+}
+
+/* ─── Bottom CTA ─── */
+.vite-bottom-cta {
+  position: relative;
+  overflow: hidden;
+  text-align: center;
+  background: 
+    radial-gradient(ellipse 70% 60% at 50% 25%, rgba(250, 189, 47, 0.22) 0%, rgba(254, 128, 25, 0.12) 45%, rgba(29, 32, 33, 0.98) 85%),
+    linear-gradient(180deg, var(--color-midnight) 0%, #282828 50%, var(--color-midnight) 100%);
+  border-top: 1px solid rgba(250, 189, 47, 0.4);
+  border-bottom: 1px solid var(--color-nickel);
+  box-shadow: inset 0 1px 0 rgba(250, 189, 47, 0.25), inset 0 20px 50px rgba(250, 189, 47, 0.06);
+}
+
+.vite-cta-glow {
+  position: absolute;
+  top: -100px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 550px;
+  height: 300px;
+  background: radial-gradient(circle, rgba(250, 189, 47, 0.28) 0%, rgba(254, 128, 25, 0.14) 50%, transparent 70%);
+  filter: blur(45px);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.vite-cta-bg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0.12;
+  mix-blend-mode: luminosity;
+  filter: sepia(0.7) hue-rotate(10deg);
+  z-index: 0;
+  pointer-events: none;
+}
+
+.vite-cta-content {
+  position: relative;
+  z-index: 10;
+  max-width: 44rem;
+  margin: 0 auto;
+  padding: 100px 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+}
+
+/* ─── Footer ─── */
+.vite-footer {
+  background: var(--color-midnight);
+  border-top: 1px solid var(--color-nickel);
+}
+
+.vite-footer-grid {
+  padding: 60px 40px;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 40px;
+}
+
+@media (min-width: 768px) {
+  .vite-footer-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+.vite-footer-col-title {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-brand);
+  margin-bottom: 20px;
+}
+
+.vite-footer-links {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.vite-footer-link {
+  color: var(--color-dim);
+  font-size: 0.92rem;
+  text-decoration: none;
+  transition: color 0.2s;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.vite-footer-link:hover {
+  color: var(--color-brand);
+}
+
+.vite-footer-bottom {
+  padding: 24px 40px;
+  border-top: 1px solid var(--color-nickel);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  font-size: 0.85rem;
+  color: var(--color-dim);
+}
+
+@media (min-width: 768px) {
+  .vite-footer-bottom {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+  }
+}
+
+/* ─── Search Dialog Modal ─── */
+.vite-search-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(8px);
+  z-index: 1000;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 80px 16px 20px;
+  animation: viteFadeIn 0.2s ease-out;
+}
+
+.vite-search-modal {
+  width: 100%;
+  max-width: 580px;
+  background: var(--color-midnight);
+  border: 1px solid var(--color-nickel);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 32px 80px rgba(0, 0, 0, 0.85);
+}
+
+.vite-search-input-wrap {
+  display: flex;
+  align-items: center;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--color-nickel);
+  gap: 12px;
+  background: var(--color-soft);
+}
+
+.vite-search-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  font-size: 1.05rem;
+  color: var(--color-bright);
+  outline: none;
+  font-family: var(--font-sans);
+}
+
+.vite-search-results {
+  max-height: 380px;
+  overflow-y: auto;
+  padding: 8px;
+}
+
+.vite-search-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  text-decoration: none;
+  color: var(--color-white);
+  transition: background 0.15s;
+}
+
+.vite-search-item:hover {
+  background: rgba(250, 189, 47, 0.12);
+  color: var(--color-brand);
+}
+
+@keyframes viteFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes viteFadeDown {
+  from { opacity: 0; transform: translateY(-6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
