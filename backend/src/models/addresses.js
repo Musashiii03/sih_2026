@@ -7,9 +7,9 @@
 module.exports = (sequelize, DataTypes) => {
   const Address = sequelize.define('Address', {
     id: {
-      type: DataTypes.UUID,
-      defaultValue: DataTypes.UUIDV4,
-      primaryKey: true
+      type: DataTypes.INTEGER,
+      primaryKey: true,
+      autoIncrement: true
     },
     address_line_1: {
       type: DataTypes.STRING(255),
@@ -93,3 +93,4 @@ module.exports = (sequelize, DataTypes) => {
 
   return Address;
 };
+

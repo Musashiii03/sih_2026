@@ -7,12 +7,12 @@
 module.exports = (sequelize, DataTypes) => {
   const BuildingUnit = sequelize.define('BuildingUnit', {
     id: {
-      type: DataTypes.UUID,
-      defaultValue: DataTypes.UUIDV4,
-      primaryKey: true
+      type: DataTypes.INTEGER,
+      primaryKey: true,
+      autoIncrement: true
     },
     building_id: {
-      type: DataTypes.UUID,
+      type: DataTypes.INTEGER,
       allowNull: false,
       references: {
         model: 'buildings',
@@ -94,3 +94,4 @@ module.exports = (sequelize, DataTypes) => {
 
   return BuildingUnit;
 };
+
