@@ -1,5 +1,6 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, NavLink, useNavigate, useLocation } from 'react-router-dom';
+import LandingPage from './components/LandingPage';
 import OwnerConsole from './components/OwnerConsole';
 import DispatchConsole from './components/DispatchConsole';
 import IncidentDashboard from './components/IncidentDashboard';
@@ -12,8 +13,12 @@ function OwnerSidebar() {
   return (
     <nav className="atma-sidebar">
       <div className="sidebar-brand">
-        <div className="sidebar-brand-icon">
-          <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>shield</span>
+        <div className="sidebar-brand-icon" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <img
+            src="/atmarakshak_logo.png"
+            alt="Atmarakshak Logo"
+            style={{ width: 28, height: 28, objectFit: 'contain', borderRadius: 4 }}
+          />
         </div>
         <div className="sidebar-brand-text">
           <div className="sidebar-brand-name"><em>Atma</em>rakshak</div>
@@ -177,7 +182,8 @@ export default function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/"           element={<LoginPage />} />
+        <Route path="/"           element={<LandingPage />} />
+        <Route path="/login"      element={<LoginPage />} />
         <Route path="/owner/*"    element={<OwnerLayout />} />
         <Route path="/dispatch/*" element={<DispatchLayout />} />
       </Routes>

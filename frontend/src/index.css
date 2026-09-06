@@ -1,41 +1,60 @@
 /* ═══════════════════════════════════════════════════
-   ATMARAKSHAK (आत्मरक्षक) — GIC Design Language
+   ATMARAKSHAK (आत्मरक्षक) — Gruvbox Dark Theme
    Global Token System
 ═══════════════════════════════════════════════════ */
 
+/*
+  Gruvbox Dark palette reference:
+  bg0_h #1d2021 · bg0/bg #282828 · bg0_s #32302f
+  bg1   #3c3836 · bg2 #504945    · bg3   #665c54 · bg4 #7c6f64
+  gray  #928374 · fg4 #a89984    · fg3   #bdae93 · fg2 #d5c4a1
+  fg1   #ebdbb2 · fg0 #fbf1c7
+  red   #fb4934 · green #b8bb26  · yellow #fabd2f · blue  #83a598
+  purple #d3869b · aqua #8ec07c  · orange #fe8019
+*/
+
 :root {
-  /* ── Base Surfaces ── */
-  --bg:            #fefffc;   /* GIC parchment canvas */
-  --bg-surface:    #ffffff;   /* GIC paper — elevated */
-  --bg-card:       #ffffff;   /* card surface */
-  --bg-card-hover: #f9faf7;   /* GIC linen hover */
-  --bg-input:      #f9faf7;   /* GIC linen input */
+  /* ── Gruvbox Base Surfaces ── */
+  --bg:            #282828;   /* Gruvbox bg — main canvas */
+  --bg-surface:    #3c3836;   /* Gruvbox bg1 — elevated */
+  --bg-card:       #3c3836;   /* Gruvbox bg1 — card surface */
+  --bg-card-hover: #504945;   /* Gruvbox bg2 — hover */
+  --bg-input:      #32302f;   /* Gruvbox bg0_s — input */
+  --bg-deep:       #1d2021;   /* Gruvbox bg0_h — deepest */
+  --bg-sidebar:    #1d2021;   /* Gruvbox bg0_h — sidebar */
 
-  /* ── Severity / Semantic ── */
-  --critical:      #e11d48;
-  --critical-dim:  #fef2f2;
-  --critical-ring: rgba(225,29,72,0.25);
-  --moderate:      #d97706;
-  --moderate-dim:  #fffbeb;
-  --safe:          #16a34a;
-  --safe-dim:      #f0fdf4;
-  --accent:        #41a1cf;   /* GIC signal blue */
-  --accent-dim:    rgba(65,161,207,0.12);
+  /* ── Gruvbox Severity / Semantic ── */
+  --critical:      #fb4934;   /* Gruvbox bright red */
+  --critical-dim:  rgba(251,73,52,0.15);
+  --critical-ring: rgba(251,73,52,0.3);
+  --moderate:      #fabd2f;   /* Gruvbox bright yellow */
+  --moderate-dim:  rgba(250,189,47,0.15);
+  --safe:          #b8bb26;   /* Gruvbox bright green */
+  --safe-dim:      rgba(184,187,38,0.15);
+  --accent:        #83a598;   /* Gruvbox bright blue */
+  --accent-dim:    rgba(131,165,152,0.15);
+  --orange:        #fe8019;   /* Gruvbox bright orange */
+  --orange-dim:    rgba(254,128,25,0.15);
+  --purple:        #d3869b;   /* Gruvbox bright purple */
+  --aqua:          #8ec07c;   /* Gruvbox bright aqua */
+  --yellow:        #fabd2f;   /* Gruvbox bright yellow */
 
-  /* ── Text ── */
-  --text:          #2c2c2c;   /* GIC graphite */
-  --text-muted:    #444141;   /* GIC charcoal */
-  --text-dim:      #646464;   /* GIC ash */
-  --text-invert:   #ffffff;
+  /* ── Gruvbox Text ── */
+  --text:          #ebdbb2;   /* Gruvbox fg1 — primary */
+  --text-muted:    #d5c4a1;   /* Gruvbox fg2 — secondary */
+  --text-dim:      #a89984;   /* Gruvbox fg4 — muted */
+  --text-faint:    #928374;   /* Gruvbox gray — very muted */
+  --text-invert:   #282828;   /* Gruvbox bg — inverted text */
 
-  /* ── Borders ── */
-  --border:        #dee2de;   /* GIC mist — green-tinted hairline */
-  --border-strong: #c8cec8;
+  /* ── Gruvbox Borders ── */
+  --border:        #504945;   /* Gruvbox bg2 — default border */
+  --border-strong: #665c54;   /* Gruvbox bg3 — emphasized border */
+  --border-subtle: #3c3836;   /* Gruvbox bg1 — subtle border */
 
-  /* ── Shadows ── */
-  --shadow-sm:   0 1px 1px rgba(0,0,0,0.06), 0 4px 5px rgba(0,0,0,0.04);
-  --shadow-md:   0 2px 6px rgba(0,0,0,0.08);
-  --shadow-lg:   0 4px 16px rgba(0,0,0,0.10);
+  /* ── Shadows (deeper on dark bg) ── */
+  --shadow-sm:   0 1px 2px rgba(0,0,0,0.3), 0 4px 8px rgba(0,0,0,0.2);
+  --shadow-md:   0 2px 8px rgba(0,0,0,0.35);
+  --shadow-lg:   0 4px 24px rgba(0,0,0,0.45);
 
   /* ── Typography ── */
   --font-display:  'Fraunces', Georgia, serif;
@@ -69,11 +88,11 @@ body {
   overflow-x: hidden;
 }
 
-/* ── Scrollbar ── */
+/* ── Scrollbar (Gruvbox bg3/bg4 tones) ── */
 ::-webkit-scrollbar { width: 5px; height: 5px; }
-::-webkit-scrollbar-track { background: var(--bg); }
-::-webkit-scrollbar-thumb { background: rgba(44,26,14,0.18); border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: rgba(44,26,14,0.30); }
+::-webkit-scrollbar-track { background: var(--bg-deep); }
+::-webkit-scrollbar-thumb { background: #665c54; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #7c6f64; }
 
 /* ══════════════════════════════════════════════
    APP LAYOUT — Sidebar + Main
