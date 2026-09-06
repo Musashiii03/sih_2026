@@ -10,8 +10,8 @@ import './ApexConsole.css';
 
 export default function LoginPage() {
   const navigate = useNavigate();
-  const [email, setEmail] = useState('owner@atmarakshak.corp');
-  const [password, setPassword] = useState('demobypass');
+const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [showPw, setShowPw] = useState(false);
   const [loading, setLoading] = useState(false);
   const [loadingScreen, setLoadingScreen] = useState(false);
