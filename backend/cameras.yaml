@@ -1,0 +1,38 @@
+# Atmarakshak Multi-Camera Stream Configuration (cameras.yaml)
+# Supports RTSP streams, Laptop webcams (0), and Mobile Phone Wi-Fi CCTV
+
+cameras:
+  - id: CAM-01
+    name: Main Lobby & Security Turnstiles
+    source: 0
+    fps_limit: 30
+    enabled: true
+    sector: Sector 1A
+
+  - id: CAM-03
+    name: Warehouse A (Hazard Epicenter)
+    source: "http://192.168.1.105:8080/video"
+    fps_limit: 24
+    enabled: true
+    sector: Sector 4C
+
+  - id: CAM-04
+    name: Server Infrastructure Vault
+    source: "rtsp://admin:secret123@192.168.1.4:554/stream1"
+    fps_limit: 30
+    enabled: true
+    sector: Sector 1B
+
+  - id: CAM-05
+    name: Cafeteria Industrial Kitchen
+    source: "rtsp://admin:secret123@192.168.1.5:554/stream1"
+    fps_limit: 24
+    enabled: true
+    sector: Sector 2A
+
+  - id: CAM-07
+    name: Chemical Synthesis Lab
+    source: "http://192.168.1.108:8080/video"
+    fps_limit: 30
+    enabled: true
+    sector: Sector 3A
