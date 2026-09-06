@@ -1,0 +1,26 @@
+# Dependencies
+node_modules/
+**/node_modules/
+
+# Build artifacts
+dist/
+**/dist/
+dist-ssr/
+
+# Large media / recording captures
+*.mp4
+*.avi
+*.mkv
+
+# Environment & local secrets
+.env
+*.local
+
+# IDE & Editor
+.vscode/
+.idea/
+*.swp
+
+# OS Files
+.DS_Store
+Thumbs.db

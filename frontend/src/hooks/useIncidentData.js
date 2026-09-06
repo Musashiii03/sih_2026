@@ -40,42 +40,57 @@ export function useIncidentData() {
   const [error,       setError]       = useState(null);
 
   // ── Load incident list ─────────────────────────────────────────────────
-  const loadIncidents = useCallback(async () => {
+  const loadIncidents = useCallback(async (isSilent = false) => {
     try {
-      setLoading(true);
+      if (!isSilent) setLoading(true);
       setError(null);
       const data = await fetchJson('/api/incidents');
       const list = data.incidents || [];
       setIncidents(list);
-      if (list.length > 0 && !selectedId) {
-        setSelectedId(list[0].incident_id);
-      }
+      setSelectedId(prev => {
+        if (prev && list.some(inc => inc.incident_id === prev)) return prev;
+        return list.length > 0 ? list[0].incident_id : null;
+      });
     } catch (e) {
-      setError(e.message);
+      if (!isSilent) setError(e.message);
     } finally {
-      setLoading(false);
+      if (!isSilent) setLoading(false);
     }
   }, []);
 
-  useEffect(() => { loadIncidents(); }, [loadIncidents]);
+  // Initial load + live polling for new incidents
+  useEffect(() => { 
+    loadIncidents(false);
+    const pollTimer = setInterval(() => {
+      loadIncidents(true);
+    }, 4000);
+    return () => clearInterval(pollTimer);
+  }, [loadIncidents]);
 
-  // ── Load detail data whenever selectedId changes ───────────────────────
-  useEffect(() => {
-    if (!selectedId) return;
-    setSummary(null);
-    setHologram(null);
-    setHumanData(null);
-
+  // ── Load detail data whenever selectedId changes (with live polling) ───
+  const loadSelectedDetails = useCallback((id) => {
+    if (!id) return;
     Promise.all([
-      fetchJson(`/api/incidents/${selectedId}/summary`).catch(() => null),
-      fetchJson(`/api/incidents/${selectedId}/hologram`).catch(() => null),
-      fetchJson(`/api/incidents/${selectedId}/humans`).catch(() => null),
+      fetchJson(`/api/incidents/${id}/summary`).catch(() => null),
+      fetchJson(`/api/incidents/${id}/hologram`).catch(() => null),
+      fetchJson(`/api/incidents/${id}/humans`).catch(() => null),
     ]).then(([sum, holo, humans]) => {
       setSummary(sum);
       setHologram(holo);
       setHumanData(humans);
     });
-  }, [selectedId]);
+  }, []);
+
+  useEffect(() => {
+    if (!selectedId) return;
+    loadSelectedDetails(selectedId);
+
+    const detailTimer = setInterval(() => {
+      loadSelectedDetails(selectedId);
+    }, 4000);
+
+    return () => clearInterval(detailTimer);
+  }, [selectedId, loadSelectedDetails]);
 
   return {
     incidents,

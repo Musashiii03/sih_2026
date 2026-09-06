@@ -9,14 +9,15 @@
 const express = require('express');
 const fs = require('fs').promises;
 const path = require('path');
+const { resolveCameraStreamUrl, getAllCameras, resolveCameraDetails } = require('../utils/cameraConfig');
 
 const router = express.Router();
 
 // Base path for fire incidents storage
 // Configured relative to backend directory or via environment variable
 const INCIDENTS_BASE_PATH = process.env.FRAME_STORAGE_PATH
-  ? path.join(__dirname, '../..', process.env.FRAME_STORAGE_PATH)
-  : path.join(__dirname, '../data/fire_incidents');
+  ? path.resolve(__dirname, '../..', process.env.FRAME_STORAGE_PATH)
+  : path.resolve(__dirname, '../../data/fire_incidents');
 
 // ============================================================================
 // HELPER FUNCTIONS
@@ -71,13 +72,16 @@ async function scanIncidentDirectories() {
           // Read summary to get metadata
           const summaryContent = await fs.readFile(summaryPath, 'utf8');
           const summary = JSON.parse(summaryContent);
+          const cameraId = summary.camera_id || 'Unknown';
+          const cameraStreamUrl = resolveCameraStreamUrl(cameraId);
 
           incidents.push({
             incident_id: summary.incident_id || incidentDir.name,
             timestamp: summary.timestamp || 0,
             timestamp_readable: summary.timestamp_readable || '',
             frame_count: summary.frame_count || 0,
-            camera_id: summary.camera_id || 'Unknown',
+            camera_id: cameraId,
+            camera_stream_url: cameraStreamUrl,
             location: summary.location || 'Unknown',
             date_directory: dateDir.name,
             incident_directory: incidentDir.name
@@ -370,6 +374,10 @@ router.get('/incidents/:incidentId/summary', async (req, res) => {
       // Non-fatal — return summary as-is if enrichment fails
       console.warn('⚠️  Metadata enrichment failed:', enrichErr.message);
     }
+
+    // Resolve camera_stream_url dynamically against cameras.yaml
+    summary.camera_stream_url = resolveCameraStreamUrl(summary.camera_id);
+
     res.json(summary);
   } catch (error) {
     console.error('❌ Error reading incident summary:', error);
@@ -512,6 +520,48 @@ router.get('/incidents/:incidentId/frames/:frameIndex', async (req, res) => {
       });
     }
   }
+});
+
+// ============================================================================
+// CAMERA STREAM CONFIGURATION ENDPOINTS
+// ============================================================================
+
+/**
+ * GET /api/cameras
+ * Returns all configured cameras with their dynamic stream URLs
+ */
+router.get('/cameras', (req, res) => {
+  try {
+    const cameras = getAllCameras();
+    res.json({
+      cameras,
+      count: cameras.length,
+      timestamp: Date.now()
+    });
+  } catch (error) {
+    console.error('❌ Error retrieving cameras:', error);
+    res.status(500).json({
+      error: 'InternalServerError',
+      message: 'Failed to retrieve cameras',
+      details: error.message
+    });
+  }
+});
+
+/**
+ * GET /api/cameras/:cameraId/stream
+ * Resolves camera stream URL for a specific camera ID
+ */
+router.get('/cameras/:cameraId/stream', (req, res) => {
+  const { cameraId } = req.params;
+  const camera = resolveCameraDetails(cameraId);
+  if (!camera) {
+    return res.status(404).json({
+      error: 'NotFound',
+      message: `Camera '${cameraId}' not found in cameras.yaml`
+    });
+  }
+  res.json(camera);
 });
 
 // ============================================================================

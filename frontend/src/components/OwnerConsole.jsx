@@ -1,1630 +1,1230 @@
 /**
- * OwnerConsole — Hierarchical drill-down dashboard
- * Levels: Owner → Organization → Building → Live Monitoring → Incident → Management → History
- * Style: GIC design language (Fraunces, Manrope, parchment canvas, hairline borders, signal-blue CTAs)
+ * OwnerConsole — Atmarakshak Command Center
+ * Modeled after Atmarakshak Safety Monitor (hazard-monitor-8)
+ *
+ * Views:
+ *  1. Command Overview (KPIs, Org Safety Matrix, System Readiness)
+ *  2. Live Monitoring (CCTV Feed, YOLO bounding box, AI Detection Simulator)
+ *  3. Incident History (Search, Filter, Incident Details, Acknowledge/Resolve)
  */
-import React, { useState, useEffect } from 'react';
+
+import React, { useState, useEffect, useMemo } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
 import {
-  ArrowRight, ArrowLeft, Building2, Camera, Flame,
-  ShieldCheck, ShieldAlert, AlertTriangle, CheckCircle2,
-  Clock, MapPin, Users, Eye, FileText, Bell,
-  ChevronRight, RefreshCw, Loader2, X, Search,
-  TrendingUp, AlertCircle, CheckCircle, ZapOff
+  LayoutDashboard,
+  Video,
+  History,
+  Shield,
+  ShieldAlert,
+  Flame,
+  Droplets,
+  Wind,
+  CheckCircle,
+  AlertTriangle,
+  LogOut,
+  ChevronDown,
+  Search,
+  ExternalLink,
+  Radio,
+  Check,
+  X,
+  Clock,
+  ArrowRight,
+  Activity,
+  Layers,
+  Camera
 } from 'lucide-react';
-import {
-  useIncidentData, frameImageUrl, deriveSeverity, getEvidenceFrames, aggregateStats
-} from '../hooks/useIncidentData';
-import {
-  useOwnerData,
-  OWNER_PROFILE, OWNER_BUILDINGS, OWNER_CAMERAS,
-  OWNER_COMPLAINTS, OWNER_ALERTS, PEOPLE_SAFETY
-} from '../hooks/useOwnerData';
+import './ApexConsole.css';
 
-// ═══════════════════════════════════════════════════════════════════
-// GIC DESIGN TOKENS
-// ═══════════════════════════════════════════════════════════════════
-const G = {
-  parchment:  '#fefffc',
-  paper:      '#ffffff',
-  linen:      '#f9faf7',
-  inkBlack:   '#171717',
-  graphite:   '#2c2c2c',
-  charcoal:   '#444141',
-  ash:        '#646464',
-  fog:        '#b4b8b4',
-  mist:       '#dee2de',
-  twilight:   '#282834',
-  dusk:       '#1f1f29',
-  signal:     '#41a1cf',
-  cerulean:   '#0081c0',
-  // semantic
-  fire:       '#e11d48',
-  fireDim:    '#fef2f2',
-  fireRing:   '#fecaca',
-  amber:      '#d97706',
-  amberDim:   '#fffbeb',
-  green:      '#16a34a',
-  greenDim:   '#f0fdf4',
-};
-
-// ═══════════════════════════════════════════════════════════════════
-// SHARED PRIMITIVES
-// ═══════════════════════════════════════════════════════════════════
-
-/** Breadcrumb trail */
-function Breadcrumb({ crumbs, onNavigate }) {
-  return (
-    <nav style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-      {crumbs.map((c, i) => (
-        <React.Fragment key={i}>
-          {i > 0 && <ChevronRight size={13} color={G.fog} />}
-          {i < crumbs.length - 1 ? (
-            <button onClick={() => onNavigate(c.level, c.id)} style={{
-              background: 'none', border: 'none', cursor: 'pointer', padding: 0,
-              fontFamily: "'Manrope',sans-serif", fontSize: 13, fontWeight: 500,
-              color: G.signal, letterSpacing: '-0.01em',
-            }}>{c.label}</button>
-          ) : (
-            <span style={{
-              fontFamily: "'Manrope',sans-serif", fontSize: 13, fontWeight: 600,
-              color: G.graphite, letterSpacing: '-0.01em',
-            }}>{c.label}</span>
-          )}
-        </React.Fragment>
-      ))}
-    </nav>
-  );
-}
-
-/** Section page header */
-function PageHeader({ title, subtitle, actions, breadcrumb, onBack, level }) {
-  const levelColors = {
-    owner:    G.graphite,
-    org:      G.cerulean,
-    building: G.amber,
-    live:     G.fire,
-    incident: G.fire,
-    manage:   G.amber,
-    history:  G.graphite,
-  };
-  return (
-    <div style={{ borderBottom: `1px solid ${G.mist}`, paddingBottom: 24, marginBottom: 32 }}>
-      {breadcrumb}
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between',
-        marginTop: breadcrumb ? 16 : 0, flexWrap: 'wrap', gap: 12 }}>
-        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14 }}>
-          {onBack && (
-            <button onClick={onBack} style={{
-              background: 'none', border: `1px solid ${G.mist}`, borderRadius: 8,
-              width: 36, height: 36, cursor: 'pointer', display: 'flex',
-              alignItems: 'center', justifyContent: 'center', color: G.ash,
-              flexShrink: 0, marginTop: 4,
-            }}>
-              <ArrowLeft size={15} />
-            </button>
-          )}
-          <div>
-            <h1 style={{
-              fontFamily: "'Fraunces',Georgia,serif",
-              fontStyle: 'italic', fontWeight: 400,
-              fontSize: 40, lineHeight: 1.1, letterSpacing: '-0.8px',
-              color: levelColors[level] || G.graphite, margin: 0,
-            }}>{title}</h1>
-            {subtitle && <p style={{
-              fontFamily: "'Manrope',sans-serif", fontSize: 15, fontWeight: 400,
-              color: G.ash, marginTop: 6, letterSpacing: '-0.01em',
-            }}>{subtitle}</p>}
-          </div>
-        </div>
-        {actions && <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>{actions}</div>}
-      </div>
-    </div>
-  );
-}
-
-/** GIC white content card */
-function Card({ children, style = {} }) {
-  return (
-    <div style={{
-      background: G.paper, border: `1px solid ${G.mist}`,
-      borderRadius: 12, boxShadow: '0 1px 1px rgba(0,0,0,0.06),0 4px 5px rgba(0,0,0,0.04)',
-      ...style,
-    }}>
-      {children}
-    </div>
-  );
-}
-
-/** Outlined signal-blue CTA */
-function BtnOutline({ children, onClick, icon, small = false, style = {} }) {
-  const [hover, setHover] = useState(false);
-  return (
-    <button onClick={onClick}
-      onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}
-      style={{
-        background: hover ? `${G.signal}12` : 'transparent',
-        border: `1px solid ${G.signal}`, borderRadius: 8,
-        padding: small ? '5px 12px' : '8px 16px',
-        fontFamily: "'Manrope',sans-serif", fontSize: 13, fontWeight: 500,
-        color: G.signal, letterSpacing: '-0.01em', cursor: 'pointer',
-        display: 'inline-flex', alignItems: 'center', gap: 6,
-        transition: 'background 0.15s', ...style,
-      }}>
-      {children}
-      {icon !== false && (
-        <span style={{ width: 18, height: 18, borderRadius: '50%',
-          border: `1px solid ${G.signal}50`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <ArrowRight size={10} />
-        </span>
-      )}
-    </button>
-  );
-}
-
-/** Dark Dusk filled button */
-function BtnDark({ children, onClick, small = false, disabled = false, style = {} }) {
-  return (
-    <button onClick={onClick} disabled={disabled} style={{
-      background: disabled ? G.fog : G.dusk, border: `1px solid ${G.twilight}`,
-      borderRadius: 8, padding: small ? '6px 14px' : '9px 18px',
-      fontFamily: "'Manrope',sans-serif", fontSize: 13, fontWeight: 500,
-      color: '#fff', letterSpacing: '-0.01em', cursor: disabled ? 'not-allowed' : 'pointer',
-      display: 'inline-flex', alignItems: 'center', gap: 6,
-      opacity: disabled ? 0.6 : 1, transition: 'opacity 0.15s', ...style,
-    }}>
-      {children}
-    </button>
-  );
-}
-
-/** Severity / status badge */
-function Badge({ label, color = G.signal, bg }) {
-  return (
-    <span style={{
-      fontFamily: "'JetBrains Mono',monospace", fontSize: 10, fontWeight: 700,
-      letterSpacing: '0.06em', textTransform: 'uppercase',
-      color, background: bg || `${color}15`,
-      border: `1px solid ${color}40`, borderRadius: 999,
-      padding: '2px 9px', display: 'inline-block', lineHeight: 1.5,
-    }}>{label}</span>
-  );
-}
-
-function SevBadge({ sev }) {
-  const map = {
-    CRITICAL: { color: G.fire,  label: 'Critical' },
-    HIGH:     { color: '#d97706', label: 'High' },
-    MODERATE: { color: G.amber, label: 'Moderate' },
-    LOW:      { color: G.green, label: 'Low' },
-    SAFE:     { color: G.green, label: 'Safe' },
-    UNKNOWN:  { color: G.fog,   label: 'Unknown' },
-  };
-  const s = map[sev?.toUpperCase()] || map.UNKNOWN;
-  return <Badge label={s.label} color={s.color} />;
-}
-
-/** Safety status dot */
-function SafetyDot({ status }) {
-  const c = status === 'CRITICAL' ? G.fire : status === 'ATTENTION' ? G.amber : G.green;
-  return <span style={{ width: 8, height: 8, borderRadius: '50%', background: c, display: 'inline-block',
-    boxShadow: `0 0 0 3px ${c}25`, flexShrink: 0 }} />;
-}
-
-/** Horizontal divider */
-const Divider = ({ my = 24 }) => (
-  <div style={{ height: 1, background: G.mist, margin: `${my}px 0` }} />
-);
-
-/** KPI chip */
-function KpiChip({ label, value, sub, valueColor = G.graphite, icon }) {
-  return (
-    <Card style={{ padding: '18px 20px', display: 'flex', flexDirection: 'column', gap: 6 }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <span style={{ fontFamily: "'Manrope',sans-serif", fontSize: 12, fontWeight: 500,
-          color: G.ash, letterSpacing: '-0.01em' }}>{label}</span>
-        {icon && <span style={{ color: G.fog }}>{icon}</span>}
-      </div>
-      <div style={{ fontFamily: "'Fraunces',Georgia,serif", fontStyle: 'italic',
-        fontWeight: 400, fontSize: 36, lineHeight: 1, color: valueColor }}>{value}</div>
-      {sub && <div style={{ fontFamily: "'Manrope',sans-serif", fontSize: 12, color: G.ash }}>{sub}</div>}
-    </Card>
-  );
-}
-
-/** Frame image (real from backend) */
-function FrameThumb({ incidentId, frameIndex, style = {} }) {
-  const [ok, setOk] = useState(false);
-  const url = incidentId ? frameImageUrl(incidentId, frameIndex) : null;
-  return (
-    <div style={{ background: G.linen, borderRadius: 6, overflow: 'hidden',
-      border: `1px solid ${G.mist}`, ...style, position: 'relative' }}>
-      {url && <img src={url} alt="" onLoad={() => setOk(true)}
-        style={{ width: '100%', height: '100%', objectFit: 'cover',
-          opacity: ok ? 1 : 0, transition: 'opacity 0.3s', display: 'block' }} />}
-      {(!url || !ok) && (
-        <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center',
-          justifyContent: 'center', color: G.fog }}>
-          <Camera size={18} />
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ═══════════════════════════════════════════════════════════════════
-// MOCK INCIDENTS (7-level system needs full incident data)
-// ═══════════════════════════════════════════════════════════════════
-const INCIDENTS = [
+// ─── SEEDED ORGANIZATIONS & SITES ────────────────────────────────────
+const ORGANIZATIONS = [
   {
-    id: 'INC-00142', orgId: 'ORG-001', buildingId: 'BLD-ARJ-B-042',
-    camId: 'CAM-02', camCode: 'ARJ-B-CAM-02',
-    type: 'Fire', severity: 'CRITICAL', confidence: 97.4,
-    location: 'East Corridor, 2nd Floor', floor: '2',
-    timestamp: '2026-08-30T15:46:14Z', timestampDisplay: '30 Aug 2026, 15:46 IST',
-    status: 'Active', framesConfirmed: 5, framesTotal: 5,
-    evidenceCount: 6, humanCount: 0, objectCount: 2,
-    notes: '', resolution: null,
-    incidentIdBackend: 'INC-20260830-230331',
+    id: 'APX-01',
+    code: 'APX-01',
+    name: 'Atmarakshak Industrial Group',
+    buildingsCount: 2,
+    safetyScore: 94,
+    alertsCount: 11,
+    facilities: [
+      { id: 'AOH-01', code: 'AOH-01', name: 'Atmarakshak Operations Hub' },
+      { id: 'MRL-02', code: 'MRL-02', name: 'Materials Research Lab' },
+    ],
   },
   {
-    id: 'INC-00141', orgId: 'ORG-001', buildingId: 'BLD-SHL-A-011',
-    camId: 'CAM-06', camCode: 'SHL-A-CAM-02',
-    type: 'Smoke', severity: 'HIGH', confidence: 72.1,
-    location: 'Kitchen Block, 3rd Floor', floor: '3',
-    timestamp: '2026-08-29T13:51:04Z', timestampDisplay: '29 Aug 2026, 13:51 IST',
-    status: 'Investigating', framesConfirmed: 4, framesTotal: 5,
-    evidenceCount: 3, humanCount: 2, objectCount: 1,
-    notes: 'Owner investigating kitchen steam vs actual smoke.',
-    resolution: null,
-    incidentIdBackend: null,
-  },
-  {
-    id: 'INC-00139', orgId: 'ORG-001', buildingId: 'BLD-ARJ-B-042',
-    camId: 'CAM-03', camCode: 'ARJ-B-CAM-03',
-    type: 'Water Leak', severity: 'MODERATE', confidence: 91.0,
-    location: 'Server Room B, 1st Floor', floor: '1',
-    timestamp: '2026-08-28T11:24:40Z', timestampDisplay: '28 Aug 2026, 11:24 IST',
-    status: 'Resolved', framesConfirmed: 5, framesTotal: 5,
-    evidenceCount: 4, humanCount: 0, objectCount: 3,
-    notes: 'HVAC auto-shutdown applied. Plumber called. Resolved.',
-    resolution: 'Leak fixed by maintenance. No damage to server equipment.',
-    incidentIdBackend: null,
-  },
-  {
-    id: 'INC-00137', orgId: 'ORG-001', buildingId: 'BLD-WRH-D-007',
-    camId: 'CAM-14', camCode: 'WRH-D-CAM-04',
-    type: 'Person', severity: 'LOW', confidence: 84.0,
-    location: 'Generator Room, Ground Floor', floor: 'G',
-    timestamp: '2026-09-02T22:18:00Z', timestampDisplay: '2 Sep 2026, 22:18 IST',
-    status: 'Resolved', framesConfirmed: 5, framesTotal: 5,
-    evidenceCount: 2, humanCount: 1, objectCount: 0,
-    notes: 'Security responded. Authorised maintenance personnel.',
-    resolution: 'False positive — authorised staff. Cleared.',
-    incidentIdBackend: null,
+    id: 'NSL-02',
+    code: 'NSL-02',
+    name: 'Northstar Logistics',
+    buildingsCount: 1,
+    safetyScore: 88,
+    alertsCount: 3,
+    facilities: [
+      { id: 'NST-04', code: 'NST-04', name: 'Northstar Terminal A' },
+    ],
   },
 ];
 
-// Mock organisation (single org for now)
-const ORGS = [
+// ─── SEEDED CAMERAS ──────────────────────────────────────────────────
+const CAMERAS = [
   {
-    id: 'ORG-001', name: 'Mehra Properties Ltd.',
-    buildings: 3, cameras: 18, activeIncidents: 2,
-    resolvedIncidents: 12, overallSafetyScore: 74,
-    since: '2021-04-01',
+    id: 'CAM-04',
+    code: 'CAM-04',
+    room: 'Chemistry Lab',
+    location: 'Materials Research Lab — aet Chemistry Lab',
+    facilityId: 'MRL-02',
+    orgId: 'APX-01',
+    health: 'maintenance',
+    signalStrength: 96,
+    fps: 28,
+    resolution: '1080p',
+    image: '/cctv/camera_render.jpg',
+  },
+  {
+    id: 'CAM-05',
+    code: 'CAM-05',
+    room: 'Dock 04',
+    location: 'Northstar Terminal 1 / Dock 04',
+    facilityId: 'NST-04',
+    orgId: 'NSL-02',
+    health: 'healthy',
+    signalStrength: 98,
+    fps: 30,
+    resolution: '1080p',
+    image: '/cctv/surveillance_dock.jpg',
+  },
+  {
+    id: 'CAM-06',
+    code: 'CAM-06',
+    room: 'Mezzanine',
+    location: 'Northstar Terminal 1 / Mezzanine',
+    facilityId: 'NST-04',
+    orgId: 'NSL-02',
+    health: 'healthy',
+    signalStrength: 92,
+    fps: 25,
+    resolution: '1080p',
+    image: '/cctv/camera_render.jpg',
   },
 ];
 
-// ═══════════════════════════════════════════════════════════════════
-// LEVEL 1 — OWNER DASHBOARD
-// ═══════════════════════════════════════════════════════════════════
-function OwnerDashboard({ navigate }) {
-  const ownerData = useOwnerData();
-  const { kpis, incidents, loading, alerts } = ownerData;
-  const unread = OWNER_ALERTS.filter(a => !a.read).length;
-  const activeFire = INCIDENTS.filter(i => i.status === 'Active').length;
+// ─── INITIAL INCIDENTS (From Video) ──────────────────────────────────
+const INITIAL_INCIDENTS = [
+  {
+    id: 'INC-A911E5',
+    type: 'FIRE',
+    location: 'Northstar Terminal 1 / Dock 04',
+    facilityId: 'NST-04',
+    camera: 'CAM-05',
+    severity: 'HIGH',
+    confidence: 91,
+    status: 'UNACKNOWLEDGED',
+    created: 'Sep 05, 11:18 PM',
+    operatorNote: 'AI detection created by Morgan Reed · Atmarakshak AI Monitor',
+    image: '/cctv/surveillance_dock.jpg',
+  },
+  {
+    id: 'INC-D09460',
+    type: 'SMOKE',
+    location: 'Atmarakshak Operations Hub / Loading Bay A',
+    facilityId: 'AOH-01',
+    camera: 'CAM-02',
+    severity: 'MEDIUM',
+    confidence: 88,
+    status: 'UNACKNOWLEDGED',
+    created: 'Sep 05, 11:10 PM',
+    operatorNote: 'Optical density exceeded threshold 450ppm',
+    image: '/cctv/camera_render.jpg',
+  },
+  {
+    id: 'INC-496C61',
+    type: 'FIRE',
+    location: 'Northstar Terminal 1 / Dock 04',
+    facilityId: 'NST-04',
+    camera: 'CAM-05',
+    severity: 'HIGH',
+    confidence: 94,
+    status: 'UNACKNOWLEDGED',
+    created: 'Sep 05, 09:38 PM',
+    operatorNote: 'YOLO verified thermal temporal confirmation',
+    image: '/cctv/surveillance_dock.jpg',
+  },
+  {
+    id: 'INC-5BCE5E',
+    type: 'WATER LEAK',
+    location: 'Northstar Terminal 1 / Dock 04',
+    facilityId: 'NST-04',
+    camera: 'CAM-05',
+    severity: 'LOW',
+    confidence: 82,
+    status: 'ACKNOWLEDGED',
+    created: 'Sep 05, 09:14 PM',
+    operatorNote: 'Sump pump overflow flagged in sector 4',
+    image: '/cctv/camera_render.jpg',
+  },
+  {
+    id: 'INC-3DCFF1',
+    type: 'FIRE',
+    location: 'Atmarakshak Operations Hub / Loading Bay A',
+    facilityId: 'AOH-01',
+    camera: 'CAM-01',
+    severity: 'HIGH',
+    confidence: 96,
+    status: 'ACKNOWLEDGED',
+    created: 'Sep 05, 09:02 PM',
+    operatorNote: 'Verified thermal flare near forklift charge bay',
+    image: '/cctv/surveillance_dock.jpg',
+  },
+  {
+    id: 'INC-7E8C6D',
+    type: 'FIRE',
+    location: 'Atmarakshak Operations Hub / Loading Bay A',
+    facilityId: 'AOH-01',
+    camera: 'CAM-01',
+    severity: 'CRITICAL',
+    confidence: 97,
+    status: 'UNACKNOWLEDGED',
+    created: 'Sep 05, 08:52 PM',
+    operatorNote: 'Direct flame visible in pallet storage rack',
+    image: '/cctv/surveillance_dock.jpg',
+  },
+  {
+    id: 'INC-923398',
+    type: 'FIRE',
+    location: 'Atmarakshak Operations Hub / Loading Bay A',
+    facilityId: 'AOH-01',
+    camera: 'CAM-01',
+    severity: 'HIGH',
+    confidence: 89,
+    status: 'RESOLVED',
+    created: 'Sep 05, 08:30 PM',
+    operatorNote: 'Extinguished by on-site safety marshal',
+    image: '/cctv/camera_render.jpg',
+  },
+  {
+    id: 'INC-D88748',
+    type: 'FIRE',
+    location: 'Atmarakshak Operations Hub / Loading Bay A',
+    facilityId: 'AOH-01',
+    camera: 'CAM-01',
+    severity: 'MEDIUM',
+    confidence: 85,
+    status: 'RESOLVED',
+    created: 'Sep 05, 08:12 PM',
+    operatorNote: 'Resolved and cleared by station chief',
+    image: '/cctv/surveillance_dock.jpg',
+  },
+  {
+    id: 'INC-30F8FD',
+    type: 'SMOKE',
+    location: 'Atmarakshak Operations Hub / Loading Bay A',
+    facilityId: 'AOH-01',
+    camera: 'CAM-02',
+    severity: 'MEDIUM',
+    confidence: 90,
+    status: 'UNACKNOWLEDGED',
+    created: 'Sep 05, 08:00 PM',
+    operatorNote: 'Exhaust duct particulate backflow detected',
+    image: '/cctv/camera_render.jpg',
+  },
+  {
+    id: 'INC-88E771',
+    type: 'FIRE',
+    location: 'Atmarakshak Operations Hub / Loading Bay A',
+    facilityId: 'AOH-01',
+    camera: 'CAM-01',
+    severity: 'HIGH',
+    confidence: 92,
+    status: 'UNACKNOWLEDGED',
+    created: 'Sep 05, 07:44 PM',
+    operatorNote: 'Pallet flare detected by thermal camera',
+    image: '/cctv/surveillance_dock.jpg',
+  },
+  {
+    id: 'INC-0C349A',
+    type: 'WATER LEAK',
+    location: 'Atmarakshak Operations Hub / Loading Bay A',
+    facilityId: 'AOH-01',
+    camera: 'CAM-03',
+    severity: 'LOW',
+    confidence: 84,
+    status: 'RESOLVED',
+    created: 'Sep 05, 07:18 PM',
+    operatorNote: 'Valve closed and dry mop initiated',
+    image: '/cctv/camera_render.jpg',
+  },
+  {
+    id: 'INC-F73953',
+    type: 'SMOKE',
+    location: 'Materials Research Lab / Chemistry Lab',
+    facilityId: 'MRL-02',
+    camera: 'CAM-04',
+    severity: 'MEDIUM',
+    confidence: 89,
+    status: 'RESOLVED',
+    created: 'Sep 05, 07:05 PM',
+    operatorNote: 'Fume hood damper calibrated and resolved',
+    image: '/cctv/camera_render.jpg',
+  },
+];
+
+export default function OwnerConsole() {
+  const navigate = useNavigate();
+
+  // Navigation tabs: 'overview' | 'monitoring' | 'incidents'
+  const [activeTab, setActiveTab] = useState('overview');
+
+  // Organizations & Selected Facility
+  const [selectedOrgId, setSelectedOrgId] = useState('APX-01');
+  const [selectedFacilityId, setSelectedFacilityId] = useState('AOH-01');
+
+  // Live Monitoring State
+  const [selectedCameraId, setSelectedCameraId] = useState('CAM-04');
+  const [simulatedHazard, setSimulatedHazard] = useState(null); // 'fire' | 'smoke' | 'water' | null
+  const [hazardConfidence, setHazardConfidence] = useState(96);
+  const [hazardConfirmed, setHazardConfirmed] = useState(false);
+  const [liveTime, setLiveTime] = useState('');
+
+  // Incidents State
+  const [incidents, setIncidents] = useState(INITIAL_INCIDENTS);
+  const [selectedIncidentId, setSelectedIncidentId] = useState('INC-A911E5');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState('ALL');
+  const [operatorNoteInput, setOperatorNoteInput] = useState('');
+
+  // Floating Toasts Stack
+  const [toasts, setToasts] = useState([
+    { id: 1, text: 'Owner session established', type: 'success' }
+  ]);
+
+  // Push Toast helper
+  const showToast = (text, type = 'info') => {
+    const id = Date.now() + Math.random();
+    setToasts((prev) => [...prev, { id, text, type }]);
+    setTimeout(() => {
+      setToasts((prev) => prev.filter((t) => t.id !== id));
+    }, 4500);
+  };
+
+  const removeToast = (id) => {
+    setToasts((prev) => prev.filter((t) => t.id !== id));
+  };
+
+  // Clock runner
+  useEffect(() => {
+    const updateTime = () => {
+      const now = new Date();
+      setLiveTime(now.toLocaleTimeString('en-US', { hour12: true }));
+    };
+    updateTime();
+    const timer = setInterval(updateTime, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  // Selected Org and Camera objects
+  const currentOrg = useMemo(() => {
+    return ORGANIZATIONS.find((o) => o.id === selectedOrgId) || ORGANIZATIONS[0];
+  }, [selectedOrgId]);
+
+  const currentCamera = useMemo(() => {
+    return CAMERAS.find((c) => c.id === selectedCameraId) || CAMERAS[0];
+  }, [selectedCameraId]);
+
+  const selectedIncident = useMemo(() => {
+    return incidents.find((i) => i.id === selectedIncidentId) || incidents[0];
+  }, [incidents, selectedIncidentId]);
+
+  // Counts
+  const activeIncidentsCount = useMemo(() => {
+    return incidents.filter((i) => i.status === 'UNACKNOWLEDGED').length;
+  }, [incidents]);
+
+  // Filtered Incidents
+  const filteredIncidents = useMemo(() => {
+    return incidents.filter((inc) => {
+      const matchesStatus =
+        statusFilter === 'ALL' ? true : inc.status === statusFilter;
+      const matchesQuery =
+        inc.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        inc.type.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        inc.location.toLowerCase().includes(searchQuery.toLowerCase());
+      return matchesStatus && matchesQuery;
+    });
+  }, [incidents, statusFilter, searchQuery]);
+
+  // Trigger Simulation
+  const handleSimulate = (type) => {
+    setSimulatedHazard(type);
+    const conf = type === 'fire' ? 96 : type === 'smoke' ? 91 : 88;
+    setHazardConfidence(conf);
+    setHazardConfirmed(true);
+
+    const typeNames = {
+      fire: 'Fire signature temporally verified',
+      smoke: 'Smoke signature temporally verified',
+      water: 'Water leak signature temporally verified',
+    };
+    showToast(typeNames[type], type === 'fire' ? 'alert' : 'info');
+  };
+
+  // Create Incident from Simulator
+  const handleCreateIncidentRecord = () => {
+    if (!simulatedHazard) return;
+    const randomHex = Math.random().toString(16).substring(2, 8).toUpperCase();
+    const newId = `INC-${randomHex}`;
+    const hazardType =
+      simulatedHazard === 'fire'
+        ? 'FIRE'
+        : simulatedHazard === 'smoke'
+        ? 'SMOKE'
+        : 'WATER LEAK';
+
+    const now = new Date();
+    const dateStr = `${now.toLocaleString('default', { month: 'short' })} ${now.getDate().toString().padStart(2, '0')}, ${now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+
+    const newInc = {
+      id: newId,
+      type: hazardType,
+      location: currentCamera.location,
+      facilityId: currentCamera.facilityId,
+      camera: currentCamera.code,
+      severity: simulatedHazard === 'water' ? 'LOW' : 'HIGH',
+      confidence: hazardConfidence,
+      status: 'UNACKNOWLEDGED',
+      created: dateStr,
+      operatorNote: `AI detection created by Morgan Reed · Atmarakshak AI Monitor`,
+      image: currentCamera.image,
+    };
+
+    setIncidents((prev) => [newInc, ...prev]);
+    setSelectedIncidentId(newId);
+    showToast(`${newId} created — operator action required`, 'alert');
+
+    // Reset simulator preview
+    setSimulatedHazard(null);
+    setHazardConfirmed(false);
+  };
+
+  // Acknowledge Incident
+  const handleAcknowledge = () => {
+    if (!selectedIncident) return;
+    setIncidents((prev) =>
+      prev.map((i) =>
+        i.id === selectedIncident.id ? { ...i, status: 'ACKNOWLEDGED' } : i
+      )
+    );
+    showToast(`Incident ${selectedIncident.id} is now acknowledged`, 'success');
+  };
+
+  // Resolve Incident
+  const handleResolve = () => {
+    if (!selectedIncident) return;
+    setIncidents((prev) =>
+      prev.map((i) =>
+        i.id === selectedIncident.id ? { ...i, status: 'RESOLVED' } : i
+      )
+    );
+    showToast(`Incident ${selectedIncident.id} marked as resolved`, 'success');
+  };
+
+  // Sign out handler
+  const handleSignOut = () => {
+    showToast('Session closed', 'info');
+    setTimeout(() => {
+      navigate('/login');
+    }, 600);
+  };
 
   return (
-    <div>
-      <PageHeader
-        level="owner"
-        title={`Good morning, ${OWNER_PROFILE.name.split(' ')[0]}.`}
-        subtitle="Here's the safety overview across all your properties."
-        actions={
-          <>
-            {unread > 0 && <Badge label={`${unread} unread alerts`} color={G.fire} />}
-            <BtnDark onClick={() => navigate('org', 'ORG-001')} small>
-              View Organisation <ArrowRight size={13} />
-            </BtnDark>
-          </>
-        }
-      />
-
-      {/* Overall safety score */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 14, marginBottom: 32 }}>
-        <KpiChip label="Organisations" value={ORGS.length}
-          sub="Under ownership" icon={<Building2 size={16} />} />
-        <KpiChip label="Total Buildings" value={kpis.totalBuildings}
-          sub="Across all orgs" icon={<Building2 size={16} />} />
-        <KpiChip label="Active Incidents" value={activeFire}
-          sub="Require attention" valueColor={activeFire > 0 ? G.fire : G.green}
-          icon={<Flame size={16} />} />
-        <KpiChip label="System Status" value="Online"
-          sub="All services operational" valueColor={G.green}
-          icon={<ShieldCheck size={16} />} />
-      </div>
-
-      {/* Two-col: Orgs + Active incidents */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
-        {/* Organisations */}
-        <div>
-          <h2 style={{ fontFamily: "'Fraunces',Georgia,serif", fontStyle: 'italic',
-            fontWeight: 400, fontSize: 22, color: G.graphite, marginBottom: 14 }}>
-            Organisations
-          </h2>
-          {ORGS.map(org => (
-            <Card key={org.id} style={{ padding: '20px 22px', cursor: 'pointer' }}
-              onClick={() => navigate('org', org.id)}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                <div>
-                  <div style={{ fontFamily: "'Fraunces',Georgia,serif", fontStyle: 'italic',
-                    fontWeight: 400, fontSize: 20, color: G.graphite, marginBottom: 6 }}>
-                    {org.name}
-                  </div>
-                  <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap' }}>
-                    {[
-                      { l: 'Buildings',  v: org.buildings },
-                      { l: 'Cameras',    v: org.cameras },
-                      { l: 'Active',     v: org.activeIncidents },
-                      { l: 'Resolved',   v: org.resolvedIncidents },
-                    ].map(s => (
-                      <div key={s.l}>
-                        <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 18,
-                          fontWeight: 700, color: G.graphite }}>{s.v}</div>
-                        <div style={{ fontFamily: "'Manrope',sans-serif", fontSize: 11,
-                          color: G.ash }}>{s.l}</div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 10 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <span style={{ fontFamily: "'Manrope',sans-serif", fontSize: 12, color: G.ash }}>
-                      Safety score
-                    </span>
-                    <span style={{
-                      fontFamily: "'Fraunces',Georgia,serif", fontStyle: 'italic',
-                      fontSize: 28, fontWeight: 400,
-                      color: org.overallSafetyScore >= 80 ? G.green : org.overallSafetyScore >= 60 ? G.amber : G.fire,
-                    }}>{org.overallSafetyScore}%</span>
-                  </div>
-                  <BtnOutline onClick={() => navigate('org', org.id)} small>Manage</BtnOutline>
-                </div>
-              </div>
-            </Card>
-          ))}
-        </div>
-
-        {/* Active incidents */}
-        <div>
-          <h2 style={{ fontFamily: "'Fraunces',Georgia,serif", fontStyle: 'italic',
-            fontWeight: 400, fontSize: 22, color: G.graphite, marginBottom: 14 }}>
-            Active Incidents
-          </h2>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            {INCIDENTS.filter(i => i.status === 'Active' || i.status === 'Investigating').map(inc => (
-              <Card key={inc.id} style={{ padding: '16px 18px', cursor: 'pointer' }}
-                onClick={() => navigate('incident', inc.id)}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                      <SevBadge sev={inc.severity} />
-                      <span style={{ fontFamily: "'JetBrains Mono',monospace",
-                        fontSize: 11, color: G.ash }}>{inc.id}</span>
-                    </div>
-                    <div style={{ fontFamily: "'Manrope',sans-serif", fontSize: 14,
-                      fontWeight: 600, color: G.graphite, marginBottom: 2 }}>
-                      {inc.type} — {inc.location}
-                    </div>
-                    <div style={{ fontFamily: "'Manrope',sans-serif", fontSize: 12, color: G.ash }}>
-                      {inc.timestampDisplay}
-                    </div>
-                  </div>
-                  <ChevronRight size={16} color={G.fog} />
-                </div>
-              </Card>
-            ))}
-            {INCIDENTS.filter(i => i.status === 'Active' || i.status === 'Investigating').length === 0 && (
-              <Card style={{ padding: '24px', textAlign: 'center' }}>
-                <CheckCircle size={28} color={G.green} style={{ margin: '0 auto 8px' }} />
-                <div style={{ fontFamily: "'Manrope',sans-serif", fontSize: 14, color: G.ash }}>
-                  No active incidents
-                </div>
-              </Card>
-            )}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ═══════════════════════════════════════════════════════════════════
-// LEVEL 2 — ORGANISATION DASHBOARD
-// ═══════════════════════════════════════════════════════════════════
-function OrgDashboard({ orgId, navigate, breadcrumb }) {
-  const org = ORGS.find(o => o.id === orgId) || ORGS[0];
-  const orgBuildings = OWNER_BUILDINGS;
-  const orgIncidents = INCIDENTS;
-
-  const totalOnline  = OWNER_CAMERAS.filter(c => c.status === 'ONLINE').length;
-  const totalOffline = OWNER_CAMERAS.filter(c => c.status === 'OFFLINE').length;
-  const activeCount  = orgIncidents.filter(i => i.status === 'Active').length;
-  const resolved     = orgIncidents.filter(i => i.status === 'Resolved').length;
-
-  return (
-    <div>
-      <PageHeader level="org" title={org.name}
-        subtitle={`Organisation overview · Member since ${org.since}`}
-        breadcrumb={breadcrumb}
-        onBack={() => navigate('owner')}
-        actions={<BtnOutline onClick={() => navigate('owner')} small icon={false}>← Back</BtnOutline>}
-      />
-
-      {/* KPI row */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14, marginBottom: 32 }}>
-        <KpiChip label="Total Buildings" value={orgBuildings.length}
-          sub="Under this org" icon={<Building2 size={16} />} />
-        <KpiChip label="Total Cameras" value={OWNER_CAMERAS.length}
-          sub={`${totalOnline} online · ${totalOffline} offline`}
-          icon={<Camera size={16} />} />
-        <KpiChip label="Active Alerts" value={activeCount}
-          valueColor={activeCount > 0 ? G.fire : G.green}
-          sub="Unresolved incidents" icon={<Flame size={16} />} />
-        <KpiChip label="Resolved" value={resolved}
-          sub="This period" valueColor={G.green} icon={<CheckCircle2 size={16} />} />
-      </div>
-
-      {/* Buildings grid */}
-      <h2 style={{ fontFamily: "'Fraunces',Georgia,serif", fontStyle: 'italic',
-        fontWeight: 400, fontSize: 22, color: G.graphite, marginBottom: 16 }}>
-        Buildings
-      </h2>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginBottom: 32 }}>
-        {orgBuildings.map(b => {
-          const bCams = OWNER_CAMERAS.filter(c => c.buildingId === b.id);
-          const bInc  = INCIDENTS.filter(i => i.buildingId === b.id && i.status !== 'Resolved');
-          return (
-            <Card key={b.id} style={{ padding: '20px 22px', cursor: 'pointer' }}
-              onClick={() => navigate('building', b.id)}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <SafetyDot status={b.safetyStatus} />
-                  <span style={{ fontFamily: "'Manrope',sans-serif", fontSize: 11,
-                    fontWeight: 600, color: G.ash, textTransform: 'uppercase',
-                    letterSpacing: '0.05em' }}>{b.type}</span>
-                </div>
-                {bInc.length > 0 && <Badge label={`${bInc.length} active`} color={G.fire} />}
-              </div>
-              <div style={{ fontFamily: "'Fraunces',Georgia,serif", fontStyle: 'italic',
-                fontWeight: 400, fontSize: 17, color: G.graphite, marginBottom: 4, lineHeight: 1.3 }}>
-                {b.name}
-              </div>
-              <div style={{ fontFamily: "'Manrope',sans-serif", fontSize: 12, color: G.ash,
-                marginBottom: 14, lineHeight: 1.5 }}>{b.address}</div>
-              <div style={{ display: 'flex', gap: 18, borderTop: `1px solid ${G.mist}`,
-                paddingTop: 14, flexWrap: 'wrap' }}>
-                {[
-                  { l: 'Floors',   v: b.floors },
-                  { l: 'Cameras',  v: bCams.length },
-                  { l: 'Online',   v: bCams.filter(c=>c.status==='ONLINE').length },
-                ].map(s => (
-                  <div key={s.l}>
-                    <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 16,
-                      fontWeight: 700, color: G.graphite }}>{s.v}</div>
-                    <div style={{ fontFamily: "'Manrope',sans-serif", fontSize: 11, color: G.ash }}>{s.l}</div>
-                  </div>
-                ))}
-              </div>
-              <div style={{ marginTop: 16 }}>
-                <BtnOutline onClick={() => navigate('building', b.id)} small style={{ width: '100%', justifyContent: 'center' }}>
-                  View Building
-                </BtnOutline>
-              </div>
-            </Card>
-          );
-        })}
-      </div>
-
-      {/* Recent incidents */}
-      <h2 style={{ fontFamily: "'Fraunces',Georgia,serif", fontStyle: 'italic',
-        fontWeight: 400, fontSize: 22, color: G.graphite, marginBottom: 16 }}>
-        Recent Incidents
-      </h2>
-      <IncidentTable incidents={INCIDENTS.slice(0, 4)} navigate={navigate} />
-    </div>
-  );
-}
-
-// ═══════════════════════════════════════════════════════════════════
-// LEVEL 3 — BUILDING DASHBOARD
-// ═══════════════════════════════════════════════════════════════════
-function BuildingDashboard({ buildingId, navigate, breadcrumb }) {
-  const building = OWNER_BUILDINGS.find(b => b.id === buildingId) || OWNER_BUILDINGS[0];
-  const cameras   = OWNER_CAMERAS.filter(c => c.buildingId === buildingId);
-  const incidents = INCIDENTS.filter(i => i.buildingId === buildingId);
-  const active    = incidents.filter(i => i.status !== 'Resolved');
-
-  // Group cameras by floor
-  const byFloor = cameras.reduce((acc, c) => {
-    if (!acc[c.floor]) acc[c.floor] = [];
-    acc[c.floor].push(c);
-    return acc;
-  }, {});
-
-  const camStatusColor = s => s === 'ONLINE' ? G.green : s === 'OFFLINE' ? G.fire : G.amber;
-  const aiColor = a => a === 'FIRE' ? G.fire : a === 'SMOKE' ? G.amber : a === 'NORMAL' ? G.green : G.fog;
-
-  return (
-    <div>
-      <PageHeader level="building" title={building.name}
-        subtitle={building.address}
-        breadcrumb={breadcrumb}
-        onBack={() => navigate('org', 'ORG-001')}
-        actions={
-          active.length > 0
-            ? <Badge label={`${active.length} active incident${active.length > 1 ? 's' : ''}`} color={G.fire} />
-            : <Badge label="All Clear" color={G.green} />
-        }
-      />
-
-      {/* Building info + Safety */}
-      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 20, marginBottom: 32 }}>
-        <Card style={{ padding: '22px 24px' }}>
-          <div style={{ fontFamily: "'Manrope',sans-serif", fontSize: 12, fontWeight: 600,
-            color: G.ash, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 16 }}>
-            Building Information
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 20 }}>
-            {[
-              { l: 'Type',           v: building.type },
-              { l: 'Occupancy',      v: building.occupancyType },
-              { l: 'Floors',         v: building.floors },
-              { l: 'Units',          v: building.units },
-              { l: 'Last Inspection',v: building.lastInspection },
-              { l: 'Fire Exits',     v: building.fireExits },
-            ].map(s => (
-              <div key={s.l}>
-                <div style={{ fontFamily: "'Manrope',sans-serif", fontSize: 11, color: G.ash, marginBottom: 2 }}>{s.l}</div>
-                <div style={{ fontFamily: "'Manrope',sans-serif", fontSize: 14, fontWeight: 600, color: G.graphite }}>{s.v}</div>
-              </div>
-            ))}
-          </div>
-        </Card>
-        <Card style={{ padding: '22px 24px' }}>
-          <div style={{ fontFamily: "'Manrope',sans-serif", fontSize: 12, fontWeight: 600,
-            color: G.ash, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 12 }}>
-            Safety Equipment
-          </div>
-          {[
-            { l: 'Fire Alarm',          v: building.fireAlarm,       icon: '🔔' },
-            { l: 'Sprinkler System',     v: building.sprinkler,       icon: '💧' },
-            { l: 'Fire Hydrant',         v: building.fireHydrant,     icon: '🚒' },
-            { l: 'Fire Extinguishers',   v: `${building.fireExtinguishers} units`, icon: '🧯', raw: true },
-          ].map(s => (
-            <div key={s.l} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-              padding: '8px 0', borderBottom: `1px solid ${G.mist}` }}>
-              <span style={{ fontFamily: "'Manrope',sans-serif", fontSize: 13, color: G.charcoal }}>
-                {s.icon} {s.l}
-              </span>
-              {s.raw
-                ? <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 12, color: G.graphite }}>{s.v}</span>
-                : <span style={{ color: s.v ? G.green : G.fire, display: 'flex', alignItems: 'center' }}>
-                    {s.v ? <CheckCircle2 size={15} /> : <AlertCircle size={15} />}
-                  </span>
-              }
-            </div>
-          ))}
-        </Card>
-      </div>
-
-      {/* Current Alerts */}
-      {active.length > 0 && (
-        <>
-          <h2 style={{ fontFamily: "'Fraunces',Georgia,serif", fontStyle: 'italic',
-            fontWeight: 400, fontSize: 22, color: G.fire, marginBottom: 14 }}>
-            Current Alerts
-          </h2>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 32 }}>
-            {active.map(inc => (
-              <Card key={inc.id} style={{ padding: '16px 18px', borderColor: `${G.fire}40`,
-                background: G.fireDim, cursor: 'pointer' }}
-                onClick={() => navigate('incident', inc.id)}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                    <Flame size={18} color={G.fire} />
-                    <div>
-                      <div style={{ fontFamily: "'Manrope',sans-serif", fontSize: 14,
-                        fontWeight: 700, color: G.fire }}>
-                        {inc.type} — {inc.location}
-                      </div>
-                      <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 11,
-                        color: G.ash, marginTop: 2 }}>
-                        {inc.id} · {inc.timestampDisplay}
-                      </div>
-                    </div>
-                  </div>
-                  <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                    <SevBadge sev={inc.severity} />
-                    <BtnDark onClick={() => navigate('incident', inc.id)} small>Manage →</BtnDark>
-                  </div>
-                </div>
-              </Card>
-            ))}
-          </div>
-        </>
-      )}
-
-      {/* Cameras by floor */}
-      <h2 style={{ fontFamily: "'Fraunces',Georgia,serif", fontStyle: 'italic',
-        fontWeight: 400, fontSize: 22, color: G.graphite, marginBottom: 16 }}>
-        Cameras by Floor
-      </h2>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 16, marginBottom: 32 }}>
-        {Object.entries(byFloor).map(([floor, cams]) => (
-          <Card key={floor} style={{ overflow: 'hidden' }}>
-            <div style={{ padding: '12px 18px', borderBottom: `1px solid ${G.mist}`,
-              display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <span style={{ fontFamily: "'Manrope',sans-serif", fontSize: 13, fontWeight: 600,
-                color: G.graphite }}>Floor {floor}</span>
-              <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 11, color: G.ash }}>
-                {cams.length} camera{cams.length > 1 ? 's' : ''}
-              </span>
-            </div>
-            <div style={{ padding: '12px 18px', display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {cams.map(cam => (
-                <div key={cam.id} style={{ display: 'flex', alignItems: 'center',
-                  justifyContent: 'space-between', padding: '10px 12px',
-                  background: cam.hasIncident ? G.fireDim : G.linen,
-                  border: `1px solid ${cam.hasIncident ? `${G.fire}40` : G.mist}`,
-                  borderRadius: 8, cursor: 'pointer' }}
-                  onClick={() => navigate('live', cam.id)}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <div style={{ width: 8, height: 8, borderRadius: '50%',
-                      background: camStatusColor(cam.status), flexShrink: 0 }} />
-                    <div>
-                      <div style={{ fontFamily: "'Manrope',sans-serif", fontSize: 13,
-                        fontWeight: 600, color: G.graphite }}>{cam.label}</div>
-                      <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10,
-                        color: G.ash }}>{cam.code}</div>
-                    </div>
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <Badge label={cam.aiStatus}
-                      color={aiColor(cam.aiStatus)} />
-                    <Badge label={cam.status}
-                      color={camStatusColor(cam.status)} />
-                    <ChevronRight size={14} color={G.fog} />
-                  </div>
-                </div>
-              ))}
-            </div>
-          </Card>
-        ))}
-      </div>
-
-      {/* Incident history */}
-      <h2 style={{ fontFamily: "'Fraunces',Georgia,serif", fontStyle: 'italic',
-        fontWeight: 400, fontSize: 22, color: G.graphite, marginBottom: 16 }}>
-        Incident History
-      </h2>
-      <IncidentTable incidents={incidents} navigate={navigate} />
-    </div>
-  );
-}
-
-// ═══════════════════════════════════════════════════════════════════
-// LEVEL 4 — LIVE MONITORING
-// ═══════════════════════════════════════════════════════════════════
-function LiveMonitoring({ camId, navigate, breadcrumb }) {
-  const cam = OWNER_CAMERAS.find(c => c.id === camId) || OWNER_CAMERAS[0];
-  const inc = INCIDENTS.find(i => i.camId === cam.id && i.status !== 'Resolved');
-  const { summary } = useIncidentData();
-  const backendId = inc?.incidentIdBackend;
-
-  const frames = summary?.frames ?? [];
-  const evidFrames = getEvidenceFrames(summary, 4);
-  const confirmed = frames.filter(f => f.fire_count > 0).length || (inc ? inc.framesConfirmed : 0);
-  const total = Math.max(5, confirmed, inc?.framesTotal || 5);
-
-  return (
-    <div>
-      <PageHeader level="live" title="Live Monitoring"
-        subtitle={`${cam.label} · ${cam.code} · Floor ${cam.floor}`}
-        breadcrumb={breadcrumb}
-        onBack={() => navigate('building', cam.buildingId)}
-        actions={
-          inc
-            ? <BtnDark onClick={() => navigate('incident', inc.id)} small>
-                View Incident <ArrowRight size={13} />
-              </BtnDark>
-            : null
-        }
-      />
-
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 380px', gap: 20 }}>
-        {/* Left — CCTV + detection */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          {/* Camera feed */}
-          <Card>
-            <div style={{ padding: '14px 18px', borderBottom: `1px solid ${G.mist}`,
-              display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                {inc && <span style={{ width: 8, height: 8, borderRadius: '50%',
-                  background: G.fire, animation: 'pulse 1.5s infinite', flexShrink: 0 }} />}
-                <span style={{ fontFamily: "'Manrope',sans-serif", fontSize: 13,
-                  fontWeight: 600, color: G.graphite }}>{cam.label}</span>
-                <Badge label={cam.status} color={cam.status === 'ONLINE' ? G.green : G.fire} />
-              </div>
-              <Badge label={cam.aiStatus}
-                color={cam.aiStatus === 'FIRE' ? G.fire : cam.aiStatus === 'SMOKE' ? G.amber : G.green} />
-            </div>
-            {/* Frame grid 2×2 */}
-            <div style={{ padding: 16 }}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 8 }}>
-                {[0,1,2,3].map(i => {
-                  const fi = frames[i]?.frame_index ?? i;
-                  return (
-                    <div key={i} style={{ position: 'relative', aspectRatio: '16/9',
-                      background: '#0d0906', borderRadius: 6, overflow: 'hidden',
-                      border: `1px solid ${G.mist}` }}>
-                      {backendId && <img src={frameImageUrl(backendId, fi)} alt=""
-                        style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
-                      {!backendId && <div style={{ position: 'absolute', inset: 0,
-                        background: 'linear-gradient(135deg, #1a0a04 0%, #2d1208 100%)',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <Camera size={20} color="rgba(255,255,255,0.2)" />
-                      </div>}
-                      {/* HUD */}
-                      <div style={{ position: 'absolute', top: 6, left: 6 }}>
-                        <span style={{ background: inc ? 'rgba(225,29,72,0.85)' : 'rgba(0,0,0,0.6)',
-                          color: '#fff', fontFamily: "'JetBrains Mono',monospace", fontSize: 8,
-                          padding: '2px 6px', borderRadius: 3, fontWeight: 700,
-                          animation: inc ? 'blink 1.5s infinite' : 'none' }}>
-                          {inc ? '● REC' : cam.id}
-                        </span>
-                      </div>
-                      <div style={{ position: 'absolute', bottom: 5, right: 6 }}>
-                        <span style={{ background: 'rgba(0,0,0,0.6)', color: 'rgba(255,255,255,0.6)',
-                          fontFamily: "'JetBrains Mono',monospace", fontSize: 8,
-                          padding: '1px 5px', borderRadius: 3 }}>
-                          Frame {fi}
-                        </span>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          </Card>
-
-          {/* Temporal verification */}
-          <Card style={{ padding: '18px 20px' }}>
-            <div style={{ fontFamily: "'Manrope',sans-serif", fontSize: 12, fontWeight: 600,
-              color: G.ash, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 14 }}>
-              Temporal Verification Engine
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
-              <div style={{ display: 'flex', gap: 5 }}>
-                {Array.from({ length: total }).map((_, i) => (
-                  <div key={i} style={{
-                    width: 32, height: 10, borderRadius: 3,
-                    background: i < confirmed
-                      ? (inc?.type === 'Fire' ? G.fire : G.amber)
-                      : G.mist,
-                    boxShadow: i < confirmed ? `0 0 5px ${G.fire}60` : 'none',
-                    transition: 'background 0.3s',
-                  }} />
-                ))}
-              </div>
-              <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 12,
-                fontWeight: 700, color: inc ? G.fire : G.green }}>
-                {confirmed}/{total} confirmed
-              </span>
-            </div>
-            <div style={{ fontFamily: "'Manrope',sans-serif", fontSize: 12, color: G.ash }}>
-              {confirmed >= 5
-                ? '⚠ Hazard confirmed — 5+ consecutive frames verified'
-                : 'Monitoring — awaiting 5 consecutive frame confirmations'}
-            </div>
-          </Card>
-        </div>
-
-        {/* Right — detection data */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-          {/* Detection status */}
-          <Card style={{ padding: '18px 20px' }}>
-            <div style={{ fontFamily: "'Manrope',sans-serif", fontSize: 12, fontWeight: 600,
-              color: G.ash, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 14 }}>
-              YOLO Detection
-            </div>
-            {[
-              { l: 'Hazard Type',   v: cam.aiStatus, badge: true },
-              { l: 'Confidence',    v: inc ? `${inc.confidence}%` : '—' },
-              { l: 'Fire Detected', v: cam.aiStatus === 'FIRE' ? 'Yes' : 'No' },
-              { l: 'Smoke Detected',v: cam.aiStatus === 'SMOKE' ? 'Yes' : 'No' },
-              { l: 'Humans',        v: inc?.humanCount ?? 0 },
-              { l: 'Objects',       v: inc?.objectCount ?? 0 },
-              { l: 'Sample Rate',   v: '3.0 FPS' },
-              { l: 'Model',         v: 'YOLOv8x' },
-            ].map(r => (
-              <div key={r.l} style={{ display: 'flex', alignItems: 'center',
-                justifyContent: 'space-between', padding: '8px 0',
-                borderBottom: `1px solid ${G.mist}` }}>
-                <span style={{ fontFamily: "'Manrope',sans-serif", fontSize: 13, color: G.ash }}>
-                  {r.l}
-                </span>
-                {r.badge
-                  ? <Badge label={r.v}
-                      color={r.v === 'FIRE' ? G.fire : r.v === 'SMOKE' ? G.amber : r.v === 'NORMAL' ? G.green : G.fog} />
-                  : <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 12,
-                      fontWeight: 700, color: G.graphite }}>{String(r.v)}</span>
-                }
-              </div>
-            ))}
-          </Card>
-
-          {/* If hazard confirmed, show incident link */}
-          {inc && (
-            <Card style={{ padding: '16px 18px', background: G.fireDim, borderColor: `${G.fire}40` }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
-                <Flame size={16} color={G.fire} />
-                <span style={{ fontFamily: "'Manrope',sans-serif", fontSize: 13,
-                  fontWeight: 700, color: G.fire }}>Hazard Confirmed</span>
-              </div>
-              <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 11,
-                color: G.ash, marginBottom: 12 }}>{inc.id}</div>
-              <BtnDark onClick={() => navigate('incident', inc.id)} style={{ width: '100%', justifyContent: 'center' }}>
-                View Incident Details <ArrowRight size={13} />
-              </BtnDark>
-            </Card>
-          )}
-
-          {/* Camera info */}
-          <Card style={{ padding: '16px 18px' }}>
-            <div style={{ fontFamily: "'Manrope',sans-serif", fontSize: 12, fontWeight: 600,
-              color: G.ash, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 12 }}>
-              Camera Info
-            </div>
-            {[
-              { l: 'ID',       v: cam.code },
-              { l: 'Location', v: cam.room },
-              { l: 'Floor',    v: cam.floor },
-              { l: 'Building', v: cam.building?.split('—')[1]?.trim() },
-              { l: 'Last Seen',v: cam.lastSeen },
-            ].map(r => (
-              <div key={r.l} style={{ display: 'flex', justifyContent: 'space-between',
-                padding: '6px 0', borderBottom: `1px solid ${G.mist}` }}>
-                <span style={{ fontFamily: "'Manrope',sans-serif", fontSize: 12, color: G.ash }}>{r.l}</span>
-                <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 11,
-                  color: G.graphite, textAlign: 'right', maxWidth: 160 }}>{r.v}</span>
-              </div>
-            ))}
-          </Card>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ═══════════════════════════════════════════════════════════════════
-// LEVEL 5 — INCIDENT CREATED / DETAIL
-// ═══════════════════════════════════════════════════════════════════
-function IncidentDetail({ incidentId, navigate, breadcrumb }) {
-  const inc = INCIDENTS.find(i => i.id === incidentId) || INCIDENTS[0];
-  const { summary, hologram } = useIncidentData();
-  const evidFrames = getEvidenceFrames(summary, 6);
-  const backendId  = inc.incidentIdBackend;
-
-  const typeColor = inc.type === 'Fire' ? G.fire : inc.type === 'Smoke' ? G.amber :
-                    inc.type === 'Water Leak' ? G.cerulean : G.graphite;
-
-  return (
-    <div>
-      <PageHeader level="incident"
-        title={`${inc.type} Incident`}
-        subtitle={`${inc.id} · ${inc.timestampDisplay}`}
-        breadcrumb={breadcrumb}
-        onBack={() => navigate('building', inc.buildingId)}
-        actions={
-          <div style={{ display: 'flex', gap: 10 }}>
-            <SevBadge sev={inc.severity} />
-            {inc.status !== 'Resolved' && (
-              <BtnDark onClick={() => navigate('manage', inc.id)} small>
-                Manage Incident <ArrowRight size={13} />
-              </BtnDark>
-            )}
-          </div>
-        }
-      />
-
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 360px', gap: 20 }}>
-        {/* Left */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          {/* Incident summary card */}
-          <Card>
-            <div style={{ padding: '16px 20px', borderBottom: `1px solid ${G.mist}`,
-              display: 'flex', alignItems: 'center', gap: 10 }}>
-              <div style={{ width: 36, height: 36, borderRadius: 8,
-                background: `${typeColor}15`, border: `1px solid ${typeColor}30`,
-                display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <Flame size={18} color={typeColor} />
-              </div>
-              <div>
-                <div style={{ fontFamily: "'Fraunces',Georgia,serif", fontStyle: 'italic',
-                  fontWeight: 400, fontSize: 20, color: typeColor }}>
-                  {inc.type} confirmed — {inc.location}
-                </div>
-                <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 11, color: G.ash, marginTop: 2 }}>
-                  {inc.id} · {inc.camCode}
-                </div>
-              </div>
-            </div>
-            <div style={{ padding: '16px 20px', display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16 }}>
-              {[
-                { l: 'Incident ID',     v: inc.id },
-                { l: 'Type',            v: inc.type },
-                { l: 'Severity',        v: inc.severity },
-                { l: 'Confidence',      v: `${inc.confidence}%` },
-                { l: 'Location',        v: inc.location },
-                { l: 'Floor',           v: inc.floor },
-                { l: 'Camera',          v: inc.camCode },
-                { l: 'Status',          v: inc.status },
-              ].map(r => (
-                <div key={r.l}>
-                  <div style={{ fontFamily: "'Manrope',sans-serif", fontSize: 11, color: G.ash, marginBottom: 3 }}>{r.l}</div>
-                  <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 12, fontWeight: 700, color: G.graphite }}>
-                    {r.v}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </Card>
-
-          {/* Evidence frames */}
-          <Card style={{ padding: '18px 20px' }}>
-            <div style={{ fontFamily: "'Manrope',sans-serif", fontSize: 12, fontWeight: 600,
-              color: G.ash, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 14 }}>
-              Evidence Images — {(evidFrames.length || inc.evidenceCount)} frames
-            </div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
-              {(evidFrames.length > 0
-                ? evidFrames
-                : Array.from({ length: inc.evidenceCount }, (_, i) => ({ frame_index: i }))
-              ).map((f, i) => (
-                <FrameThumb key={i}
-                  incidentId={backendId}
-                  frameIndex={f.frame_index ?? i}
-                  style={{ aspectRatio: '16/9' }}
-                />
-              ))}
-            </div>
-          </Card>
-
-          {/* Temporal verification */}
-          <Card style={{ padding: '18px 20px' }}>
-            <div style={{ fontFamily: "'Manrope',sans-serif", fontSize: 12, fontWeight: 600,
-              color: G.ash, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 12 }}>
-              Temporal Verification
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
-              <div style={{ display: 'flex', gap: 5 }}>
-                {Array.from({ length: inc.framesTotal }).map((_, i) => (
-                  <div key={i} style={{
-                    width: 36, height: 10, borderRadius: 3,
-                    background: i < inc.framesConfirmed ? G.fire : G.mist,
-                    boxShadow: i < inc.framesConfirmed ? `0 0 5px ${G.fire}60` : 'none',
-                  }} />
-                ))}
-              </div>
-              <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 12,
-                fontWeight: 700, color: G.fire }}>
-                {inc.framesConfirmed}/{inc.framesTotal} confirmed
-              </span>
-            </div>
-            <div style={{ fontFamily: "'Manrope',sans-serif", fontSize: 12, color: G.ash }}>
-              YOLOv8x · 3.0 FPS extraction · 5+ consecutive frames required
-            </div>
-          </Card>
-        </div>
-
-        {/* Right */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-          {/* People */}
-          <Card style={{ padding: '18px 20px' }}>
-            <div style={{ fontFamily: "'Manrope',sans-serif", fontSize: 12, fontWeight: 600,
-              color: G.ash, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 12 }}>
-              People at Risk
-            </div>
-            <div style={{ fontFamily: "'Fraunces',Georgia,serif", fontStyle: 'italic',
-              fontWeight: 400, fontSize: 48, color: inc.humanCount > 0 ? G.fire : G.green,
-              lineHeight: 1, marginBottom: 4 }}>
-              {inc.humanCount}
-            </div>
-            <div style={{ fontFamily: "'Manrope',sans-serif", fontSize: 13, color: G.ash }}>
-              {inc.humanCount === 0
-                ? 'No persons detected in frame'
-                : `${inc.humanCount} person${inc.humanCount > 1 ? 's' : ''} detected`}
-            </div>
-            {(() => {
-              const ps = PEOPLE_SAFETY.find(p => p.incidentId === inc.id);
-              if (!ps) return null;
-              return (
-                <div style={{ marginTop: 14, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-                  {[
-                    { l: 'Possibly Trapped', v: ps.possiblyTrapped, c: G.fire },
-                    { l: 'Evacuated',        v: ps.evacuated,       c: G.green },
-                    { l: 'Rescued',          v: ps.rescued,         c: G.cerulean },
-                    { l: 'Unknown',          v: ps.unknown,         c: G.amber },
-                  ].map(s => (
-                    <div key={s.l} style={{ background: G.linen, borderRadius: 8, padding: '10px 12px',
-                      border: `1px solid ${G.mist}` }}>
-                      <div style={{ fontFamily: "'Fraunces',Georgia,serif", fontStyle: 'italic',
-                        fontSize: 22, fontWeight: 400, color: s.c }}>{s.v}</div>
-                      <div style={{ fontFamily: "'Manrope',sans-serif", fontSize: 11, color: G.ash }}>{s.l}</div>
-                    </div>
-                  ))}
-                </div>
-              );
-            })()}
-          </Card>
-
-          {/* Timestamp */}
-          <Card style={{ padding: '18px 20px' }}>
-            <div style={{ fontFamily: "'Manrope',sans-serif", fontSize: 12, fontWeight: 600,
-              color: G.ash, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 12 }}>
-              Timestamp
-            </div>
-            <div style={{ fontFamily: "'Fraunces',Georgia,serif", fontStyle: 'italic',
-              fontWeight: 400, fontSize: 18, color: G.graphite, lineHeight: 1.4 }}>
-              {inc.timestampDisplay}
-            </div>
-            <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 11,
-              color: G.ash, marginTop: 6 }}>{inc.timestamp}</div>
-          </Card>
-
-          {/* Actions */}
-          <Card style={{ padding: '18px 20px' }}>
-            <div style={{ fontFamily: "'Manrope',sans-serif", fontSize: 12, fontWeight: 600,
-              color: G.ash, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 14 }}>
-              Actions
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {inc.status !== 'Resolved' && (
-                <BtnDark onClick={() => navigate('manage', inc.id)} style={{ width: '100%', justifyContent: 'center' }}>
-                  Manage this Incident <ArrowRight size={13} />
-                </BtnDark>
-              )}
-              <BtnOutline onClick={() => navigate('history', inc.buildingId)}
-                style={{ width: '100%', justifyContent: 'center' }}>
-                View Incident History
-              </BtnOutline>
-              <BtnOutline onClick={() => navigate('live', inc.camId)}
-                style={{ width: '100%', justifyContent: 'center' }}>
-                Open Live Feed
-              </BtnOutline>
-            </div>
-          </Card>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ═══════════════════════════════════════════════════════════════════
-// LEVEL 6 — INCIDENT MANAGEMENT
-// ═══════════════════════════════════════════════════════════════════
-function IncidentManagement({ incidentId, navigate, breadcrumb }) {
-  const inc = INCIDENTS.find(i => i.id === incidentId) || INCIDENTS[0];
-  const [status,   setStatus]   = useState(inc.status);
-  const [notes,    setNotes]    = useState(inc.notes || '');
-  const [saved,    setSaved]    = useState(false);
-  const [resolved, setResolved] = useState(inc.status === 'Resolved');
-
-  function handleSave() {
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
-  }
-  function handleResolve() {
-    setResolved(true);
-    setStatus('Resolved');
-  }
-
-  const ACTIONS = [
-    { id: 'acknowledge', label: 'Acknowledge',  icon: <Eye size={15} />,           desc: 'Confirm you have seen this incident.' },
-    { id: 'investigate', label: 'Investigate',  icon: <Search size={15} />,         desc: 'Mark as under investigation by your team.' },
-    { id: 'escalate',    label: 'Escalate',     icon: <AlertTriangle size={15} />, desc: 'Route to ERSS / 112 emergency dispatch.' },
-  ];
-
-  return (
-    <div>
-      <PageHeader level="manage"
-        title="Incident Management"
-        subtitle={`${inc.id} · ${inc.type} — ${inc.location}`}
-        breadcrumb={breadcrumb}
-        onBack={() => navigate('incident', inc.id)}
-      />
-
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: 20 }}>
-        {/* Left — actions + notes */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          {/* Status */}
-          <Card style={{ padding: '20px 22px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-              <div style={{ fontFamily: "'Manrope',sans-serif", fontSize: 12, fontWeight: 600,
-                color: G.ash, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                Current Status
-              </div>
-              <SevBadge sev={inc.severity} />
-            </div>
-            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-              {['Active','Investigating','Contained','Resolved'].map(s => (
-                <button key={s} onClick={() => { setStatus(s); if (s === 'Resolved') setResolved(true); }}
-                  style={{
-                    padding: '8px 16px', borderRadius: 8, cursor: 'pointer',
-                    fontFamily: "'Manrope',sans-serif", fontSize: 13, fontWeight: 500,
-                    border: `1px solid ${status === s ? G.signal : G.mist}`,
-                    background: status === s ? `${G.signal}15` : G.paper,
-                    color: status === s ? G.signal : G.charcoal,
-                    transition: 'all 0.15s',
-                  }}>
-                  {s}
-                </button>
-              ))}
-            </div>
-          </Card>
-
-          {/* Quick actions */}
-          <Card style={{ padding: '20px 22px' }}>
-            <div style={{ fontFamily: "'Manrope',sans-serif", fontSize: 12, fontWeight: 600,
-              color: G.ash, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 16 }}>
-              Actions
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              {ACTIONS.map(a => (
-                <div key={a.id} style={{ display: 'flex', alignItems: 'center',
-                  justifyContent: 'space-between', padding: '14px 16px',
-                  background: G.linen, border: `1px solid ${G.mist}`, borderRadius: 8 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <span style={{ color: G.ash }}>{a.icon}</span>
-                    <div>
-                      <div style={{ fontFamily: "'Manrope',sans-serif", fontSize: 14,
-                        fontWeight: 600, color: G.graphite }}>{a.label}</div>
-                      <div style={{ fontFamily: "'Manrope',sans-serif", fontSize: 12,
-                        color: G.ash }}>{a.desc}</div>
-                    </div>
-                  </div>
-                  <BtnOutline onClick={() => setStatus(
-                    a.id === 'acknowledge' ? 'Active' :
-                    a.id === 'investigate' ? 'Investigating' : status
-                  )} small>
-                    {a.label}
-                  </BtnOutline>
-                </div>
-              ))}
-            </div>
-          </Card>
-
-          {/* Notes */}
-          <Card style={{ padding: '20px 22px' }}>
-            <div style={{ fontFamily: "'Manrope',sans-serif", fontSize: 12, fontWeight: 600,
-              color: G.ash, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 14 }}>
-              Operator Notes
-            </div>
-            <textarea value={notes} onChange={e => setNotes(e.target.value)}
-              placeholder="Add notes about this incident…"
+    <div className="apex-app-root">
+      {/* ─── FLOATING TOASTS ─── */}
+      <div className="apex-toast-stack">
+        {toasts.map((t) => (
+          <div key={t.id} className={`apex-toast ${t.type}`}>
+            {t.type === 'success' && <Check size={16} color="#4ade80" />}
+            {t.type === 'alert' && <Flame size={16} color="#fb4934" />}
+            {t.type === 'info' && <Activity size={16} color="#fabd2f" />}
+            <span>{t.text}</span>
+            <button
+              onClick={() => removeToast(t.id)}
               style={{
-                width: '100%', minHeight: 120, resize: 'vertical',
-                background: G.linen, border: `1px solid ${G.mist}`, borderRadius: 8,
-                padding: '10px 14px', fontFamily: "'Manrope',sans-serif",
-                fontSize: 14, color: G.charcoal, outline: 'none',
-                lineHeight: 1.6, transition: 'border-color 0.15s',
+                background: 'none',
+                border: 'none',
+                color: '#8b928a',
+                cursor: 'pointer',
+                padding: '0 0 0 8px',
               }}
-              onFocus={e => e.currentTarget.style.borderColor = G.signal}
-              onBlur={e => e.currentTarget.style.borderColor = G.mist}
-            />
-            <div style={{ display: 'flex', gap: 10, marginTop: 12, justifyContent: 'flex-end' }}>
-              {saved && <span style={{ fontFamily: "'Manrope',sans-serif", fontSize: 12,
-                color: G.green, alignSelf: 'center' }}>✓ Saved</span>}
-              <BtnOutline onClick={handleSave} small>Save Notes</BtnOutline>
-            </div>
-          </Card>
-
-          {/* Resolve */}
-          {!resolved ? (
-            <Card style={{ padding: '20px 22px', background: G.fireDim, borderColor: `${G.fire}40` }}>
-              <div style={{ fontFamily: "'Fraunces',Georgia,serif", fontStyle: 'italic',
-                fontWeight: 400, fontSize: 22, color: G.fire, marginBottom: 8 }}>
-                Mark as Resolved
-              </div>
-              <div style={{ fontFamily: "'Manrope',sans-serif", fontSize: 13, color: G.charcoal,
-                marginBottom: 16, lineHeight: 1.6 }}>
-                Confirm that the hazard has been addressed and the incident is fully resolved.
-                This will close the incident and log the resolution timestamp.
-              </div>
-              <BtnDark onClick={handleResolve} style={{ background: G.green, borderColor: G.green }}>
-                <CheckCircle2 size={15} /> Confirm Resolved
-              </BtnDark>
-            </Card>
-          ) : (
-            <Card style={{ padding: '20px 22px', background: G.greenDim, borderColor: `${G.green}40` }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <CheckCircle2 size={22} color={G.green} />
-                <div style={{ fontFamily: "'Fraunces',Georgia,serif", fontStyle: 'italic',
-                  fontWeight: 400, fontSize: 20, color: G.green }}>
-                  Incident Resolved
-                </div>
-              </div>
-              <div style={{ fontFamily: "'Manrope',sans-serif", fontSize: 13, color: G.ash, marginTop: 8 }}>
-                Logged at {new Date().toLocaleTimeString('en-IN')} IST
-              </div>
-            </Card>
-          )}
-        </div>
-
-        {/* Right — incident summary */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-          <Card style={{ padding: '18px 20px' }}>
-            <div style={{ fontFamily: "'Manrope',sans-serif", fontSize: 12, fontWeight: 600,
-              color: G.ash, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 14 }}>
-              Incident Summary
-            </div>
-            {[
-              { l: 'ID',          v: inc.id },
-              { l: 'Type',        v: inc.type },
-              { l: 'Location',    v: inc.location },
-              { l: 'Confidence',  v: `${inc.confidence}%` },
-              { l: 'Severity',    v: inc.severity },
-              { l: 'Humans',      v: inc.humanCount },
-              { l: 'Detected at', v: inc.timestampDisplay },
-            ].map(r => (
-              <div key={r.l} style={{ display: 'flex', justifyContent: 'space-between',
-                padding: '8px 0', borderBottom: `1px solid ${G.mist}` }}>
-                <span style={{ fontFamily: "'Manrope',sans-serif", fontSize: 12, color: G.ash }}>{r.l}</span>
-                <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 11,
-                  fontWeight: 700, color: G.graphite, textAlign: 'right' }}>{String(r.v)}</span>
-              </div>
-            ))}
-          </Card>
-
-          {/* Evidence thumbnail */}
-          <Card style={{ padding: '18px 20px' }}>
-            <div style={{ fontFamily: "'Manrope',sans-serif", fontSize: 12, fontWeight: 600,
-              color: G.ash, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 12 }}>
-              Evidence
-            </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-              {Array.from({ length: Math.min(4, inc.evidenceCount) }, (_, i) => (
-                <FrameThumb key={i} incidentId={inc.incidentIdBackend}
-                  frameIndex={i} style={{ aspectRatio: '16/9' }} />
-              ))}
-            </div>
-            <BtnOutline onClick={() => navigate('incident', inc.id)}
-              small style={{ marginTop: 12, width: '100%', justifyContent: 'center' }}>
-              View All Evidence
-            </BtnOutline>
-          </Card>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ═══════════════════════════════════════════════════════════════════
-// LEVEL 7 — INCIDENT HISTORY
-// ═══════════════════════════════════════════════════════════════════
-function IncidentHistory({ buildingId, navigate, breadcrumb }) {
-  const [search, setSearch]     = useState('');
-  const [filter, setFilter]     = useState('All');
-  const building = buildingId ? OWNER_BUILDINGS.find(b => b.id === buildingId) : null;
-  const all = buildingId ? INCIDENTS.filter(i => i.buildingId === buildingId) : INCIDENTS;
-  const filtered = all.filter(inc => {
-    const matchSearch = !search || inc.id.toLowerCase().includes(search.toLowerCase())
-      || inc.location.toLowerCase().includes(search.toLowerCase())
-      || inc.type.toLowerCase().includes(search.toLowerCase());
-    const matchFilter = filter === 'All' || inc.status === filter || inc.severity === filter;
-    return matchSearch && matchFilter;
-  });
-
-  return (
-    <div>
-      <PageHeader level="history"
-        title="Incident History"
-        subtitle={building ? `${building.name} — all past incidents` : 'All buildings — complete incident log'}
-        breadcrumb={breadcrumb}
-        onBack={() => building ? navigate('building', buildingId) : navigate('org', 'ORG-001')}
-      />
-
-      {/* Filters */}
-      <div style={{ display: 'flex', gap: 10, marginBottom: 20, flexWrap: 'wrap', alignItems: 'center' }}>
-        <div style={{ position: 'relative', flex: 1, minWidth: 200 }}>
-          <Search size={14} style={{ position: 'absolute', left: 12, top: '50%',
-            transform: 'translateY(-50%)', color: G.fog, pointerEvents: 'none' }} />
-          <input value={search} onChange={e => setSearch(e.target.value)}
-            placeholder="Search incidents…"
-            style={{
-              width: '100%', background: G.paper, border: `1px solid ${G.mist}`,
-              borderRadius: 8, padding: '8px 12px 8px 36px',
-              fontFamily: "'Manrope',sans-serif", fontSize: 13, color: G.charcoal,
-              outline: 'none',
-            }}
-            onFocus={e => e.currentTarget.style.borderColor = G.signal}
-            onBlur={e => e.currentTarget.style.borderColor = G.mist}
-          />
-        </div>
-        <div style={{ display: 'flex', gap: 6 }}>
-          {['All','Active','Resolved','Fire','Smoke','CRITICAL','MODERATE'].map(f => (
-            <button key={f} onClick={() => setFilter(f)} style={{
-              padding: '6px 14px', borderRadius: 8, cursor: 'pointer',
-              fontFamily: "'Manrope',sans-serif", fontSize: 12, fontWeight: 500,
-              border: `1px solid ${filter === f ? G.signal : G.mist}`,
-              background: filter === f ? `${G.signal}15` : G.paper,
-              color: filter === f ? G.signal : G.charcoal,
-            }}>{f}</button>
-          ))}
-        </div>
-      </div>
-
-      {/* Stats row */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14, marginBottom: 24 }}>
-        {[
-          { l: 'Total',      v: all.length,                                              c: G.graphite },
-          { l: 'Active',     v: all.filter(i=>i.status==='Active').length,               c: G.fire     },
-          { l: 'Resolved',   v: all.filter(i=>i.status==='Resolved').length,             c: G.green    },
-          { l: 'Avg Confidence', v: `${(all.reduce((a,i)=>a+i.confidence,0)/Math.max(all.length,1)).toFixed(0)}%`, c: G.amber },
-        ].map(s => (
-          <KpiChip key={s.l} label={s.l} value={s.v} valueColor={s.c} />
+            >
+              <X size={14} />
+            </button>
+          </div>
         ))}
       </div>
 
-      {/* Incident table */}
-      <Card style={{ overflow: 'hidden' }}>
-        <div style={{ padding: '12px 18px', borderBottom: `1px solid ${G.mist}`,
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <span style={{ fontFamily: "'Manrope',sans-serif", fontSize: 13, fontWeight: 600,
-            color: G.graphite }}>{filtered.length} incident{filtered.length !== 1 ? 's' : ''}</span>
-        </div>
-        <IncidentTable incidents={filtered} navigate={navigate} showBuilding={!buildingId} />
-      </Card>
-    </div>
-  );
-}
-
-// ── Shared incident table used at multiple levels ─────────────────────────
-function IncidentTable({ incidents, navigate, showBuilding = false }) {
-  if (!incidents.length) return (
-    <div style={{ padding: 32, textAlign: 'center', fontFamily: "'Manrope',sans-serif",
-      fontSize: 14, color: G.ash }}>
-      No incidents to display.
-    </div>
-  );
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column' }}>
-      {incidents.map((inc, i) => {
-        const typeColor = inc.type === 'Fire' ? G.fire : inc.type === 'Smoke' ? G.amber :
-                          inc.type === 'Water Leak' ? G.cerulean : G.graphite;
-        return (
-          <div key={inc.id} onClick={() => navigate('incident', inc.id)}
-            style={{
-              display: 'flex', alignItems: 'center', gap: 14,
-              padding: '14px 18px',
-              borderBottom: i < incidents.length - 1 ? `1px solid ${G.mist}` : 'none',
-              cursor: 'pointer', transition: 'background 0.12s',
-              background: 'transparent',
-            }}
-            onMouseEnter={e => e.currentTarget.style.background = G.linen}
-            onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
-          >
-            <div style={{ width: 36, height: 36, borderRadius: 8, flexShrink: 0,
-              background: `${typeColor}12`, border: `1px solid ${typeColor}25`,
-              display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <Flame size={16} color={typeColor} />
+      {/* ─── LEFT SIDEBAR ─── */}
+      <aside className="apex-sidebar">
+        <div>
+          {/* Brand */}
+          <div className="apex-sidebar-brand">
+            <div className="apex-brand-icon" style={{ padding: 3, overflow: 'hidden' }}>
+              <img
+                src="/atmarakshak_logo.png"
+                alt="Atmarakshak Logo"
+                style={{ width: '100%', height: '100%', objectFit: 'contain', borderRadius: 6 }}
+              />
             </div>
-            <div style={{ flex: 1 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 3 }}>
-                <span style={{ fontFamily: "'Manrope',sans-serif", fontSize: 14,
-                  fontWeight: 600, color: G.graphite }}>
-                  {inc.type} — {inc.location}
+            <div>
+              <div className="apex-brand-name">Atmarakshak</div>
+              <div className="apex-brand-sub">OPS CONSOLE · V2.4</div>
+            </div>
+          </div>
+
+          {/* Nav List */}
+          <ul className="apex-nav-list">
+            <li>
+              <button
+                className={`apex-nav-item ${activeTab === 'overview' ? 'active' : ''}`}
+                onClick={() => setActiveTab('overview')}
+              >
+                <LayoutDashboard size={16} className="apex-nav-icon" />
+                <span>Command Overview</span>
+              </button>
+            </li>
+            <li>
+              <button
+                className={`apex-nav-item ${activeTab === 'monitoring' ? 'active' : ''}`}
+                onClick={() => setActiveTab('monitoring')}
+              >
+                <Video size={16} className="apex-nav-icon" />
+                <span>Live Monitoring</span>
+              </button>
+            </li>
+            <li>
+              <button
+                className={`apex-nav-item ${activeTab === 'incidents' ? 'active' : ''}`}
+                onClick={() => setActiveTab('incidents')}
+              >
+                <History size={16} className="apex-nav-icon" />
+                <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+                  <span>Incident History</span>
+                  {activeIncidentsCount > 0 && (
+                    <span
+                      style={{
+                        fontFamily: 'JetBrains Mono, monospace',
+                        fontSize: '10px',
+                        background: 'rgba(251, 73, 52, 0.15)',
+                        color: '#fb4934',
+                        padding: '1px 6px',
+                        borderRadius: '4px',
+                        border: '1px solid rgba(251, 73, 52, 0.3)',
+                      }}
+                    >
+                      {activeIncidentsCount}
+                    </span>
+                  )}
                 </span>
-                <SevBadge sev={inc.severity} />
+              </button>
+            </li>
+          </ul>
+        </div>
+
+        {/* User Profile & Sign Out */}
+        <div className="apex-sidebar-user">
+          <div className="apex-user-info-row">
+            <div className="apex-user-avatar">MR</div>
+            <div>
+              <div className="apex-user-name">Morgan Reed</div>
+              <div className="apex-user-role">OWNER / OPERATOR</div>
+            </div>
+          </div>
+          <button className="apex-signout-btn" onClick={handleSignOut}>
+            <LogOut size={13} />
+            <span>SIGN OUT</span>
+          </button>
+        </div>
+      </aside>
+
+      {/* ─── MAIN CONTENT VIEWPORT ─── */}
+      <main className="apex-main-viewport">
+        {/* Top Header */}
+        <header className="apex-top-header">
+          <div className="apex-header-left">
+            <div className="apex-breadcrumb-block">
+              <div className="apex-breadcrumb-path">
+                ATMARAKSHAK &gt; {activeTab === 'overview' ? 'COMMAND OVERVIEW' : activeTab === 'monitoring' ? 'LIVE MONITORING' : 'INCIDENT HISTORY'}
               </div>
-              <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap' }}>
-                <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 11, color: G.ash }}>
-                  {inc.id}
-                </span>
-                <span style={{ fontFamily: "'Manrope',sans-serif", fontSize: 12, color: G.ash }}>
-                  {inc.timestampDisplay}
-                </span>
-                {showBuilding && (
-                  <span style={{ fontFamily: "'Manrope',sans-serif", fontSize: 12, color: G.ash }}>
-                    {OWNER_BUILDINGS.find(b => b.id === inc.buildingId)?.name?.split('—')[1]?.trim()}
-                  </span>
+              <h1 className="apex-page-title">
+                {activeTab === 'overview' && 'Owner command center'}
+                {activeTab === 'monitoring' && 'Live monitoring'}
+                {activeTab === 'incidents' && 'Incident management'}
+              </h1>
+            </div>
+
+            {/* Selectors for facility/org in Monitoring & Incidents */}
+            {(activeTab === 'monitoring' || activeTab === 'incidents' || activeTab === 'overview') && (
+              <div className="apex-header-selectors">
+                <select
+                  value={selectedOrgId}
+                  onChange={(e) => {
+                    setSelectedOrgId(e.target.value);
+                    const org = ORGANIZATIONS.find((o) => o.id === e.target.value);
+                    if (org && org.facilities.length > 0) {
+                      setSelectedFacilityId(org.facilities[0].id);
+                    }
+                  }}
+                  className="apex-select-pill"
+                >
+                  {ORGANIZATIONS.map((org) => (
+                    <option key={org.id} value={org.id}>
+                      {org.code} — {org.name.toUpperCase()}
+                    </option>
+                  ))}
+                </select>
+
+                <select
+                  value={selectedFacilityId}
+                  onChange={(e) => setSelectedFacilityId(e.target.value)}
+                  className="apex-select-pill"
+                >
+                  {currentOrg.facilities.map((fac) => (
+                    <option key={fac.id} value={fac.id}>
+                      {fac.code} — {fac.name.toUpperCase()}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+          </div>
+
+          <div className="apex-header-right">
+            <div className="apex-nominal-pill">
+              <div className="apex-pulse-dot" />
+              <span>SYSTEM NOMINAL</span>
+            </div>
+            <div className="apex-user-badge-pill">
+              <div
+                style={{
+                  width: 20,
+                  height: 20,
+                  borderRadius: '50%',
+                  background: '#373d38',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: 10,
+                  color: '#eae7df',
+                }}
+              >
+                MR
+              </div>
+              <span>Morgan Reed</span>
+            </div>
+          </div>
+        </header>
+
+        {/* Content Body */}
+        <div className="apex-content-area">
+          {/* ═════════════════════════════════════════════════════════════ */}
+          {/* TAB 1: COMMAND OVERVIEW                                      */}
+          {/* ═════════════════════════════════════════════════════════════ */}
+          {activeTab === 'overview' && (
+            <div>
+              {/* 4 KPI Cards */}
+              <div className="apex-kpi-row">
+                {/* Active Incidents */}
+                <div className="apex-kpi-card">
+                  <div className="apex-kpi-label">
+                    <span>ACTIVE INCIDENTS</span>
+                    <span
+                      style={{
+                        width: 6,
+                        height: 6,
+                        borderRadius: '50%',
+                        background: '#fb4934',
+                      }}
+                    />
+                  </div>
+                  <div className="apex-kpi-value">{activeIncidentsCount}</div>
+                  <div className="apex-kpi-sub">Requires operator review</div>
+                </div>
+
+                {/* Safety Score */}
+                <div className="apex-kpi-card">
+                  <div className="apex-kpi-label">SAFETY SCORE</div>
+                  <div className="apex-kpi-value">91%</div>
+                  <div className="apex-kpi-sub">Across all monitored sites</div>
+                  <div className="apex-kpi-bar">
+                    <div className="apex-kpi-bar-fill" style={{ width: '91%' }} />
+                  </div>
+                </div>
+
+                {/* Buildings */}
+                <div className="apex-kpi-card">
+                  <div className="apex-kpi-label">BUILDINGS</div>
+                  <div className="apex-kpi-value">03</div>
+                  <div className="apex-kpi-sub">2 organizations</div>
+                </div>
+
+                {/* Cameras Online */}
+                <div className="apex-kpi-card">
+                  <div className="apex-kpi-label">CAMERAS ONLINE</div>
+                  <div className="apex-kpi-value">5/6</div>
+                  <div className="apex-kpi-sub">Network availability</div>
+                </div>
+              </div>
+
+              {/* Matrix + Readiness Grid */}
+              <div className="apex-overview-grid">
+                {/* Left: Organization Safety Matrix */}
+                <div className="apex-panel">
+                  <div className="apex-panel-header">
+                    <span className="apex-panel-title">ORGANIZATION SAFETY MATRIX</span>
+                    <span className="apex-tag-badge">2 REGISTERED</span>
+                  </div>
+
+                  <div className="apex-org-card-list">
+                    {ORGANIZATIONS.map((org) => {
+                      const isSelected = selectedOrgId === org.id;
+                      return (
+                        <div
+                          key={org.id}
+                          className={`apex-org-card ${isSelected ? 'selected' : ''}`}
+                          onClick={() => {
+                            setSelectedOrgId(org.id);
+                            if (org.facilities.length > 0) {
+                              setSelectedFacilityId(org.facilities[0].id);
+                            }
+                          }}
+                        >
+                          <div>
+                            <div className="apex-org-name">
+                              <span style={{ width: 8, height: 8, borderRadius: 2, background: isSelected ? '#fe8019' : '#525b54' }} />
+                              <span>{org.name}</span>
+                            </div>
+                            <div className="apex-org-sub">
+                              {org.code} · {org.buildingsCount.toString().padStart(2, '0')} buildings
+                            </div>
+                          </div>
+
+                          <div className="apex-org-stats">
+                            <div className="apex-stat-col">
+                              <div className="apex-stat-label">SAFETY</div>
+                              <div className="apex-stat-val green">{org.safetyScore}%</div>
+                            </div>
+                            <div className="apex-stat-col">
+                              <div className="apex-stat-label">ALERTS</div>
+                              <div className="apex-stat-val amber">{org.alertsCount}</div>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* Selected Org summary banner */}
+                  <div className="apex-selected-org-bar">
+                    <div>
+                      <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 10, color: 'var(--apex-text-muted)', display: 'block' }}>
+                        SELECTED ORGANIZATION
+                      </span>
+                      <span style={{ fontSize: 14, fontWeight: 700, color: '#eae7df' }}>
+                        {currentOrg.name}
+                      </span>
+                    </div>
+                    <div style={{ display: 'flex', gap: 20, fontFamily: 'JetBrains Mono, monospace', fontSize: 11 }}>
+                      <div>
+                        <span style={{ color: 'var(--apex-text-muted)', marginRight: 6 }}>BUILDINGS</span>
+                        <strong style={{ color: '#eae7df' }}>{currentOrg.buildingsCount}</strong>
+                      </div>
+                      <div>
+                        <span style={{ color: 'var(--apex-text-muted)', marginRight: 6 }}>ALERTS</span>
+                        <strong style={{ color: '#fabd2f' }}>{currentOrg.alertsCount}</strong>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Right: System Readiness */}
+                <div className="apex-panel">
+                  <div className="apex-panel-header">
+                    <span className="apex-panel-title">SYSTEM READINESS</span>
+                  </div>
+
+                  <div className="apex-readiness-item">
+                    <div className="apex-readiness-title-row">
+                      <span style={{ fontSize: 13, fontWeight: 600, color: '#eae7df' }}>Detection engine</span>
+                      <span
+                        style={{
+                          fontFamily: 'JetBrains Mono, monospace',
+                          fontSize: 10,
+                          fontWeight: 700,
+                          color: '#4ade80',
+                          border: '1px solid rgba(74, 222, 128, 0.3)',
+                          background: 'rgba(74, 222, 128, 0.08)',
+                          padding: '1px 8px',
+                          borderRadius: 4,
+                        }}
+                      >
+                        NOMINAL
+                      </span>
+                    </div>
+                    <div style={{ fontSize: 12, color: 'var(--apex-text-muted)' }}>
+                      YOLO temporal verification
+                    </div>
+                  </div>
+
+                  <div className="apex-readiness-item">
+                    <div className="apex-readiness-title-row">
+                      <span style={{ fontSize: 13, fontWeight: 600, color: '#eae7df' }}>Camera uplink</span>
+                      <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 11, color: '#4ade80' }}>83%</span>
+                    </div>
+                    <div className="apex-kpi-bar" style={{ marginTop: 4 }}>
+                      <div className="apex-kpi-bar-fill" style={{ width: '83%' }} />
+                    </div>
+                  </div>
+
+                  <div className="apex-readiness-item">
+                    <div className="apex-stat-label" style={{ marginBottom: 6 }}>NETWORK HEARTBEAT</div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <div className="apex-pulse-dot" />
+                      <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 12, color: '#eae7df' }}>
+                        ALL systems reporting
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ═════════════════════════════════════════════════════════════ */}
+          {/* TAB 2: LIVE MONITORING                                       */}
+          {/* ═════════════════════════════════════════════════════════════ */}
+          {activeTab === 'monitoring' && (
+            <div className="apex-monitoring-grid">
+              {/* Left Column: CCTV Screen Player */}
+              <div className="apex-cctv-container">
+                <div className="apex-cctv-header">
+                  <div className="apex-cctv-feed-title">
+                    <span className="apex-live-tag">
+                      <span className="apex-live-dot" />
+                      LIVE CCTV / {currentCamera.code}
+                    </span>
+                  </div>
+                  <div className="apex-cctv-clock">{liveTime}</div>
+                </div>
+
+                <div style={{ padding: '6px 18px', background: 'var(--apex-bg-surface-alt)', borderBottom: '1px solid var(--apex-border-dim)', fontSize: 12, color: 'var(--apex-text-muted)' }}>
+                  {currentCamera.location}
+                </div>
+
+                {/* Screen View */}
+                <div className="apex-cctv-screen">
+                  <img
+                    src={currentCamera.image}
+                    alt="CCTV Feed"
+                    className="apex-cctv-img"
+                  />
+                  <div className="apex-scanlines" />
+                  <div className="apex-cctv-hud-crosshair" />
+                  <div className="apex-cctv-hud-camid">{currentCamera.code} // {currentCamera.room.toUpperCase()}</div>
+
+                  {/* Simulated Bounding Box when hazard triggered */}
+                  {simulatedHazard && (
+                    <div
+                      className="apex-bounding-box"
+                      style={{
+                        borderColor: simulatedHazard === 'fire' ? '#fb4934' : simulatedHazard === 'smoke' ? '#fabd2f' : '#83a598',
+                      }}
+                    >
+                      <div
+                        className="apex-bounding-badge"
+                        style={{
+                          background: simulatedHazard === 'fire' ? '#fb4934' : simulatedHazard === 'smoke' ? '#fabd2f' : '#83a598',
+                          color: simulatedHazard === 'smoke' ? '#1c1e1d' : '#ffffff',
+                        }}
+                      >
+                        {simulatedHazard.toUpperCase()} — {hazardConfidence}%
+                      </div>
+                      <div
+                        className="apex-bounding-sub"
+                        style={{
+                          color: simulatedHazard === 'fire' ? '#fb4934' : simulatedHazard === 'smoke' ? '#fabd2f' : '#83a598',
+                        }}
+                      >
+                        YOLO / TEMPORAL LOCK
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Bottom CCTV Status Pill */}
+                  <div className={`apex-cctv-bottom-bar ${simulatedHazard ? 'hazard' : 'normal'}`}>
+                    <span style={{ width: 6, height: 6, borderRadius: '50%', background: simulatedHazard ? '#fb4934' : '#4ade80' }} />
+                    <span>
+                      {simulatedHazard
+                        ? `ACTIVE HAZARD CONFIRMED · ${simulatedHazard.toUpperCase()} DETECTED`
+                        : 'NO ACTIVE DETECTION · MONITORING'}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Camera Switcher Tabs */}
+                <div className="apex-camera-tabs">
+                  {CAMERAS.map((cam) => {
+                    const isActive = selectedCameraId === cam.id;
+                    return (
+                      <button
+                        key={cam.id}
+                        className={`apex-cam-tab-btn ${isActive ? 'active' : ''}`}
+                        onClick={() => setSelectedCameraId(cam.id)}
+                      >
+                        <span className="apex-cam-tab-id">{cam.code}</span>
+                        <span className="apex-cam-tab-room">{cam.room}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* Camera Health info */}
+                <div style={{ padding: '14px 18px', background: 'var(--apex-bg-deep)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderTop: '1px solid var(--apex-border-dim)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 10, color: 'var(--apex-text-muted)' }}>CAMERA HEALTH</span>
+                    <span
+                      style={{
+                        fontFamily: 'JetBrains Mono, monospace',
+                        fontSize: 10,
+                        fontWeight: 600,
+                        color: currentCamera.health === 'healthy' ? '#4ade80' : '#fabd2f',
+                        background: currentCamera.health === 'healthy' ? 'rgba(74, 222, 128, 0.1)' : 'rgba(250, 189, 47, 0.1)',
+                        border: `1px solid ${currentCamera.health === 'healthy' ? 'rgba(74, 222, 128, 0.3)' : 'rgba(250, 189, 47, 0.3)'}`,
+                        padding: '1px 8px',
+                        borderRadius: 4,
+                      }}
+                    >
+                      {currentCamera.health}
+                    </span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontFamily: 'JetBrains Mono, monospace', fontSize: 11 }}>
+                    <span style={{ color: 'var(--apex-text-muted)' }}>Signal strength</span>
+                    <div style={{ width: 60, height: 4, background: '#2f3531', borderRadius: 2 }}>
+                      <div style={{ width: `${currentCamera.signalStrength}%`, height: '100%', background: '#4ade80', borderRadius: 2 }} />
+                    </div>
+                    <span style={{ color: '#4ade80' }}>{currentCamera.signalStrength}%</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Right Column: AI Detection Simulator */}
+              <div className="apex-panel">
+                <div className="apex-panel-header">
+                  <span className="apex-panel-title">AI DETECTION SIMULATOR</span>
+                </div>
+                <p style={{ fontSize: 13, color: 'var(--apex-text-muted)', lineHeight: 1.5, margin: '0 0 20px 0' }}>
+                  Trigger a controlled signal to test the temporal verification and incident workflow.
+                </p>
+
+                {/* Simulation Buttons */}
+                <button className="apex-sim-btn fire" onClick={() => handleSimulate('fire')}>
+                  <span>SIMULATE FIRE</span>
+                  <ArrowRight size={14} />
+                </button>
+
+                <button className="apex-sim-btn smoke" onClick={() => handleSimulate('smoke')}>
+                  <span>SIMULATE SMOKE</span>
+                  <ArrowRight size={14} />
+                </button>
+
+                <button className="apex-sim-btn water" onClick={() => handleSimulate('water')}>
+                  <span>SIMULATE WATER LEAK</span>
+                  <ArrowRight size={14} />
+                </button>
+
+                {/* Hazard Confirmed Card */}
+                {hazardConfirmed && simulatedHazard && (
+                  <div className="apex-hazard-confirmed-box">
+                    <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 10, color: '#fb4934', letterSpacing: '0.06em', marginBottom: 4 }}>
+                      HAZARD CONFIRMED
+                    </div>
+                    <div style={{ fontSize: 24, fontWeight: 700, color: '#f7f5ed', textTransform: 'capitalize', margin: '2px 0 10px 0' }}>
+                      {simulatedHazard}
+                    </div>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, fontFamily: 'JetBrains Mono, monospace', fontSize: 11, borderTop: '1px solid rgba(251, 73, 52, 0.2)', paddingTop: 10 }}>
+                      <div>
+                        <span style={{ color: 'var(--apex-text-muted)', display: 'block', fontSize: 10 }}>CONFIDENCE</span>
+                        <strong style={{ color: '#fb4934', fontSize: 14 }}>{hazardConfidence}%</strong>
+                      </div>
+                      <div>
+                        <span style={{ color: 'var(--apex-text-muted)', display: 'block', fontSize: 10 }}>TEMPORAL</span>
+                        <strong style={{ color: '#eae7df', fontSize: 12 }}>VERIFIED 3/3</strong>
+                      </div>
+                    </div>
+
+                    <button className="apex-create-incident-btn" onClick={handleCreateIncidentRecord}>
+                      <span>+ CREATE INCIDENT RECORD</span>
+                      <ArrowRight size={13} />
+                    </button>
+                  </div>
                 )}
               </div>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
-              <Badge
-                label={inc.status}
-                color={inc.status === 'Active' ? G.fire : inc.status === 'Resolved' ? G.green : G.amber}
-              />
-              <ChevronRight size={15} color={G.fog} />
-            </div>
-          </div>
-        );
-      })}
-    </div>
-  );
-}
+          )}
 
-// ═══════════════════════════════════════════════════════════════════
-// NAVIGATION ENGINE
-// ═══════════════════════════════════════════════════════════════════
-const LEVEL_ORDER = ['owner','org','building','live','incident','manage','history'];
+          {/* ═════════════════════════════════════════════════════════════ */}
+          {/* TAB 3: INCIDENT MANAGEMENT / HISTORY                         */}
+          {/* ═════════════════════════════════════════════════════════════ */}
+          {activeTab === 'incidents' && (
+            <div className="apex-incidents-grid">
+              {/* Left Column: List */}
+              <div className="apex-panel" style={{ padding: '16px 20px' }}>
+                <div className="apex-panel-header" style={{ marginBottom: 14 }}>
+                  <span className="apex-panel-title">INCIDENT HISTORY</span>
+                  <span className="apex-tag-badge">{filteredIncidents.length} RECORDS</span>
+                </div>
 
-function buildBreadcrumbs(stack, navigate) {
-  return stack.map((entry, i) => ({
-    label: entry.label,
-    level: entry.level,
-    id: entry.id,
-  }));
-}
+                {/* Filter and Search Bar */}
+                <div className="apex-filter-bar">
+                  <div style={{ position: 'relative', flex: 1 }}>
+                    <input
+                      type="text"
+                      className="apex-search-input"
+                      placeholder="Search ID, type, location..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      style={{ width: '100%', boxSizing: 'border-box' }}
+                    />
+                  </div>
+                  <select
+                    className="apex-select-pill"
+                    value={statusFilter}
+                    onChange={(e) => setStatusFilter(e.target.value)}
+                  >
+                    <option value="ALL">ALL STATUSES</option>
+                    <option value="UNACKNOWLEDGED">UNACKNOWLEDGED</option>
+                    <option value="ACKNOWLEDGED">ACKNOWLEDGED</option>
+                    <option value="RESOLVED">RESOLVED</option>
+                  </select>
+                </div>
 
-// ═══════════════════════════════════════════════════════════════════
-// ROOT EXPORT
-// ═══════════════════════════════════════════════════════════════════
-export default function OwnerConsole() {
-  // Navigation stack: [{level, id, label}]
-  const [stack, setStack] = useState([{ level: 'owner', id: null, label: 'Owner Dashboard' }]);
-  const current = stack[stack.length - 1];
+                {/* Incidents List */}
+                <div className="apex-incidents-list">
+                  {filteredIncidents.length === 0 ? (
+                    <div style={{ textAlign: 'center', padding: '36px 0', color: 'var(--apex-text-muted)', fontSize: 13 }}>
+                      No incidents match the current filter.
+                    </div>
+                  ) : (
+                    filteredIncidents.map((inc) => {
+                      const isSelected = selectedIncident?.id === inc.id;
+                      return (
+                        <div
+                          key={inc.id}
+                          className={`apex-incident-card ${isSelected ? 'selected' : ''}`}
+                          onClick={() => setSelectedIncidentId(inc.id)}
+                        >
+                          <div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                              <span
+                                style={{
+                                  fontFamily: 'JetBrains Mono, monospace',
+                                  fontSize: 10,
+                                  fontWeight: 700,
+                                  color: inc.type === 'FIRE' ? '#fb4934' : inc.type === 'SMOKE' ? '#fabd2f' : '#83a598',
+                                  background: inc.type === 'FIRE' ? 'rgba(251, 73, 52, 0.15)' : inc.type === 'SMOKE' ? 'rgba(250, 189, 47, 0.15)' : 'rgba(131, 165, 152, 0.15)',
+                                  padding: '1px 6px',
+                                  borderRadius: 3,
+                                }}
+                              >
+                                {inc.type}
+                              </span>
+                              <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 12, fontWeight: 700, color: '#f5f4ed' }}>
+                                {inc.id}
+                              </span>
+                            </div>
+                            <div style={{ fontSize: 12, color: 'var(--apex-text-muted)' }}>
+                              {inc.location}
+                            </div>
+                          </div>
 
-  function navigate(level, id) {
-    // Generate a human-readable label
-    let label = level;
-    if (level === 'owner')    label = 'Owner Dashboard';
-    if (level === 'org')      label = ORGS.find(o => o.id === id)?.name || 'Organisation';
-    if (level === 'building') label = OWNER_BUILDINGS.find(b => b.id === id)?.name?.split('—')[0]?.trim() || 'Building';
-    if (level === 'live')     label = OWNER_CAMERAS.find(c => c.id === id)?.label || 'Live Feed';
-    if (level === 'incident') label = id || 'Incident';
-    if (level === 'manage')   label = 'Manage';
-    if (level === 'history')  label = 'History';
+                          <div style={{ textAlign: 'right' }}>
+                            <span
+                              className={`apex-inc-status-badge ${inc.status.toLowerCase()}`}
+                            >
+                              {inc.status}
+                            </span>
+                            <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 10, color: 'var(--apex-text-dim)', marginTop: 4 }}>
+                              {inc.created}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+              </div>
 
-    // If navigating to an ancestor level, pop stack back
-    const existingIdx = stack.findIndex(s => s.level === level && (s.id === id || !id));
-    if (existingIdx >= 0) {
-      setStack(stack.slice(0, existingIdx + 1));
-    } else {
-      setStack([...stack, { level, id, label }]);
-    }
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  }
+              {/* Right Column: Incident Record Details */}
+              {selectedIncident ? (
+                <div className="apex-panel">
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--apex-border-dim)', paddingBottom: 14, marginBottom: 16 }}>
+                    <div>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: '#eae7df' }}>{selectedIncident.location}</div>
+                      <div style={{ display: 'flex', gap: 6, marginTop: 4 }}>
+                        <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 10, color: '#4ade80', background: 'rgba(74, 222, 128, 0.1)', padding: '1px 6px', borderRadius: 3 }}>
+                          OPEN
+                        </span>
+                        <span className={`apex-inc-status-badge ${selectedIncident.status.toLowerCase()}`}>
+                          {selectedIncident.status}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
 
-  function handleBreadcrumbNav(level, id) {
-    const idx = stack.findLastIndex(s => s.level === level);
-    if (idx >= 0) setStack(stack.slice(0, idx + 1));
-    else navigate(level, id);
-  }
+                  {/* Incident Title */}
+                  <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 11, color: 'var(--apex-text-muted)', marginBottom: 2 }}>
+                    INCIDENT RECORD
+                  </div>
+                  <h2 style={{ fontFamily: 'Fraunces, Georgia, serif', fontSize: 26, fontStyle: 'italic', fontWeight: 400, color: '#f7f5ed', margin: '0 0 16px 0' }}>
+                    {selectedIncident.id}
+                  </h2>
 
-  const breadcrumb = stack.length > 1 ? (
-    <Breadcrumb
-      crumbs={stack.map(s => ({ label: s.label, level: s.level, id: s.id }))}
-      onNavigate={handleBreadcrumbNav}
-    />
-  ) : null;
+                  {/* Metadata Grid */}
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, fontFamily: 'JetBrains Mono, monospace', fontSize: 11, marginBottom: 18, background: 'var(--apex-bg-surface-alt)', padding: 14, borderRadius: 6, border: '1px solid var(--apex-border-dim)' }}>
+                    <div>
+                      <span style={{ color: 'var(--apex-text-muted)', display: 'block', fontSize: 10 }}>SEVERITY</span>
+                      <strong style={{ color: selectedIncident.severity === 'HIGH' || selectedIncident.severity === 'CRITICAL' ? '#fb4934' : '#fabd2f' }}>
+                        {selectedIncident.severity}
+                      </strong>
+                    </div>
+                    <div>
+                      <span style={{ color: 'var(--apex-text-muted)', display: 'block', fontSize: 10 }}>CONFIDENCE</span>
+                      <strong style={{ color: '#eae7df' }}>{selectedIncident.confidence}%</strong>
+                    </div>
+                    <div>
+                      <span style={{ color: 'var(--apex-text-muted)', display: 'block', fontSize: 10 }}>CAMERA</span>
+                      <strong style={{ color: '#eae7df' }}>{selectedIncident.camera}</strong>
+                    </div>
+                    <div>
+                      <span style={{ color: 'var(--apex-text-muted)', display: 'block', fontSize: 10 }}>CREATED</span>
+                      <strong style={{ color: '#eae7df' }}>{selectedIncident.created}</strong>
+                    </div>
+                  </div>
 
-  return (
-    <div style={{
-      minHeight: '100vh',
-      background: G.parchment,
-      fontFamily: "'Manrope',sans-serif",
-    }}>
-      {/* Top bar */}
-      <div style={{
-        background: G.paper, borderBottom: `1px solid ${G.mist}`,
-        padding: '0 32px', height: 52,
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        position: 'sticky', top: 0, zIndex: 100,
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-          <button onClick={() => navigate('owner')} style={{
-            background: 'none', border: 'none', cursor: 'pointer', padding: 0,
-            display: 'flex', alignItems: 'center', gap: 8,
-          }}>
-            <ShieldCheck size={18} color={G.graphite} strokeWidth={1.5} />
-            <span style={{ fontFamily: "'Fraunces',Georgia,serif", fontStyle: 'italic',
-              fontSize: 17, fontWeight: 400, color: G.graphite }}>
-              <em style={{ color: '#d97706' }}>Atma</em>rakshak
-            </span>
-          </button>
-          <div style={{ width: 1, height: 18, background: G.mist }} />
-          <span style={{ fontFamily: "'Manrope',sans-serif", fontSize: 12, fontWeight: 500,
-            color: G.ash }}>Owner Portal</span>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-          {OWNER_ALERTS.filter(a => !a.read).length > 0 && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <span style={{ width: 7, height: 7, borderRadius: '50%',
-                background: G.fire, animation: 'pulse 1.5s infinite' }} />
-              <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 11,
-                color: G.fire, fontWeight: 700 }}>
-                {OWNER_ALERTS.filter(a => !a.read).length} alerts
-              </span>
+                  {/* Camera Frame Snapshot */}
+                  <div style={{ position: 'relative', height: 180, borderRadius: 6, overflow: 'hidden', border: '1px solid var(--apex-border-dim)', marginBottom: 18, background: '#0e100f' }}>
+                    <img
+                      src={selectedIncident.image || '/cctv/surveillance_dock.jpg'}
+                      alt="Incident Snapshot"
+                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                    />
+                    <div className="apex-scanlines" />
+                    <div
+                      style={{
+                        position: 'absolute',
+                        top: '20%',
+                        left: '25%',
+                        width: '45%',
+                        height: '50%',
+                        border: '2px solid #fb4934',
+                        boxShadow: '0 0 8px rgba(251, 73, 52, 0.4)',
+                      }}
+                    >
+                      <span
+                        style={{
+                          position: 'absolute',
+                          top: -18,
+                          left: -2,
+                          background: '#fb4934',
+                          color: '#fff',
+                          fontFamily: 'JetBrains Mono, monospace',
+                          fontSize: 9,
+                          fontWeight: 700,
+                          padding: '1px 6px',
+                        }}
+                      >
+                        {selectedIncident.type} · {selectedIncident.confidence}%
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Operator Notes */}
+                  <div style={{ marginBottom: 16 }}>
+                    <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 10, color: 'var(--apex-text-muted)', marginBottom: 4 }}>
+                      OPERATOR NOTES
+                    </div>
+                    <div style={{ fontSize: 12, color: 'var(--apex-text-secondary)', marginBottom: 8, fontStyle: 'italic' }}>
+                      {selectedIncident.operatorNote}
+                    </div>
+                    <textarea
+                      value={operatorNoteInput}
+                      onChange={(e) => setOperatorNoteInput(e.target.value)}
+                      placeholder="Add dispatch or resolution note..."
+                      rows={3}
+                      style={{
+                        width: '100%',
+                        background: 'var(--apex-bg-surface-alt)',
+                        border: '1px solid var(--apex-border)',
+                        borderRadius: 6,
+                        padding: '8px 10px',
+                        color: '#eae7df',
+                        fontFamily: 'Manrope, sans-serif',
+                        fontSize: 12,
+                        outline: 'none',
+                        resize: 'none',
+                        boxSizing: 'border-box',
+                      }}
+                    />
+                  </div>
+
+                  {/* Action CTA Button */}
+                  {selectedIncident.status === 'UNACKNOWLEDGED' && (
+                    <button className="apex-ack-btn" onClick={handleAcknowledge}>
+                      <span>ACKNOWLEDGE INCIDENT</span>
+                      <ArrowRight size={14} />
+                    </button>
+                  )}
+
+                  {selectedIncident.status === 'ACKNOWLEDGED' && (
+                    <button
+                      className="apex-ack-btn"
+                      onClick={handleResolve}
+                      style={{ background: '#38bdf8', borderColor: '#7dd3fc', color: '#0b1f2b' }}
+                    >
+                      <span>RESOLVE INCIDENT</span>
+                      <Check size={14} />
+                    </button>
+                  )}
+
+                  {selectedIncident.status === 'RESOLVED' && (
+                    <div
+                      style={{
+                        padding: '10px 14px',
+                        background: 'rgba(74, 222, 128, 0.1)',
+                        border: '1px solid rgba(74, 222, 128, 0.3)',
+                        borderRadius: 6,
+                        color: '#4ade80',
+                        fontFamily: 'JetBrains Mono, monospace',
+                        fontSize: 11,
+                        fontWeight: 700,
+                        textAlign: 'center',
+                      }}
+                    >
+                      ✓ INCIDENT RESOLVED AND LOGGED
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="apex-panel" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--apex-text-muted)' }}>
+                  Select an incident to view details
+                </div>
+              )}
             </div>
           )}
-          <div style={{ width: 1, height: 18, background: G.mist }} />
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <div style={{ width: 28, height: 28, borderRadius: '50%',
-              background: G.linen, border: `1px solid ${G.mist}`,
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontFamily: "'Manrope',sans-serif", fontSize: 11, fontWeight: 700,
-              color: G.graphite }}>
-              {OWNER_PROFILE.initials}
-            </div>
-            <span style={{ fontFamily: "'Manrope',sans-serif", fontSize: 13,
-              fontWeight: 500, color: G.graphite }}>{OWNER_PROFILE.name}</span>
-          </div>
-          <a href="/" style={{ fontFamily: "'Manrope',sans-serif", fontSize: 12,
-            color: G.ash, textDecoration: 'none' }}>← Logout</a>
         </div>
-      </div>
 
-      {/* Page content */}
-      <div style={{ maxWidth: 1200, margin: '0 auto', padding: '40px 32px 80px' }}>
-        {current.level === 'owner' && (
-          <OwnerDashboard navigate={navigate} />
-        )}
-        {current.level === 'org' && (
-          <OrgDashboard orgId={current.id} navigate={navigate} breadcrumb={breadcrumb} />
-        )}
-        {current.level === 'building' && (
-          <BuildingDashboard buildingId={current.id} navigate={navigate} breadcrumb={breadcrumb} />
-        )}
-        {current.level === 'live' && (
-          <LiveMonitoring camId={current.id} navigate={navigate} breadcrumb={breadcrumb} />
-        )}
-        {current.level === 'incident' && (
-          <IncidentDetail incidentId={current.id} navigate={navigate} breadcrumb={breadcrumb} />
-        )}
-        {current.level === 'manage' && (
-          <IncidentManagement incidentId={current.id} navigate={navigate} breadcrumb={breadcrumb} />
-        )}
-        {current.level === 'history' && (
-          <IncidentHistory buildingId={current.id} navigate={navigate} breadcrumb={breadcrumb} />
-        )}
-      </div>
-
-      {/* Footer */}
-      <div style={{
-        position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 50,
-        background: G.paper, borderTop: `1px solid ${G.mist}`,
-        padding: '8px 32px', display: 'flex', justifyContent: 'space-between',
-      }}>
-        <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10, color: G.fog }}>
-          Atmarakshak v2.4 · YOLOv8x · ERSS/112 · API: localhost:3001
-        </span>
-        <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10, color: G.fog }}>
-          {new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })} IST
-        </span>
-      </div>
-
-      <style>{`
-        @keyframes pulse {
-          0%,100% { opacity:1; transform:scale(1); }
-          50%      { opacity:0.5; transform:scale(1.3); }
-        }
-        @keyframes blink {
-          0%,100% { opacity:1; }
-          50%      { opacity:0.3; }
-        }
-      `}</style>
+        {/* Console Footer */}
+        <footer className="apex-footer-bar">
+          <div>ATMARAKSHAK / ALL DATA STREAMS ENCRYPTED</div>
+          <div>UTC · BUILD 2.4.18</div>
+        </footer>
+      </main>
     </div>
   );
 }

@@ -246,17 +246,22 @@ const startServer = async () => {
       console.error('💡 Please check your database configuration and ensure the database server is running.');
     } else {
       // Sync database models (creates tables if they don't exist)
-      await syncDatabase({
-        alter: process.env.NODE_ENV === 'development',
-        force: false
-      });
-      
-      // Log registered models
-      const modelCount = db.getModelCount();
-      if (modelCount > 0) {
-        console.log(`📦 Registered models (${modelCount}):`, db.getModelNames().join(', '));
-      } else {
-        console.log('📦 No models registered yet. Add models to /models directory.');
+      try {
+        await syncDatabase({
+          alter: process.env.NODE_ENV === 'development',
+          force: false
+        });
+        
+        // Log registered models
+        const modelCount = db.getModelCount();
+        if (modelCount > 0) {
+          console.log(`📦 Registered models (${modelCount}):`, db.getModelNames().join(', '));
+        } else {
+          console.log('📦 No models registered yet. Add models to /models directory.');
+        }
+      } catch (syncErr) {
+        console.warn('⚠️  Database synchronization warning (PostGIS geography not available or table exists):', syncErr.message);
+        console.log('ℹ️  Continuing server startup with PostgreSQL connected and frame/camera APIs active.');
       }
     }
     

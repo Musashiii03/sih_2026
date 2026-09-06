@@ -1,411 +1,757 @@
-import React, { useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { INCIDENTS, getIncident, severityClass, statusColor } from '../data/incidents';
+/**
+ * IncidentDashboard — ATMARAKSHAK ERSS 112 Mission Critical Dispatch View
+ * Spacious, breathable command HUD with real-time video, telemetry, and fleet dispatch.
+ */
 
-// ── CCTV feed (dispatch variant) ─────────────────────────────────
-function DispatchCctv({ inc }) {
-  const fireColor = inc.severity === 'CRITICAL' ? '#C93A1C'
-                  : inc.severity === 'MODERATE' ? '#B87518' : '#4A7C2F';
-  return (
-    <div className="dcctv-wrap">
-      <div className="dcctv-bg" style={{
-        background: `radial-gradient(ellipse 58% 48% at 56% 55%, ${fireColor}55 0%, #120C06ee 80%)`
-      }} />
-      <svg className="dcctv-svg" viewBox="0 0 640 360" preserveAspectRatio="xMidYMid slice">
-        <rect x="60" y="60" width="520" height="240" fill="none" stroke="rgba(255,255,255,0.04)" strokeWidth="1"/>
-        <line x1="60" y1="200" x2="580" y2="200" stroke="rgba(255,255,255,0.03)" strokeWidth="1"/>
-        <rect x="120" y="90" width="80" height="110" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.05)" strokeWidth="1"/>
-        {inc.severity === 'CRITICAL' && <>
-          <ellipse cx="355" cy="210" rx="90" ry="55" fill={`${fireColor}50`}/>
-          <ellipse cx="355" cy="148" rx="55" ry="68" fill="rgba(100,70,40,0.45)"/>
-        </>}
-      </svg>
-      <div className="dcctv-scanlines"/>
-      {inc.severity === 'CRITICAL' && (
-        <div className="dcctv-bbox">
-          <span className="dcctv-bbox-label">{inc.typLabel.toUpperCase()} · {inc.confidence}%</span>
-        </div>
-      )}
-      <div className="dcctv-hud">
-        <div className="dcctv-hud-top">
-          <span className={`dcctv-pill${inc.severity === 'CRITICAL' ? ' live' : ''}`}>
-            {inc.severity === 'CRITICAL' ? '● REC LIVE' : '● REC'}
-          </span>
-          <span className="dcctv-pill">{inc.camId} · {inc.confidence}%</span>
-        </div>
-        <div className="dcctv-hud-bot">
-          <span className="dcctv-pill">{inc.zone}</span>
-          <span className="dcctv-pill">{inc.timestamp}</span>
-        </div>
-      </div>
-    </div>
-  );
-}
+import React, { useState, useEffect } from 'react';
+import { useParams, useNavigate, Link } from 'react-router-dom';
+import {
+  Flame,
+  AlertTriangle,
+  CheckCircle2,
+  Clock,
+  Building2,
+  MapPin,
+  User,
+  Phone,
+  Mail,
+  Radio,
+  Truck,
+  ShieldAlert,
+  Activity,
+  Thermometer,
+  Droplets,
+  Wind,
+  ArrowLeft,
+  Check,
+  Share2,
+  Send,
+  Cpu,
+  Layers,
+  ChevronRight
+} from 'lucide-react';
+import { INCIDENTS, getIncident } from '../data/incidents';
+import CctvStreamPlayer from './CctvStreamPlayer';
+import Atmarakshak3DHero from './Atmarakshak3DHero';
+import './IncidentDashboard.css';
 
-// ── Timeline ──────────────────────────────────────────────────────
-function Timeline({ events }) {
-  const iconMap = {
-    alert: { icon: 'emergency', color: 'var(--critical)' },
-    notify: { icon: 'notifications_active', color: 'var(--accent)' },
-    ack: { icon: 'check_circle', color: 'var(--safe)' },
-    system: { icon: 'settings', color: 'var(--text-muted)' },
-    escalate: { icon: 'campaign', color: 'var(--critical)' },
-  };
-  return (
-    <div className="dtl-timeline">
-      {events.map((e, i) => {
-        const { icon, color } = iconMap[e.type] || iconMap.notify;
-        return (
-          <div key={i} className="dtl-timeline-row">
-            <div className="dtl-timeline-dot" style={{ borderColor: color }}>
-              <span className="material-symbols-outlined" style={{ fontSize: 10, color }}>{icon}</span>
-            </div>
-            {i < events.length - 1 && <div className="dtl-timeline-line"/>}
-            <div className="dtl-timeline-content">
-              <span className="dtl-time">{e.time}</span>
-              <span className="dtl-event">{e.event}</span>
-            </div>
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
-// ── Sensor readings ───────────────────────────────────────────────
-function SensorGrid({ sensors }) {
-  const fields = [
-    { key: 'smoke',     label: 'Smoke',     icon: 'air' },
-    { key: 'temp',      label: 'Temp',      icon: 'thermostat' },
-    { key: 'co',        label: 'CO Level',  icon: 'science' },
-    { key: 'sprinkler', label: 'Sprinkler', icon: 'water_drop' },
-    { key: 'hvac',      label: 'HVAC',      icon: 'air_freshener' },
-  ];
-  return (
-    <div className="dtl-sensors">
-      {fields.map(f => (
-        <div key={f.key} className="dtl-sensor-chip">
-          <span className="material-symbols-outlined" style={{ fontSize: 15, color: 'var(--text-muted)', fontVariationSettings: "'FILL' 1" }}>{f.icon}</span>
-          <div>
-            <div className="dtl-sensor-label">{f.label}</div>
-            <div className="dtl-sensor-val">{sensors[f.key]}</div>
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-// ── Dispatch Incident Detail Page ─────────────────────────────────
 export default function IncidentDashboard() {
   const { incidentId } = useParams();
   const navigate = useNavigate();
-  const inc = getIncident(incidentId);
-  const [dispatched, setDispatched] = useState({});
-  const [resolved, setResolved] = useState(inc?.status === 'Resolved');
-  const [notes, setNotes] = useState('');
 
-  if (!inc) {
+  // Find in static mock data or fallback to live API
+  const [inc, setInc] = useState(() => getIncident(incidentId) || null);
+  const [loadingApi, setLoadingApi] = useState(!inc);
+  const [stageView, setStageView] = useState('cctv'); // 'cctv' | '3d'
+  const [dispatched, setDispatched] = useState({});
+  const [resolved, setResolved] = useState(false);
+  const [notes, setNotes] = useState('');
+  const [copiedLink, setCopiedLink] = useState(false);
+  const [erssEscalated, setErssEscalated] = useState(false);
+
+  // If not found in static array, try fetching from backend API
+  useEffect(() => {
+    const staticMatch = getIncident(incidentId);
+    if (staticMatch) {
+      setInc(staticMatch);
+      setResolved(staticMatch.status === 'Resolved');
+      setLoadingApi(false);
+      return;
+    }
+
+    // Try fetching live incident from backend
+    let isMounted = true;
+    setLoadingApi(true);
+
+    fetch(`/api/incidents/${incidentId}/summary`)
+      .then(res => {
+        if (!res.ok) throw new Error('Not found');
+        return res.json();
+      })
+      .then(data => {
+        if (!isMounted) return;
+        // Transform backend incident summary into incident shape
+        const stats = data.statistics || {};
+        const isFire = (stats.total_fire_detections ?? 0) > 0;
+        const mapped = {
+          id: data.incident_id || incidentId,
+          shortId: `#${(data.incident_id || incidentId).slice(-5)}`,
+          building: data.location || 'Industrial Sector 4B',
+          zone: 'Primary Manufacturing Bay',
+          severity: isFire ? 'CRITICAL' : 'MODERATE',
+          type: isFire ? 'fire' : 'smoke',
+          typLabel: isFire ? 'Fire' : 'Smoke Hazard',
+          typeIcon: isFire ? 'Flame' : 'Activity',
+          timeSince: 'Active Now',
+          timestamp: new Date().toLocaleTimeString('en-IN'),
+          victims: stats.total_human_detections ?? 0,
+          camId: data.camera_id || 'CAM-01',
+          camera_id: data.camera_id || 'CAM-01',
+          camera_stream_url: data.camera_stream_url,
+          confidence: 94.2,
+          framesConfirmed: data.frames?.length || 5,
+          framesTotal: data.frames?.length || 5,
+          status: 'Active',
+          address: 'Plot 14, MIDC Industrial Area, Andheri East, Mumbai — 400093',
+          floors: '1 → 4',
+          owner: 'Operations Dispatch',
+          ownerPhone: '+91-98200-11234',
+          ownerEmail: 'dispatch@atmarakshak.internal',
+          ownerInitials: 'OD',
+          station: 'Andheri East Fire Station',
+          stationDist: '2.1 km',
+          stationEta: '~6 min',
+          stationPhone: '101',
+          surfacePct: 32,
+          temperature: '58°C',
+          windSpeed: '10 km/h',
+          humidity: '34%',
+          aiAnalysis: 'Continuous thermal radiation and sustained fire signature detected via multi-spectral YOLO computer vision model.',
+          evidenceImgs: [],
+          alertCooldown: [
+            { time: '14:02:11', event: 'Alert verified by temporal neural net', type: 'alert' },
+            { time: '14:02:14', event: 'Automated notification sent to facility security', type: 'notify' },
+            { time: '14:02:56', event: 'Zonal dispatch priority elevated to CRITICAL', type: 'escalate' },
+          ],
+          units: [
+            { id: 'UNIT-12', name: 'Engine 12 (Water Tender)', eta: '5 min', status: 'En Route' },
+            { id: 'UNIT-07', name: 'Ladder 7 (High Rise)',   eta: '8 min', status: 'Standby' },
+            { id: 'AMB-03',  name: 'Emergency Ambulance 3',  eta: '4 min', status: 'En Route' },
+          ],
+          sensors: {
+            smoke: 'HIGH (820 ppm)',
+            temp: '58°C',
+            co: '165 ppm',
+            sprinkler: 'Activated',
+            hvac: 'Shutdown',
+          },
+        };
+        setInc(mapped);
+        setLoadingApi(false);
+      })
+      .catch(() => {
+        if (isMounted) {
+          setInc(null);
+          setLoadingApi(false);
+        }
+      });
+
+    return () => { isMounted = false; };
+  }, [incidentId]);
+
+  function copyShareUrl() {
+    navigator.clipboard.writeText(window.location.href);
+    setCopiedLink(true);
+    setTimeout(() => setCopiedLink(false), 2000);
+  }
+
+  function handleDispatchUnit(unitId) {
+    setDispatched(prev => ({ ...prev, [unitId]: true }));
+  }
+
+  function handleErssEscalate() {
+    setErssEscalated(true);
+  }
+
+  if (loadingApi) {
     return (
-      <div className="dtl-notfound">
-        <span className="material-symbols-outlined" style={{ fontSize: 48, color: 'var(--text-dim)' }}>search_off</span>
-        <h2>Incident not found</h2>
-        <button className="btn btn-ghost" onClick={() => navigate('/dispatch')}>← Back to Dispatch</button>
+      <div className="id-root" style={{ alignItems: 'center', justifyContent: 'center', minHeight: '100vh' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14 }}>
+          <div className="apex-pulse-dot" style={{ width: 14, height: 14, background: '#fe8019' }} />
+          <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 13, color: '#c5c2b8' }}>
+            [ CONNECTING TO EMERGENCY DISPATCH TELEMETRY... ]
+          </span>
+        </div>
       </div>
     );
   }
 
-  const sevColor = inc.severity === 'CRITICAL' ? 'var(--critical)'
-                 : inc.severity === 'MODERATE' ? 'var(--moderate)' : 'var(--safe)';
+  if (!inc) {
+    return (
+      <div className="id-root" style={{ alignItems: 'center', justifyContent: 'center', minHeight: '100vh', padding: 24 }}>
+        <div style={{ maxWidth: 460, textAlign: 'center', background: '#212423', border: '1px solid #323633', borderRadius: 12, padding: '36px 32px' }}>
+          <AlertTriangle size={44} color="#fb4934" style={{ margin: '0 auto 16px' }} />
+          <h2 style={{ fontFamily: "'Fraunces', Georgia, serif", fontSize: 24, fontStyle: 'italic', margin: '0 0 10px', color: '#f7f5ed' }}>
+            Incident Not Found
+          </h2>
+          <p style={{ fontSize: 13, color: '#8b928a', lineHeight: 1.6, margin: '0 0 24px' }}>
+            The requested incident ID <code style={{ color: '#fe8019' }}>{incidentId}</code> does not exist in local cache or the active server incident log.
+          </p>
+          <button className="id-back-btn" onClick={() => navigate('/dispatch')} style={{ margin: '0 auto' }}>
+            <ArrowLeft size={14} />
+            Return to Fire Dispatch Queue
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  const isCritical = inc.severity === 'CRITICAL';
+  const isModerate = inc.severity === 'MODERATE';
+  const severityClass = isCritical ? 'critical' : isModerate ? 'moderate' : 'safe';
 
   return (
-    <div className="dtl-root">
-      {/* ── Top header bar ── */}
-      <header className="dtl-header">
-        <div className="dtl-header-left">
-          <button className="dtl-back-btn" onClick={() => navigate('/dispatch')}>
-            <span className="material-symbols-outlined" style={{ fontSize: 18 }}>arrow_back</span>
-            Back to Queue
+    <div className="id-root">
+      {/* ─── STICKY COMMAND TOPBAR ─────────────────────────────────────── */}
+      <header className="id-topbar">
+        <div className="id-topbar-left">
+          <button className="id-back-btn" onClick={() => navigate('/dispatch')}>
+            <ArrowLeft size={14} />
+            <span>DISPATCH QUEUE</span>
           </button>
-          <div className="dtl-header-divider"/>
-          <div>
-            <div className="dtl-header-title">
-              <span className="material-symbols-outlined" style={{ fontSize: 18, color: sevColor, fontVariationSettings: "'FILL' 1" }}>
-                {inc.typeIcon}
+
+          <div className="id-topbar-divider" />
+
+          <div className="id-header-title-block">
+            <div className="id-header-title">
+              <span className="id-hazard-badge">
+                <Flame size={16} />
               </span>
-              {inc.typLabel} Incident — {inc.shortId}
+              <span>{inc.typLabel} Hazard Assessment · {inc.shortId || inc.id}</span>
             </div>
-            <div className="dtl-header-sub">{inc.building} · {inc.zone}</div>
+            <div className="id-header-sub">
+              <MapPin size={12} color="#fe8019" />
+              <span>{inc.building} — {inc.zone}</span>
+            </div>
           </div>
         </div>
-        <div className="dtl-header-right">
-          <span className={severityClass(inc.severity)}>{inc.severity}</span>
-          <span className="dtl-status-pill" style={{ color: statusColor(inc.status), borderColor: `${statusColor(inc.status)}40` }}>
-            ● {inc.status}
-          </span>
-          <span className="dtl-timestamp">{inc.timestamp} IST</span>
+
+        <div className="id-topbar-right">
+          <div className={`id-severity-pill ${severityClass}`}>
+            <span>●</span>
+            <span>{inc.severity}</span>
+          </div>
+
+          <div className="id-status-pill">
+            <span className={`id-status-dot ${inc.status === 'Active' ? 'active' : ''}`} />
+            <span>{resolved ? 'RESOLVED' : inc.status.toUpperCase()}</span>
+          </div>
+
+          <div className="id-timestamp">
+            <Clock size={11} style={{ display: 'inline', marginRight: 5, verticalAlign: -1 }} />
+            {inc.timestamp} IST
+          </div>
+
+          <button
+            onClick={copyShareUrl}
+            className="id-back-btn"
+            title="Copy dynamic link to this incident"
+            style={{ padding: '7px 11px' }}
+          >
+            {copiedLink ? <Check size={14} color="#4ade80" /> : <Share2 size={14} />}
+            <span>{copiedLink ? 'COPIED' : 'SHARE'}</span>
+          </button>
         </div>
       </header>
 
-      {/* ── 3-column body ── */}
-      <div className="dtl-body">
+      {/* ─── SPACIOUS 2-COLUMN MISSION STAGE ───────────────────────────── */}
+      <main className="id-container">
+        
+        {/* ═══ LEFT COLUMN: VISION & ENVIRONMENTAL TELEMETRY ═══ */}
+        <section style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
 
-        {/* ══ Left: CCTV + AI + Timeline ══ */}
-        <div className="dtl-left">
-          <DispatchCctv inc={inc} />
+          {/* 1. CCTV Stream Player / 3D Model Hero */}
+          <div className="id-card" style={{ padding: 0 }}>
+            <div className="id-card-header">
+              <div className="id-card-title">
+                {stageView === 'cctv' ? (
+                  <>
+                    <Radio size={16} color="#fe8019" />
+                    <span>Live Optical & Thermal Surveillance Feed</span>
+                  </>
+                ) : (
+                  <>
+                    <Layers size={16} color="#fe8019" />
+                    <span>3D Architectural Digital Twin (WebGL)</span>
+                  </>
+                )}
+              </div>
 
-          {/* AI Analysis card */}
-          <div className="card dtl-ai-card">
-            <div className="card-header">
-              <span className="card-title">
-                <span className="material-symbols-outlined" style={{ fontSize: 14, color: 'var(--accent)', fontVariationSettings: "'FILL' 1" }}>smart_toy</span>
-                AI Analysis
-              </span>
-              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--accent)' }}>{inc.confidence}% confidence</span>
-            </div>
-            <div className="card-body">
-              <p className="dtl-ai-text">{inc.aiAnalysis}</p>
-              <div className="dtl-filmstrip">
-                {Array.from({ length: inc.framesTotal }).map((_, i) => (
-                  <div key={i} className={`dtl-frame${i < inc.framesConfirmed ? ' confirmed' : ''}`}/>
-                ))}
-                <span className="dtl-frame-label">{inc.framesConfirmed}/{inc.framesTotal} frames verified</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <button
+                    className={`id-mode-pill ${stageView === 'cctv' ? 'active' : ''}`}
+                    onClick={() => setStageView('cctv')}
+                  >
+                    <Radio size={12} />
+                    <span>OPTICAL CCTV</span>
+                  </button>
+                  <button
+                    className={`id-mode-pill ${stageView === '3d' ? 'active' : ''}`}
+                    onClick={() => setStageView('3d')}
+                  >
+                    <Layers size={12} />
+                    <span>HOLOGRAM</span>
+                  </button>
+                </div>
+
+                {stageView === 'cctv' && (
+                  <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 11, color: '#8b928a' }}>
+                    CAMERA: <strong style={{ color: '#eae7df' }}>{inc.camId || inc.camera_id}</strong>
+                  </div>
+                )}
               </div>
             </div>
-          </div>
+            
+            <div style={{ padding: 16 }}>
+              {stageView === 'cctv' ? (
+                <CctvStreamPlayer
+                  incidentId={inc.id || inc.incident_id}
+                  cameraId={inc.camId || inc.camera_id || 'CAM-01'}
+                  streamUrl={inc.camera_stream_url}
+                  frameIndex={0}
+                  severity={inc.severity}
+                />
+              ) : (
+                <div style={{ borderRadius: 8, overflow: 'hidden', border: '1px solid #323633', background: '#121413' }}>
+                  <Atmarakshak3DHero theme="dark" minHeight="420px" maxHeight="480px" />
+                </div>
+              )}
 
-          {/* Sensor readings */}
-          <div className="card">
-            <div className="card-header">
-              <span className="card-title">
-                <span className="material-symbols-outlined" style={{ fontSize: 14, fontVariationSettings: "'FILL' 1" }}>sensors</span>
-                Sensor Telemetry
-              </span>
-            </div>
-            <div className="card-body">
-              <SensorGrid sensors={inc.sensors} />
-            </div>
-          </div>
+              {/* Spacious KPI Metric Chips Below Video */}
+              <div className="id-kpi-grid">
+                <div className="id-kpi-chip">
+                  <div className="id-kpi-icon" style={{ background: 'rgba(251, 73, 52, 0.15)', color: '#fb4934' }}>
+                    <User size={20} />
+                  </div>
+                  <div>
+                    <div className="id-kpi-val" style={{ color: inc.victims > 0 ? '#fb4934' : '#eae7df' }}>
+                      {inc.victims}
+                    </div>
+                    <div className="id-kpi-label">Persons at Risk</div>
+                  </div>
+                </div>
 
-          {/* Alert timeline */}
-          <div className="card">
-            <div className="card-header">
-              <span className="card-title">
-                <span className="material-symbols-outlined" style={{ fontSize: 14 }}>timeline</span>
-                Alert Timeline
-              </span>
-            </div>
-            <div className="card-body">
-              <Timeline events={inc.alertCooldown} />
-            </div>
-          </div>
-        </div>
+                <div className="id-kpi-chip">
+                  <div className="id-kpi-icon" style={{ background: 'rgba(250, 189, 47, 0.15)', color: '#fabd2f' }}>
+                    <Activity size={20} />
+                  </div>
+                  <div>
+                    <div className="id-kpi-val" style={{ color: '#fabd2f' }}>
+                      {inc.confidence}%
+                    </div>
+                    <div className="id-kpi-label">AI Confidence</div>
+                  </div>
+                </div>
 
-        {/* ══ Center: Map + Building + Notes ══ */}
-        <div className="dtl-center">
-          {/* Stats row */}
-          <div className="dtl-stats-row">
-            {[
-              { label: 'Occupants at Risk', value: inc.victims,     color: 'var(--critical)', icon: 'person' },
-              { label: 'Confidence',         value: `${inc.confidence}%`, color: 'var(--accent)', icon: 'analytics' },
-              { label: 'Temp',              value: inc.temperature, color: inc.severity === 'CRITICAL' ? 'var(--critical)' : 'var(--text)', icon: 'thermostat' },
-              { label: 'Humidity',          value: inc.humidity,    color: 'var(--safe)', icon: 'water_drop' },
-            ].map((s, i) => (
-              <div key={i} className="dtl-stat-chip">
-                <span className="material-symbols-outlined dtl-stat-icon" style={{ color: s.color, fontVariationSettings: "'FILL' 1" }}>{s.icon}</span>
-                <div>
-                  <div className="dtl-stat-val" style={{ color: s.color }}>{s.value}</div>
-                  <div className="dtl-stat-label">{s.label}</div>
+                <div className="id-kpi-chip">
+                  <div className="id-kpi-icon" style={{ background: 'rgba(251, 73, 52, 0.15)', color: '#fb4934' }}>
+                    <Thermometer size={20} />
+                  </div>
+                  <div>
+                    <div className="id-kpi-val" style={{ color: '#fb4934' }}>
+                      {inc.temperature}
+                    </div>
+                    <div className="id-kpi-label">Ambient Temp</div>
+                  </div>
+                </div>
+
+                <div className="id-kpi-chip">
+                  <div className="id-kpi-icon" style={{ background: 'rgba(74, 222, 128, 0.15)', color: '#4ade80' }}>
+                    <Droplets size={20} />
+                  </div>
+                  <div>
+                    <div className="id-kpi-val" style={{ color: '#4ade80' }}>
+                      {inc.humidity}
+                    </div>
+                    <div className="id-kpi-label">Rel Humidity</div>
+                  </div>
                 </div>
               </div>
-            ))}
+            </div>
           </div>
 
-          {/* Location map placeholder */}
-          <div className="card dtl-map-card">
-            <div className="card-header">
-              <span className="card-title">
-                <span className="material-symbols-outlined" style={{ fontSize: 14, fontVariationSettings: "'FILL' 1" }}>location_on</span>
-                Live Location
-              </span>
-              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-muted)' }}>{inc.stationDist} from station</span>
+          {/* 2. Side-by-Side: AI Analysis & Environmental Sensors */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+            {/* AI Diagnostics Card */}
+            <div className="id-card id-ai-card">
+              <div className="id-card-header">
+                <div className="id-card-title">
+                  <Cpu size={15} color="#fe8019" />
+                  <span>AI Diagnostics & Neural Verification</span>
+                </div>
+              </div>
+              <div className="id-card-body">
+                <p className="id-ai-desc">
+                  {inc.aiAnalysis}
+                </p>
+
+                <div className="id-ai-filmstrip-wrap">
+                  <div className="id-filmstrip-header">
+                    <span>TEMPORAL VERIFICATION SEQUENCE</span>
+                    <strong style={{ color: '#4ade80' }}>{inc.framesConfirmed}/{inc.framesTotal} FRAMES CONFIRMED</strong>
+                  </div>
+                  <div className="id-filmstrip-bars">
+                    {Array.from({ length: inc.framesTotal || 5 }).map((_, idx) => (
+                      <div
+                        key={idx}
+                        className={`id-filmstrip-bar ${idx < (inc.framesConfirmed || 5) ? 'verified' : ''}`}
+                      />
+                    ))}
+                  </div>
+                </div>
+              </div>
             </div>
-            <div className="dtl-map-body">
-              <div className="dtl-map-bg">
-                {/* Stylised map mock */}
-                <svg width="100%" height="100%" viewBox="0 0 400 200" style={{ position: 'absolute', inset: 0 }}>
-                  <rect width="400" height="200" fill="#F5ECD8"/>
-                  {/* Roads */}
-                  <line x1="0" y1="100" x2="400" y2="100" stroke="#E0D0B0" strokeWidth="14"/>
-                  <line x1="200" y1="0" x2="200" y2="200" stroke="#E0D0B0" strokeWidth="10"/>
-                  <line x1="0" y1="140" x2="400" y2="140" stroke="#EDE0C4" strokeWidth="6"/>
-                  <line x1="130" y1="0" x2="130" y2="200" stroke="#EDE0C4" strokeWidth="6"/>
-                  <line x1="300" y1="0" x2="300" y2="200" stroke="#EDE0C4" strokeWidth="5"/>
-                  {/* Blocks */}
-                  {[[30,20,85,70],[155,20,35,70],[250,20,110,70],[320,20,60,70],
-                    [30,120,85,60],[155,120,35,60],[250,120,30,60],[300,155,80,35]].map(([x,y,w,h],i)=>(
-                    <rect key={i} x={x} y={y} width={w} height={h} rx="3" fill="#EDE0C4" stroke="#D4C4A0" strokeWidth="1"/>
+
+            {/* Environmental Sensors Card */}
+            <div className="id-card">
+              <div className="id-card-header">
+                <div className="id-card-title">
+                  <Layers size={15} color="#83a598" />
+                  <span>IoT Sensor Telemetry Grid</span>
+                </div>
+              </div>
+              <div className="id-card-body">
+                <div className="id-sensors-grid">
+                  <div className="id-sensor-box">
+                    <div className="id-sensor-header">
+                      <Wind size={12} />
+                      <span>Smoke PPM</span>
+                    </div>
+                    <div className="id-sensor-val critical">
+                      {inc.sensors?.smoke || '850 ppm'}
+                    </div>
+                  </div>
+
+                  <div className="id-sensor-box">
+                    <div className="id-sensor-header">
+                      <Thermometer size={12} />
+                      <span>Core Temp</span>
+                    </div>
+                    <div className="id-sensor-val critical">
+                      {inc.sensors?.temp || inc.temperature}
+                    </div>
+                  </div>
+
+                  <div className="id-sensor-box">
+                    <div className="id-sensor-header">
+                      <Activity size={12} />
+                      <span>Carbon Monoxide</span>
+                    </div>
+                    <div className="id-sensor-val warning">
+                      {inc.sensors?.co || '180 ppm'}
+                    </div>
+                  </div>
+
+                  <div className="id-sensor-box">
+                    <div className="id-sensor-header">
+                      <Droplets size={12} />
+                      <span>Sprinklers</span>
+                    </div>
+                    <div className="id-sensor-val safe">
+                      {inc.sensors?.sprinkler || 'Activated'}
+                    </div>
+                  </div>
+
+                  <div className="id-sensor-box">
+                    <div className="id-sensor-header">
+                      <Layers size={12} />
+                      <span>HVAC Dampers</span>
+                    </div>
+                    <div className="id-sensor-val safe">
+                      {inc.sensors?.hvac || 'Shutdown'}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* 3. Facility Location Map & Owner Card */}
+          <div className="id-card">
+            <div className="id-card-header">
+              <div className="id-card-title">
+                <Building2 size={16} color="#fabd2f" />
+                <span>Geospatial Transit & Facility Dossier</span>
+              </div>
+              <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 11, color: '#8b928a' }}>
+                DISTANCE TO STATION: <strong style={{ color: '#fabd2f' }}>{inc.stationDist}</strong>
+              </div>
+            </div>
+
+            <div className="id-card-body">
+              {/* Clean Vector Tactical Map */}
+              <div className="id-map-frame">
+                <svg width="100%" height="100%" viewBox="0 0 800 300" style={{ position: 'absolute', inset: 0, background: '#171918' }}>
+                  {/* Grid Background */}
+                  <defs>
+                    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+                      <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#252927" strokeWidth="1"/>
+                    </pattern>
+                  </defs>
+                  <rect width="800" height="300" fill="url(#grid)" />
+
+                  {/* Road Network */}
+                  <line x1="40" y1="160" x2="760" y2="160" stroke="#2e3330" strokeWidth="18" strokeLinecap="round" />
+                  <line x1="380" y1="30" x2="380" y2="280" stroke="#2e3330" strokeWidth="14" strokeLinecap="round" />
+                  <line x1="180" y1="60" x2="180" y2="260" stroke="#272b29" strokeWidth="8" />
+                  <line x1="620" y1="50" x2="620" y2="270" stroke="#272b29" strokeWidth="8" />
+
+                  {/* Industrial Building Footprints */}
+                  {[[80, 50, 80, 80], [220, 50, 120, 70], [420, 50, 150, 80], [660, 60, 90, 70],
+                    [70, 190, 90, 70], [220, 190, 130, 80], [420, 190, 160, 70], [650, 180, 100, 80]].map(([x,y,w,h], i) => (
+                    <rect key={i} x={x} y={y} width={w} height={h} rx="6" fill="#1e2220" stroke="#323835" strokeWidth="1.5" />
                   ))}
-                  {/* Incident marker */}
-                  <circle cx="200" cy="100" r="18" fill="rgba(201,58,28,0.18)" stroke="rgba(201,58,28,0.6)" strokeWidth="2"/>
-                  <circle cx="200" cy="100" r="8" fill="var(--critical)" opacity="0.9"/>
-                  <circle cx="200" cy="100" r="4" fill="#fff"/>
-                  {/* Station marker */}
-                  <circle cx="310" cy="65" r="10" fill="rgba(74,124,47,0.2)" stroke="rgba(74,124,47,0.6)" strokeWidth="1.5"/>
-                  <circle cx="310" cy="65" r="5" fill="var(--safe)" opacity="0.9"/>
-                  <line x1="200" y1="100" x2="310" y2="65" stroke="rgba(74,124,47,0.5)" strokeWidth="1.5" strokeDasharray="6 3"/>
+
+                  {/* Connecting Dispatch Route Line */}
+                  <path d="M 680 100 L 380 160 L 280 160" fill="none" stroke="#fe8019" strokeWidth="3" strokeDasharray="8 5" />
+
+                  {/* Fire Station Marker */}
+                  <circle cx="680" cy="100" r="22" fill="rgba(74, 222, 128, 0.15)" stroke="rgba(74, 222, 128, 0.5)" strokeWidth="1.5" />
+                  <circle cx="680" cy="100" r="9" fill="#4ade80" />
+                  <text x="680" y="140" fill="#4ade80" fontSize="11" fontFamily="'JetBrains Mono', monospace" textAnchor="middle" fontWeight="700">FIRE STATION</text>
+
+                  {/* Incident Epicenter Marker */}
+                  <circle cx="280" cy="160" r="28" fill="rgba(251, 73, 52, 0.2)" stroke="rgba(251, 73, 52, 0.6)" strokeWidth="2" />
+                  <circle cx="280" cy="160" r="11" fill="#fb4934" />
+                  <circle cx="280" cy="160" r="4" fill="#ffffff" />
+                  <text x="280" y="210" fill="#fb4934" fontSize="11" fontFamily="'JetBrains Mono', monospace" textAnchor="middle" fontWeight="700">INCIDENT HAZARD</text>
                 </svg>
-                <div className="dtl-map-legend">
-                  <span><span style={{ background: 'var(--critical)', borderRadius: '50%', display: 'inline-block', width: 7, height: 7 }}/>  Incident</span>
-                  <span><span style={{ background: 'var(--safe)', borderRadius: '50%', display: 'inline-block', width: 7, height: 7 }}/>  Fire Station</span>
+
+                <div className="id-map-legend">
+                  <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#fb4934' }} />
+                    <span>Hazard Site</span>
+                  </span>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#4ade80' }} />
+                    <span>Andheri East Station</span>
+                  </span>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <span style={{ width: 12, height: 2, background: '#fe8019' }} />
+                    <span>Direct Transit ({inc.stationDist} · {inc.stationEta})</span>
+                  </span>
+                </div>
+              </div>
+
+              {/* Building Details & Owner Information */}
+              <div style={{ marginTop: 18 }}>
+                <div className="id-bldg-grid">
+                  <div>
+                    <div className="id-bldg-name">{inc.building}</div>
+                    <div className="id-bldg-addr">{inc.address}</div>
+                    <div className="id-bldg-pills">
+                      <div className="id-bldg-pill">
+                        <span>FLOORS:</span>
+                        <strong style={{ color: '#eae7df' }}>{inc.floors}</strong>
+                      </div>
+                      <div className="id-bldg-pill">
+                        <span>ZONE:</span>
+                        <strong style={{ color: '#eae7df' }}>{inc.zone}</strong>
+                      </div>
+                      <div className="id-bldg-pill">
+                        <span>CAMERA ID:</span>
+                        <strong style={{ color: '#fe8019' }}>{inc.camId}</strong>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Facility Owner Card */}
+                <div className="id-owner-card">
+                  <div className="id-owner-info">
+                    <div className="id-owner-avatar">{inc.ownerInitials || 'RM'}</div>
+                    <div>
+                      <div className="id-owner-name">{inc.owner}</div>
+                      <div className="id-owner-meta">
+                        Registered Property Custodian · {inc.ownerPhone} · {inc.ownerEmail}
+                      </div>
+                    </div>
+                  </div>
+                  <a href={`tel:${inc.ownerPhone}`} className="id-call-btn">
+                    <Phone size={13} />
+                    <span>CALL OWNER</span>
+                  </a>
                 </div>
               </div>
             </div>
           </div>
+        </section>
 
-          {/* Building info */}
-          <div className="card">
-            <div className="card-header">
-              <span className="card-title">
-                <span className="material-symbols-outlined" style={{ fontSize: 14, fontVariationSettings: "'FILL' 1" }}>apartment</span>
-                Building
-              </span>
-            </div>
-            <div className="card-body dtl-building-body">
-              <div>
-                <div className="dtl-bldg-name">{inc.building}</div>
-                <div className="dtl-bldg-addr">{inc.address}</div>
-              </div>
-              <div className="dtl-bldg-meta">
-                <div><span className="label" style={{ fontSize: 9 }}>Floors</span><div className="stat-number" style={{ fontSize: 18 }}>{inc.floors}</div></div>
-                <div><span className="label" style={{ fontSize: 9 }}>Camera</span><div style={{ fontFamily: 'var(--font-mono)', fontSize: 14, fontWeight: 700, color: 'var(--accent)' }}>{inc.camId}</div></div>
+        {/* ═══ RIGHT COLUMN: TACTICAL DISPATCH & COMMAND ACTIONS ═══ */}
+        <aside className="id-sidebar">
+          
+          {/* 1. Station & Response ETA */}
+          <div className="id-card">
+            <div className="id-card-header">
+              <div className="id-card-title">
+                <Truck size={15} color="#4ade80" />
+                <span>Primary Fire Station Command</span>
               </div>
             </div>
-          </div>
-
-          {/* Owner */}
-          <div className="card">
-            <div className="card-body" style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-              <div className="dtl-owner-avatar">{inc.ownerInitials}</div>
-              <div>
-                <div className="dtl-owner-name">{inc.owner}</div>
-                <div className="dtl-owner-sub">Building Owner · {inc.ownerPhone}</div>
-                <div className="dtl-owner-sub">{inc.ownerEmail}</div>
+            <div className="id-card-body">
+              <div style={{ fontSize: 16, fontWeight: 700, color: '#f7f5ed', marginBottom: 12 }}>
+                {inc.station}
               </div>
-              <a href={`tel:${inc.ownerPhone}`} className="dtl-call-btn">
-                <span className="material-symbols-outlined" style={{ fontSize: 15, fontVariationSettings: "'FILL' 1" }}>call</span>
-                Call
+
+              <div className="id-station-info">
+                <div className="id-station-stat">
+                  <div style={{ fontSize: 10, color: '#8b928a', textTransform: 'uppercase', marginBottom: 4 }}>
+                    Station Distance
+                  </div>
+                  <div className="id-station-num" style={{ color: '#fabd2f' }}>
+                    {inc.stationDist}
+                  </div>
+                </div>
+
+                <div className="id-station-stat">
+                  <div style={{ fontSize: 10, color: '#8b928a', textTransform: 'uppercase', marginBottom: 4 }}>
+                    Estimated Arrival
+                  </div>
+                  <div className="id-station-num" style={{ color: '#4ade80' }}>
+                    {inc.stationEta}
+                  </div>
+                </div>
+              </div>
+
+              <a href={`tel:${inc.stationPhone}`} className="id-call-station-btn">
+                <Phone size={14} />
+                <span>DIRECT LINE TO DISPATCHER ({inc.stationPhone})</span>
               </a>
             </div>
           </div>
 
-          {/* Notes */}
-          <div className="card">
-            <div className="card-header">
-              <span className="card-title">
-                <span className="material-symbols-outlined" style={{ fontSize: 14 }}>edit_note</span>
-                Operator Notes
-              </span>
+          {/* 2. Response Units Fleet Deployment */}
+          <div className="id-card">
+            <div className="id-card-header">
+              <div className="id-card-title">
+                <ShieldAlert size={15} color="#fe8019" />
+                <span>Response Units & Vehicles</span>
+              </div>
             </div>
-            <div className="card-body">
+            <div className="id-card-body" style={{ padding: 14 }}>
+              <div className="id-unit-list">
+                {inc.units.map(unit => {
+                  const isSent = dispatched[unit.id] || unit.status === 'En Route';
+                  return (
+                    <div key={unit.id} className="id-unit-row">
+                      <div className="id-unit-meta">
+                        <div className="id-unit-name">{unit.name}</div>
+                        <div className="id-unit-sub">
+                          {unit.id} · ETA: <strong style={{ color: '#eae7df' }}>{unit.eta}</strong>
+                        </div>
+                      </div>
+
+                      {isSent ? (
+                        <div className="id-dispatched-tag">
+                          <Check size={12} />
+                          <span>EN ROUTE</span>
+                        </div>
+                      ) : (
+                        <button
+                          className="id-dispatch-btn"
+                          onClick={() => handleDispatchUnit(unit.id)}
+                        >
+                          <Send size={12} />
+                          <span>DISPATCH</span>
+                        </button>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+
+          {/* 3. National ERSS 112 Escalation Card */}
+          {!resolved && (
+            <div className="id-card id-erss-card">
+              <div className="id-card-body">
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#fb4934', fontWeight: 700, fontSize: 13, marginBottom: 6 }}>
+                  <ShieldAlert size={16} />
+                  <span>NATIONAL EMERGENCY (ERSS 112)</span>
+                </div>
+                <p style={{ fontSize: 12.5, color: '#c5c2b8', lineHeight: 1.5, margin: '0 0 14px' }}>
+                  Transmit verified encrypted telemetry directly to the central Maharashtra 112 Command Center.
+                </p>
+                {erssEscalated ? (
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, background: 'rgba(74, 222, 128, 0.15)', color: '#4ade80', padding: 10, borderRadius: 6, fontWeight: 700, fontSize: 12 }}>
+                    <Check size={14} />
+                    <span>TELEMETRY ROUTED TO ERSS 112</span>
+                  </div>
+                ) : (
+                  <button className="id-erss-btn" onClick={handleErssEscalate}>
+                    <span>ESCALATE TO ERSS 112</span>
+                    <ChevronRight size={15} />
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* 4. Resolve Incident Action */}
+          <div className="id-card">
+            <div className="id-card-body">
+              {resolved ? (
+                <div className="id-resolved-banner">
+                  <CheckCircle2 size={24} color="#4ade80" />
+                  <div>
+                    <div className="id-resolved-title">Incident Officially Resolved</div>
+                    <div className="id-resolved-sub">Logged & signed off by active dispatch operator</div>
+                  </div>
+                </div>
+              ) : (
+                <div>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: '#f7f5ed', marginBottom: 4 }}>
+                    Operational Clearance
+                  </div>
+                  <p style={{ fontSize: 12, color: '#8b928a', lineHeight: 1.5, margin: '0 0 14px' }}>
+                    Mark this incident as cleared once field units have suppressed hazards and confirmed site safety.
+                  </p>
+                  <button className="id-resolve-btn" onClick={() => setResolved(true)}>
+                    <CheckCircle2 size={16} />
+                    <span>MARK INCIDENT AS RESOLVED</span>
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* 5. Tactical Incident Timeline Audit */}
+          <div className="id-card">
+            <div className="id-card-header">
+              <div className="id-card-title">
+                <Clock size={15} color="#83a598" />
+                <span>Incident Action Timeline</span>
+              </div>
+            </div>
+            <div className="id-card-body">
+              <div className="id-timeline-wrap">
+                {inc.alertCooldown?.map((event, idx) => (
+                  <div key={idx} className="id-timeline-item">
+                    <div className="id-timeline-badge">
+                      <span style={{ width: 6, height: 6, borderRadius: '50%', background: event.type === 'alert' ? '#fb4934' : event.type === 'escalate' ? '#fabd2f' : '#83a598' }} />
+                    </div>
+                    <div className="id-timeline-content">
+                      <div className="id-timeline-time">{event.time} IST</div>
+                      <div className="id-timeline-desc">{event.event}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* 6. Operator Notes */}
+          <div className="id-card">
+            <div className="id-card-header">
+              <div className="id-card-title">
+                <Activity size={15} color="#c5c2b8" />
+                <span>Dispatcher Log & Notes</span>
+              </div>
+            </div>
+            <div className="id-card-body">
               <textarea
-                className="dtl-notes"
-                placeholder="Add notes for this incident…"
+                className="id-notes-area"
+                placeholder="Log dispatcher notes, evacuation progress, or hazmat warnings for this incident..."
                 value={notes}
                 onChange={e => setNotes(e.target.value)}
               />
             </div>
           </div>
-        </div>
 
-        {/* ══ Right: Dispatch Actions ══ */}
-        <div className="dtl-right">
-          {/* Nearest fire station */}
-          <div className="card">
-            <div className="card-header">
-              <span className="card-title">
-                <span className="material-symbols-outlined" style={{ fontSize: 14, fontVariationSettings: "'FILL' 1" }}>local_fire_department</span>
-                Nearest Station
-              </span>
-            </div>
-            <div className="card-body">
-              <div className="dtl-station-name">{inc.station}</div>
-              <div className="dtl-station-row">
-                <div><span className="label" style={{ fontSize: 9 }}>Distance</span><div className="stat-number accent" style={{ fontSize: 22 }}>{inc.stationDist}</div></div>
-                <div><span className="label" style={{ fontSize: 9 }}>ETA</span><div className="stat-number moderate" style={{ fontSize: 22 }}>{inc.stationEta}</div></div>
-              </div>
-              <a href="tel:101" className="dtl-call-station">
-                <span className="material-symbols-outlined" style={{ fontSize: 14, fontVariationSettings: "'FILL' 1" }}>call</span>
-                Call Station — {inc.stationPhone}
-              </a>
-            </div>
-          </div>
-
-          {/* Dispatch units */}
-          <div className="card">
-            <div className="card-header">
-              <span className="card-title">
-                <span className="material-symbols-outlined" style={{ fontSize: 14, fontVariationSettings: "'FILL' 1" }}>local_shipping</span>
-                Response Units
-              </span>
-            </div>
-            <div className="card-body" style={{ padding: 0 }}>
-              {inc.units.map(unit => (
-                <div key={unit.id} className="dtl-unit-row">
-                  <div>
-                    <div className="dtl-unit-name">{unit.name}</div>
-                    <div className="dtl-unit-id">{unit.id} · ETA {unit.eta}</div>
-                  </div>
-                  {dispatched[unit.id] ? (
-                    <span className="dtl-unit-dispatched">✓ Sent</span>
-                  ) : (
-                    <button className="dtl-dispatch-btn" onClick={() => setDispatched(d => ({ ...d, [unit.id]: true }))}>
-                      Dispatch
-                    </button>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Resolve */}
-          <div className="card" style={{ border: resolved ? '1px solid rgba(74,124,47,0.3)' : '1px solid var(--border)' }}>
-            <div className="card-body">
-              {resolved ? (
-                <div className="dtl-resolved-box">
-                  <span className="material-symbols-outlined" style={{ fontSize: 32, color: 'var(--safe)', fontVariationSettings: "'FILL' 1" }}>check_circle</span>
-                  <div className="dtl-resolved-title">Incident Resolved</div>
-                  <div className="dtl-resolved-sub">Closed by operator at {new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}</div>
-                </div>
-              ) : (
-                <>
-                  <p className="dtl-resolve-hint">Mark this incident as resolved after confirming the situation is under control.</p>
-                  <button className="dtl-resolve-btn" onClick={() => setResolved(true)}>
-                    <span className="material-symbols-outlined" style={{ fontSize: 16, fontVariationSettings: "'FILL' 1" }}>check_circle</span>
-                    Mark as Resolved
-                  </button>
-                </>
-              )}
-            </div>
-          </div>
-
-          {/* ERSS escalate */}
-          {!resolved && (
-            <div className="card" style={{ border: '1px solid var(--critical-ring)', background: 'var(--critical-dim)' }}>
-              <div className="card-body">
-                <div className="dtl-erss-title">
-                  <span className="material-symbols-outlined" style={{ fontSize: 14, color: 'var(--critical)', fontVariationSettings: "'FILL' 1" }}>campaign</span>
-                  ERSS / 112
-                </div>
-                <p className="dtl-erss-sub">Route to national emergency dispatch instantly.</p>
-                <button className="dtl-erss-btn" onClick={() => alert('Routed to ERSS/112 national emergency dispatch.')}>
-                  Escalate to ERSS / 112
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
+        </aside>
+      </main>
     </div>
   );
 }
