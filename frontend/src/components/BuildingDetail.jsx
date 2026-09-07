@@ -163,6 +163,7 @@ export default function BuildingDetail({ building, onBack, activeIncidentId, onV
           // If user wants to go back further, call parent onBack
           // Otherwise stay on building detail
         }}
+        onVerifyIncident={onVerifyIncident}
       />
     );
   }
