@@ -1,0 +1,82 @@
+{
+  "incident_id": "INC-20260907-004408",
+  "timestamp": 1788722048.4672902,
+  "timestamp_readable": "2026-09-07T00:44:08.467291Z",
+  "camera_id": "CAM-01",
+  "location": "Video Source",
+  "frame_count": 6,
+  "frames": [
+    {
+      "frame_index": 0,
+      "timestamp": 1788722013.6307936,
+      "timestamp_readable": "2026-09-07T00:43:33.630794Z",
+      "fire_confidence": 0.30192798376083374,
+      "fire_count": 0,
+      "human_count": 0,
+      "object_count": 0,
+      "image_path": "S:\\Programming\\sih_2026\\backend\\src\\ml_models\\..\\..\\data\\fire_incidents\\2026-09-07\\INC-20260907-004408\\frames\\frame_000.jpg",
+      "metadata_path": "S:\\Programming\\sih_2026\\backend\\src\\ml_models\\..\\..\\data\\fire_incidents\\2026-09-07\\INC-20260907-004408\\metadata\\frame_000.json"
+    },
+    {
+      "frame_index": 12,
+      "timestamp": 1788722021.26725,
+      "timestamp_readable": "2026-09-07T00:43:41.267250Z",
+      "fire_confidence": 0.3338755667209625,
+      "fire_count": 0,
+      "human_count": 0,
+      "object_count": 0,
+      "image_path": "S:\\Programming\\sih_2026\\backend\\src\\ml_models\\..\\..\\data\\fire_incidents\\2026-09-07\\INC-20260907-004408\\frames\\frame_012.jpg",
+      "metadata_path": "S:\\Programming\\sih_2026\\backend\\src\\ml_models\\..\\..\\data\\fire_incidents\\2026-09-07\\INC-20260907-004408\\metadata\\frame_012.json"
+    },
+    {
+      "frame_index": 40,
+      "timestamp": 1788722030.0947986,
+      "timestamp_readable": "2026-09-07T00:43:50.094799Z",
+      "fire_confidence": 0.49198028445243835,
+      "fire_count": 0,
+      "human_count": 0,
+      "object_count": 0,
+      "image_path": "S:\\Programming\\sih_2026\\backend\\src\\ml_models\\..\\..\\data\\fire_incidents\\2026-09-07\\INC-20260907-004408\\frames\\frame_040.jpg",
+      "metadata_path": "S:\\Programming\\sih_2026\\backend\\src\\ml_models\\..\\..\\data\\fire_incidents\\2026-09-07\\INC-20260907-004408\\metadata\\frame_040.json"
+    },
+    {
+      "frame_index": 41,
+      "timestamp": 1788722030.3575652,
+      "timestamp_readable": "2026-09-07T00:43:50.357565Z",
+      "fire_confidence": 0.5196259617805481,
+      "fire_count": 0,
+      "human_count": 0,
+      "object_count": 0,
+      "image_path": "S:\\Programming\\sih_2026\\backend\\src\\ml_models\\..\\..\\data\\fire_incidents\\2026-09-07\\INC-20260907-004408\\frames\\frame_041.jpg",
+      "metadata_path": "S:\\Programming\\sih_2026\\backend\\src\\ml_models\\..\\..\\data\\fire_incidents\\2026-09-07\\INC-20260907-004408\\metadata\\frame_041.json"
+    },
+    {
+      "frame_index": 63,
+      "timestamp": 1788722036.340954,
+      "timestamp_readable": "2026-09-07T00:43:56.340954Z",
+      "fire_confidence": 0.44785481691360474,
+      "fire_count": 0,
+      "human_count": 0,
+      "object_count": 0,
+      "image_path": "S:\\Programming\\sih_2026\\backend\\src\\ml_models\\..\\..\\data\\fire_incidents\\2026-09-07\\INC-20260907-004408\\frames\\frame_063.jpg",
+      "metadata_path": "S:\\Programming\\sih_2026\\backend\\src\\ml_models\\..\\..\\data\\fire_incidents\\2026-09-07\\INC-20260907-004408\\metadata\\frame_063.json"
+    },
+    {
+      "frame_index": 79,
+      "timestamp": 1788722040.375514,
+      "timestamp_readable": "2026-09-07T00:44:00.375514Z",
+      "fire_confidence": 0.36391374468803406,
+      "fire_count": 0,
+      "human_count": 0,
+      "object_count": 0,
+      "image_path": "S:\\Programming\\sih_2026\\backend\\src\\ml_models\\..\\..\\data\\fire_incidents\\2026-09-07\\INC-20260907-004408\\frames\\frame_079.jpg",
+      "metadata_path": "S:\\Programming\\sih_2026\\backend\\src\\ml_models\\..\\..\\data\\fire_incidents\\2026-09-07\\INC-20260907-004408\\metadata\\frame_079.json"
+    }
+  ],
+  "statistics": {
+    "total_fire_detections": 0,
+    "total_human_detections": 0,
+    "total_object_detections": 0,
+    "avg_fire_confidence": 0.40986305971940357
+  }
+}

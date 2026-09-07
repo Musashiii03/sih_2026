@@ -3,7 +3,6 @@ import { BrowserRouter, Routes, Route, NavLink, useNavigate, useLocation } from 
 import LandingPage from './components/LandingPage';
 import OwnerConsole from './components/OwnerConsole';
 import DispatchConsole from './components/DispatchConsole';
-import IncidentDashboard from './components/IncidentDashboard';
 import LoginPage from './components/LoginPage';
 
 // ══════════════════════════════════════════════════
@@ -168,7 +167,7 @@ function DispatchLayout() {
       <div className="atma-main-full">
         <Routes>
           <Route path="/"              element={<DispatchConsole />} />
-          <Route path="/:incidentId"   element={<IncidentDashboard />} />
+          <Route path="/:incidentId"   element={<DispatchConsole />} />
         </Routes>
       </div>
     </div>

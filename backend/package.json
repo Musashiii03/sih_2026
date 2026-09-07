@@ -12,7 +12,8 @@
     "migrate": "node scripts/migrate-database.js",
     "reset:db": "node scripts/reset-database.js",
     "seed:demo": "node scripts/setup-demo-data.js",
-    "sync:incidents": "node scripts/sync-incidents.js"
+    "sync:incidents": "node scripts/sync-incidents.js",
+    "update:fire-stations": "node scripts/update-nearest-fire-stations.js"
   },
   "keywords": [
     "fire-detection",

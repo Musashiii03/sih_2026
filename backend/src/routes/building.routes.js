@@ -30,4 +30,11 @@ router.get('/statistics', buildingController.getBuildingStatistics);
  */
 router.get('/:id', buildingController.getBuildingById);
 
+/**
+ * @route   POST /api/buildings
+ * @desc    Create new building
+ * @access  Public
+ */
+router.post('/', buildingController.createBuilding);
+
 module.exports = router;

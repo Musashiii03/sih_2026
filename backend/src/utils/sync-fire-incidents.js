@@ -121,7 +121,9 @@ async function syncFireIncidents(dataPath = null) {
             }
           }
 
-          // Create incident
+          // Create incident with dashboard URL
+          const dashboardUrl = `dispatch/${summary.incident_id}`;
+          
           const incident = await Incident.create({
             incident_number: summary.incident_id,
             incident_type: 'FIRE',
@@ -139,7 +141,8 @@ async function syncFireIncidents(dataPath = null) {
             acknowledged_at: null,
             resolved_at: null,
             location: sequelize.fn('ST_GeomFromText', 'POINT(77.0266 28.4595)', 4326),
-            confidence_score: summary.statistics?.avg_fire_confidence || 0
+            confidence_score: summary.statistics?.avg_fire_confidence || 0,
+            dashboard_url: dashboardUrl
           });
 
           // Create detection records for each frame

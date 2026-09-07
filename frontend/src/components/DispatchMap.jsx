@@ -4,13 +4,25 @@ import React, { useEffect, useRef } from 'react';
  * DispatchMap — SVG warm-toned map with:
  * - incident pin (red)
  * - station pin (marigold)
- * - route line with ETA
+ * - route line with ETA and actual distance from DB
  * - grid overlay
  */
-export default function DispatchMap({ inc }) {
+export default function DispatchMap({ inc, dashboardData }) {
   // Fixed pin positions for visual clarity
   const incidentPin = { x: 170, y: 120 };
   const stationPin  = { x: 80,  y: 70  };
+
+  // Get actual distance from dashboardData or fallback to inc
+  const actualDistance = dashboardData?.building?.nearest_fire_station?.distance_km 
+    ? `${dashboardData.building.nearest_fire_station.distance_km} km`
+    : inc?.stationDist || '2.1 km';
+  
+  const eta = dashboardData?.building?.nearest_fire_station?.distance_km
+    ? `~${Math.ceil(dashboardData.building.nearest_fire_station.distance_km * 3)} min`
+    : inc?.stationEta || '~6 min';
+
+  const stationName = dashboardData?.building?.nearest_fire_station?.fire_station_name || 'Station';
+  const incidentLocation = dashboardData?.building?.name || 'Incident Site';
 
   return (
     <div className="map-placeholder" style={{ minHeight: 220, borderRadius: 10, border: '1px solid var(--border-strong)' }}>
@@ -89,7 +101,7 @@ export default function DispatchMap({ inc }) {
           fontFamily="JetBrains Mono, monospace"
           fontWeight="700"
         >
-          {inc.stationEta}
+          {eta}
         </text>
         <text
           x={(stationPin.x + incidentPin.x) / 2 + 8}
@@ -98,7 +110,7 @@ export default function DispatchMap({ inc }) {
           fontSize="7"
           fontFamily="JetBrains Mono, monospace"
         >
-          {inc.stationDist}
+          {actualDistance}
         </text>
 
         {/* ── Incident pin ── */}
@@ -153,6 +165,24 @@ export default function DispatchMap({ inc }) {
         <line x1="20" y1="208" x2="60" y2="208" stroke="rgba(245,235,221,0.25)" strokeWidth="1.5" />
         <text x="28" y="216" fill="rgba(245,235,221,0.3)" fontSize="7"
           fontFamily="JetBrains Mono, monospace">1 km</text>
+
+        {/* ── Coordinate info (if available from DB) ── */}
+        {dashboardData?.building?.address?.latitude && (
+          <g>
+            <text x="10" y="12" fill="rgba(245,235,221,0.25)" fontSize="6"
+              fontFamily="JetBrains Mono, monospace">
+              INCIDENT: {dashboardData.building.address.latitude.toFixed(4)}°, {dashboardData.building.address.longitude.toFixed(4)}°
+            </text>
+          </g>
+        )}
+        {dashboardData?.building?.nearest_fire_station?.latitude && (
+          <g>
+            <text x="10" y="20" fill="rgba(245,235,221,0.25)" fontSize="6"
+              fontFamily="JetBrains Mono, monospace">
+              STATION: {dashboardData.building.nearest_fire_station.latitude.toFixed(4)}°, {dashboardData.building.nearest_fire_station.longitude.toFixed(4)}°
+            </text>
+          </g>
+        )}
       </svg>
     </div>
   );

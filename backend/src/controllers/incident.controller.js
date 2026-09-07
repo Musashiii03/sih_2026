@@ -60,6 +60,9 @@ exports.createIncident = async (req, res, next) => {
 
     // Generate incident number if not provided
     const incidentNumber = incident_id || `INC-${Date.now()}`;
+    
+    // Generate dashboard URL
+    const dashboardUrl = `dispatch/${incidentNumber}`;
 
     // Create the incident
     const incident = await Incident.create({
@@ -79,7 +82,8 @@ exports.createIncident = async (req, res, next) => {
       acknowledged_at: null,
       resolved_at: null,
       location: location ? sequelize.fn('ST_GeomFromText', location, 4326) : sequelize.fn('ST_GeomFromText', 'POINT(77.0266 28.4595)', 4326),
-      confidence_score: statistics?.avg_fire_confidence || 0
+      confidence_score: statistics?.avg_fire_confidence || 0,
+      dashboard_url: dashboardUrl
     });
 
     // Create detection records for each frame
@@ -222,10 +226,28 @@ exports.getAllIncidents = async (req, res, next) => {
         {
           model: Building,
           as: 'building',
-          include: [{
-            model: Address,
-            as: 'address'
-          }]
+          include: [
+            {
+              model: Address,
+              as: 'address',
+              attributes: {
+                include: [
+                  [sequelize.fn('ST_Y', sequelize.cast(sequelize.col('building.address.location'), 'geometry')), 'latitude'],
+                  [sequelize.fn('ST_X', sequelize.cast(sequelize.col('building.address.location'), 'geometry')), 'longitude']
+                ]
+              }
+            },
+            {
+              model: Address,
+              as: 'nearestFireStation',
+              attributes: {
+                include: [
+                  [sequelize.fn('ST_Y', sequelize.cast(sequelize.col('building.nearestFireStation.location'), 'geometry')), 'latitude'],
+                  [sequelize.fn('ST_X', sequelize.cast(sequelize.col('building.nearestFireStation.location'), 'geometry')), 'longitude']
+                ]
+              }
+            }
+          ]
         },
         {
           model: Camera,
@@ -236,6 +258,13 @@ exports.getAllIncidents = async (req, res, next) => {
           as: 'detections',
           limit: 5,
           order: [['detected_at', 'DESC']]
+        },
+        {
+          model: Evidence,
+          as: 'evidence',
+          limit: 10,
+          order: [['captured_at', 'ASC']],
+          attributes: ['id', 'evidence_type', 'file_name', 'file_path', 'captured_at', 'description']
         }
       ]
     });
@@ -312,7 +341,7 @@ exports.getIncidentById = async (req, res, next) => {
 };
 
 /**
- * Get incident by incident number
+ * Get incident by incident number with full relations
  */
 exports.getIncidentByNumber = async (req, res, next) => {
   try {
@@ -324,24 +353,55 @@ exports.getIncidentByNumber = async (req, res, next) => {
         {
           model: Building,
           as: 'building',
-          include: [{
-            model: Address,
-            as: 'address'
-          }]
+          include: [
+            {
+              model: Address,
+              as: 'address',
+              attributes: {
+                include: [
+                  [sequelize.fn('ST_Y', sequelize.cast(sequelize.col('building.address.location'), 'geometry')), 'latitude'],
+                  [sequelize.fn('ST_X', sequelize.cast(sequelize.col('building.address.location'), 'geometry')), 'longitude']
+                ]
+              }
+            },
+            {
+              model: Address,
+              as: 'nearestFireStation',
+              attributes: {
+                include: [
+                  [sequelize.fn('ST_Y', sequelize.cast(sequelize.col('building.nearestFireStation.location'), 'geometry')), 'latitude'],
+                  [sequelize.fn('ST_X', sequelize.cast(sequelize.col('building.nearestFireStation.location'), 'geometry')), 'longitude']
+                ]
+              }
+            }
+          ]
         },
         {
           model: Camera,
-          as: 'detected_by_camera'
+          as: 'detected_by_camera',
+          include: [
+            {
+              model: Building,
+              as: 'building',
+              attributes: ['id', 'name']
+            }
+          ]
         },
         {
           model: IncidentDetection,
           as: 'detections',
-          order: [['detected_at', 'ASC']]
+          order: [['detected_at', 'ASC']],
+          limit: 100
         },
         {
           model: Evidence,
           as: 'evidence',
-          order: [['captured_at', 'ASC']]
+          order: [['captured_at', 'ASC']],
+          attributes: [
+            'id', 'evidence_type', 'file_name', 'file_path', 
+            'mime_type', 'file_size_bytes', 'captured_at', 
+            'source_type', 'description', 'camera_id'
+          ]
         }
       ]
     });
@@ -508,6 +568,141 @@ exports.getIncidentStatistics = async (req, res, next) => {
 
   } catch (error) {
     console.error('Error fetching incident statistics:', error);
+    next(error);
+  }
+};
+
+/**
+ * Get full incident details for dashboard display
+ * Includes all relations: building, address, fire station, cameras, evidence, detections
+ */
+exports.getIncidentDashboardData = async (req, res, next) => {
+  try {
+    const { incident_number } = req.params;
+
+    const incident = await Incident.findOne({
+      where: { incident_number },
+      include: [
+        {
+          model: Building,
+          as: 'building',
+          include: [
+            {
+              model: Address,
+              as: 'address',
+              attributes: {
+                include: [
+                  [sequelize.fn('ST_Y', sequelize.cast(sequelize.col('building.address.location'), 'geometry')), 'latitude'],
+                  [sequelize.fn('ST_X', sequelize.cast(sequelize.col('building.address.location'), 'geometry')), 'longitude']
+                ]
+              }
+            },
+            {
+              model: Address,
+              as: 'nearestFireStation',
+              attributes: {
+                include: [
+                  [sequelize.fn('ST_Y', sequelize.cast(sequelize.col('building.nearestFireStation.location'), 'geometry')), 'latitude'],
+                  [sequelize.fn('ST_X', sequelize.cast(sequelize.col('building.nearestFireStation.location'), 'geometry')), 'longitude']
+                ]
+              }
+            }
+          ]
+        },
+        {
+          model: Camera,
+          as: 'detected_by_camera'
+        },
+        {
+          model: IncidentDetection,
+          as: 'detections',
+          order: [['detected_at', 'ASC']]
+        },
+        {
+          model: Evidence,
+          as: 'evidence',
+          where: { evidence_type: 'CCTV_FRAME' },
+          required: false,
+          order: [['captured_at', 'ASC']],
+          attributes: [
+            'id', 'evidence_type', 'file_name', 'file_path', 
+            'mime_type', 'captured_at', 'source_type', 'description'
+          ]
+        }
+      ]
+    });
+
+    if (!incident) {
+      return res.status(404).json({
+        success: false,
+        message: 'Incident not found'
+      });
+    }
+
+    // Format the response with dashboard-specific data
+    const dashboardData = {
+      incident: {
+        id: incident.id,
+        incident_number: incident.incident_number,
+        incident_type: incident.incident_type,
+        status: incident.status,
+        severity: incident.severity,
+        priority: incident.priority,
+        description: incident.description,
+        detected_at: incident.detected_at,
+        confidence_score: incident.confidence_score,
+        dashboard_url: incident.dashboard_url
+      },
+      building: incident.building ? {
+        id: incident.building.id,
+        name: incident.building.name,
+        building_type: incident.building.building_type,
+        number_of_floors: incident.building.number_of_floors,
+        total_area: incident.building.total_area,
+        height: incident.building.height,
+        has_fire_alarm: incident.building.has_fire_alarm,
+        has_sprinkler: incident.building.has_sprinkler,
+        has_fire_extinguishers: incident.building.has_fire_extinguishers,
+        address: incident.building.address ? {
+          address_line_1: incident.building.address.address_line_1,
+          address_line_2: incident.building.address.address_line_2,
+          locality: incident.building.address.locality,
+          city: incident.building.address.city,
+          district: incident.building.address.district,
+          state: incident.building.address.state,
+          postal_code: incident.building.address.postal_code,
+          latitude: incident.building.address.dataValues.latitude,
+          longitude: incident.building.address.dataValues.longitude
+        } : null,
+        nearest_fire_station: incident.building.nearestFireStation ? {
+          fire_station_name: incident.building.nearestFireStation.fire_station_name,
+          address_line_1: incident.building.nearestFireStation.address_line_1,
+          phone: incident.building.nearestFireStation.fire_station_name ? '101' : null,
+          distance_km: incident.building.fire_station_distance_km,
+          latitude: incident.building.nearestFireStation.dataValues.latitude,
+          longitude: incident.building.nearestFireStation.dataValues.longitude
+        } : null
+      } : null,
+      camera: incident.detected_by_camera ? {
+        id: incident.detected_by_camera.id,
+        camera_code: incident.detected_by_camera.camera_code,
+        name: incident.detected_by_camera.name,
+        camera_type: incident.detected_by_camera.camera_type,
+        floor_number: incident.detected_by_camera.floor_number,
+        room_name: incident.detected_by_camera.room_name,
+        location_description: incident.detected_by_camera.location_description
+      } : null,
+      detections: incident.detections || [],
+      evidence_frames: incident.evidence || []
+    };
+
+    res.json({
+      success: true,
+      data: dashboardData
+    });
+
+  } catch (error) {
+    console.error('Error fetching incident dashboard data:', error);
     next(error);
   }
 };

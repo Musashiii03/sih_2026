@@ -11,7 +11,7 @@ const { testConnection, syncDatabase, closeConnection } = require('./src/config/
 const db = require('./src/models');
 
 // Import API routes
-const { frameRoutes, stationRoutes, incidentRoutes, buildingRoutes } = require('./src/routes');
+const { frameRoutes, stationRoutes, incidentRoutes, buildingRoutes, cameraRoutes, organizationRoutes } = require('./src/routes');
 
 
 const app = express();
@@ -159,6 +159,12 @@ app.use('/api/incidents', incidentRoutes);
 
 // Mount building API routes at /api
 app.use('/api/buildings', buildingRoutes);
+
+// Mount camera API routes at /api
+app.use('/api/cameras', cameraRoutes);
+
+// Mount organization API routes at /api
+app.use('/api/organizations', organizationRoutes);
 
 // Health check endpoint (includes database status)
 app.get('/health', async (req, res) => {

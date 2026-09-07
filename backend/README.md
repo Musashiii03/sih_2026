@@ -129,7 +129,19 @@ npm start
 
 # Test database connection
 npm run test:db
+
+# Database setup and management
+npm run db:setup                  # Sync database schema with models
+npm run reset:db                  # Reset database (CAUTION: destroys data)
+npm run migrate                   # Run database migrations
+
+# Data seeding and synchronization
+npm run seed:demo                 # Seed demo buildings, cameras, and incidents
+npm run sync:incidents            # Sync fire incidents from filesystem
+npm run update:fire-stations      # Update nearest fire station for all buildings (uses normalized design)
 ```
+
+For detailed information on the nearest fire station feature, see [NEAREST_FIRE_STATION.md](./docs/NEAREST_FIRE_STATION.md).
 
 ## API Endpoints
 

@@ -1,0 +1,398 @@
+/* Building Detail Component Styles */
+
+.building-detail-container {
+  min-height: 100vh;
+  background: var(--apex-bg-main);
+  padding: 0;
+}
+
+.building-detail-header {
+  padding: 32px 48px;
+  background: var(--apex-bg-deep);
+  border-bottom: 1px solid var(--apex-border-dim);
+}
+
+.building-header-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 24px;
+}
+
+.building-header-main {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.building-header-icon {
+  width: 64px;
+  height: 64px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(131, 165, 152, 0.15) 0%, rgba(131, 165, 152, 0.2) 100%);
+  border: 1px solid rgba(131, 165, 152, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #83a598;
+  box-shadow: 0 4px 16px rgba(131, 165, 152, 0.2);
+  flex-shrink: 0;
+}
+
+.building-detail-title {
+  font-family: 'Fraunces', Georgia, serif;
+  font-size: 36px;
+  font-style: italic;
+  font-weight: 400;
+  color: #f7f5ed;
+  margin: 0;
+  line-height: 1.2;
+}
+
+.building-detail-subtitle {
+  font-size: 14px;
+  color: var(--apex-text-muted);
+  margin: 6px 0 0 0;
+}
+
+.building-header-stats {
+  display: flex;
+  gap: 16px;
+}
+
+.stat-pill {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 12px 20px;
+  background: var(--apex-bg-surface);
+  border: 1px solid var(--apex-border);
+  border-radius: 10px;
+}
+
+.stat-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--apex-text-muted);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.stat-value {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--apex-text-primary);
+}
+
+.stat-value.active {
+  color: #4ade80;
+}
+
+.stat-value.inactive {
+  color: #fabd2f;
+}
+
+/* Main Content */
+.building-detail-content {
+  display: grid;
+  grid-template-columns: 1fr 400px;
+  gap: 24px;
+  padding: 32px 48px;
+  min-height: calc(100vh - 200px);
+}
+
+.building-main-column {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.building-side-column {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* Main Display */
+.no-camera-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 60px;
+  color: var(--apex-text-muted);
+  text-align: center;
+  min-height: 380px;
+}
+
+/* Camera Grid */
+.camera-grid-section {
+  background: var(--apex-bg-surface);
+  border: 1px solid var(--apex-border);
+  border-radius: 12px;
+  padding: 20px;
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.section-title {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--apex-text-secondary);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin: 0;
+}
+
+.section-badge {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  font-weight: 600;
+  color: #4ade80;
+  background: rgba(74, 222, 128, 0.1);
+  border: 1px solid rgba(74, 222, 128, 0.3);
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+.camera-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 12px;
+}
+
+.camera-card {
+  background: var(--apex-bg-surface-alt);
+  border: 1px solid var(--apex-border-dim);
+  border-radius: 8px;
+  padding: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.camera-card:hover {
+  border-color: var(--apex-border-light);
+  background: #1f2320;
+}
+
+.camera-card.selected {
+  border-color: #83a598;
+  background: rgba(131, 165, 152, 0.08);
+  box-shadow: 0 0 0 1px #83a598;
+}
+
+.camera-card-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+  color: #83a598;
+}
+
+.camera-code {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--apex-text-primary);
+  flex: 1;
+}
+
+.camera-status {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.camera-status.online {
+  background: #4ade80;
+  box-shadow: 0 0 8px #4ade80;
+}
+
+.camera-status.offline {
+  background: #8b928a;
+}
+
+.camera-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.camera-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--apex-text-primary);
+  margin: 0;
+}
+
+.camera-location {
+  font-size: 11px;
+  color: var(--apex-text-muted);
+  margin: 0;
+}
+
+/* Side Panels */
+.side-panel {
+  background: var(--apex-bg-surface);
+  border: 1px solid var(--apex-border);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.side-panel-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 20px;
+  background: var(--apex-bg-deep);
+  border-bottom: 1px solid var(--apex-border-dim);
+}
+
+.panel-icon {
+  color: #83a598;
+  flex-shrink: 0;
+}
+
+.panel-title {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--apex-text-secondary);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.map-container {
+  height: 280px;
+  overflow: hidden;
+}
+
+/* Station Info */
+.station-info {
+  padding: 20px;
+}
+
+.station-main {
+  margin-bottom: 16px;
+}
+
+.station-name {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--apex-text-primary);
+  margin: 0 0 6px 0;
+}
+
+.station-address {
+  font-size: 13px;
+  color: var(--apex-text-muted);
+  margin: 0;
+}
+
+.station-metrics {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  padding: 16px 0;
+  border-top: 1px solid var(--apex-border-dim);
+  border-bottom: 1px solid var(--apex-border-dim);
+  margin-bottom: 16px;
+}
+
+.metric-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.metric-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--apex-text-muted);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.metric-value {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--apex-text-primary);
+}
+
+.station-call-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 18px;
+  background: #4ade80;
+  border: 1px solid #86efac;
+  border-radius: 10px;
+  color: #111e15;
+  font-size: 14px;
+  font-weight: 700;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.station-call-btn:hover {
+  background: #5eead4;
+  box-shadow: 0 4px 12px rgba(74, 222, 128, 0.3);
+  transform: translateY(-1px);
+}
+
+.station-phone {
+  margin-left: auto;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+}
+
+.no-station-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 40px 20px;
+  color: var(--apex-text-muted);
+  text-align: center;
+}
+
+/* Safety Features */
+.safety-features-list {
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.safety-feature-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 14px;
+  color: var(--apex-text-secondary);
+}
+
+.feature-indicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.feature-indicator.active {
+  background: #4ade80;
+  box-shadow: 0 0 8px rgba(74, 222, 128, 0.5);
+}

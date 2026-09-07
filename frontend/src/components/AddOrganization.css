@@ -1,0 +1,211 @@
+/* Add Organization Component Styles */
+
+.add-org-container {
+  min-height: 100vh;
+  padding: 0;
+  margin: 0;
+  background: var(--apex-bg-main);
+}
+
+.add-org-header {
+  padding: 32px 48px;
+  background: var(--apex-bg-deep);
+  border-bottom: 1px solid var(--apex-border-dim);
+}
+
+.back-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: transparent;
+  border: 1px solid var(--apex-border);
+  padding: 8px 16px;
+  border-radius: 8px;
+  color: var(--apex-text-secondary);
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  transition: all 0.2s;
+  margin-bottom: 32px;
+}
+
+.back-btn:hover {
+  background: var(--apex-bg-surface);
+  border-color: var(--apex-border-light);
+  color: var(--apex-text-primary);
+}
+
+.add-org-title-section {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.add-org-icon {
+  width: 64px;
+  height: 64px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(254, 128, 25, 0.15) 0%, rgba(251, 73, 52, 0.2) 100%);
+  border: 1px solid rgba(254, 128, 25, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fe8019;
+  box-shadow: 0 4px 16px rgba(254, 128, 25, 0.2);
+  flex-shrink: 0;
+}
+
+.add-org-title {
+  font-family: 'Fraunces', Georgia, serif;
+  font-size: 38px;
+  font-style: italic;
+  font-weight: 400;
+  color: #f7f5ed;
+  margin: 0;
+  line-height: 1.2;
+}
+
+.add-org-subtitle {
+  font-size: 15px;
+  color: var(--apex-text-muted);
+  margin: 6px 0 0 0;
+}
+
+.add-org-form {
+  max-width: 1100px;
+  margin: 0;
+  padding: 48px;
+}
+
+.form-message {
+  padding: 14px 18px;
+  border-radius: 10px;
+  margin-bottom: 32px;
+  font-size: 14px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.form-message.success {
+  background: rgba(74, 222, 128, 0.1);
+  border: 1px solid rgba(74, 222, 128, 0.3);
+  color: #4ade80;
+}
+
+.form-message.error {
+  background: rgba(251, 73, 52, 0.1);
+  border: 1px solid rgba(251, 73, 52, 0.3);
+  color: #fb4934;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 28px 32px;
+  margin-bottom: 40px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.form-group.full-width {
+  grid-column: 1 / -1;
+}
+
+.form-label {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--apex-text-primary);
+  margin-bottom: 10px;
+  letter-spacing: 0.02em;
+  text-align: left;
+}
+
+.required {
+  color: #fb4934;
+  margin-left: 2px;
+}
+
+.form-input,
+.form-select {
+  width: 100%;
+  padding: 14px 18px;
+  background: var(--apex-bg-surface);
+  border: 1px solid var(--apex-border);
+  border-radius: 10px;
+  color: var(--apex-text-primary);
+  font-size: 15px;
+  font-family: 'Manrope', sans-serif;
+  transition: all 0.2s;
+  box-sizing: border-box;
+  text-align: left;
+}
+
+.form-input:focus,
+.form-select:focus {
+  outline: none;
+  border-color: rgba(254, 128, 25, 0.6);
+  box-shadow: 0 0 0 4px rgba(254, 128, 25, 0.1);
+  background: var(--apex-bg-surface-alt);
+}
+
+.form-input::placeholder {
+  color: var(--apex-text-dim);
+  text-align: left;
+}
+
+.form-hint {
+  display: block;
+  font-size: 12px;
+  color: var(--apex-text-muted);
+  margin-top: 8px;
+  font-style: italic;
+  text-align: left;
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-start;
+  gap: 16px;
+  padding-top: 24px;
+  border-top: 1px solid var(--apex-border-dim);
+}
+
+.submit-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 16px 32px;
+  background: #fe8019;
+  border: 1px solid #ff9b44;
+  border-radius: 12px;
+  color: #181b19;
+  font-size: 16px;
+  font-weight: 700;
+  font-family: 'Manrope', sans-serif;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 4px 16px rgba(254, 128, 25, 0.3);
+}
+
+.submit-btn:hover:not(:disabled) {
+  background: #ffa04d;
+  box-shadow: 0 6px 20px rgba(254, 128, 25, 0.4);
+  transform: translateY(-2px);
+}
+
+.submit-btn:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.submit-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}

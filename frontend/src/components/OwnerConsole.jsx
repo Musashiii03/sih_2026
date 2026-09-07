@@ -34,6 +34,9 @@ import {
   Layers,
   Camera
 } from 'lucide-react';
+import AddOrganization from './AddOrganization';
+import AddBuilding from './AddBuilding';
+import BuildingDetail from './BuildingDetail';
 import './ApexConsole.css';
 
 // ─── SEEDED ORGANIZATIONS & SITES ────────────────────────────────────
@@ -269,8 +272,14 @@ const INITIAL_INCIDENTS = [
 export default function OwnerConsole() {
   const navigate = useNavigate();
 
-  // Navigation tabs: 'overview' | 'monitoring' | 'incidents'
+  // Navigation tabs: 'overview' | 'monitoring' | 'incidents' | 'add-organization' | 'add-building' | 'building-detail'
   const [activeTab, setActiveTab] = useState('overview');
+  const [selectedBuilding, setSelectedBuilding] = useState(null);
+
+  // Organizations & Buildings from API
+  const [organizations, setOrganizations] = useState([]);
+  const [buildings, setBuildings] = useState([]);
+  const [expandedOrgId, setExpandedOrgId] = useState(null);
 
   // Organizations & Selected Facility
   const [selectedOrgId, setSelectedOrgId] = useState('APX-01');
@@ -306,6 +315,57 @@ export default function OwnerConsole() {
 
   const removeToast = (id) => {
     setToasts((prev) => prev.filter((t) => t.id !== id));
+  };
+
+  // Fetch Organizations and Buildings
+  useEffect(() => {
+    fetchOrganizations();
+    fetchBuildings();
+  }, []);
+
+  const fetchOrganizations = async () => {
+    try {
+      const response = await fetch('/api/organizations?limit=100');
+      if (response.ok) {
+        const data = await response.json();
+        setOrganizations(data.data.organizations || []);
+      }
+    } catch (error) {
+      console.error('Error fetching organizations:', error);
+    }
+  };
+
+  const fetchBuildings = async () => {
+    try {
+      const response = await fetch('/api/buildings?limit=100');
+      if (response.ok) {
+        const data = await response.json();
+        setBuildings(data.data.buildings || []);
+      }
+    } catch (error) {
+      console.error('Error fetching buildings:', error);
+    }
+  };
+
+  // Toggle organization expansion
+  const toggleOrganization = (orgId) => {
+    setExpandedOrgId(expandedOrgId === orgId ? null : orgId);
+  };
+
+  // Get buildings for an organization
+  const getOrganizationBuildings = (orgId) => {
+    return buildings.filter(b => b.organization_id === orgId);
+  };
+
+  // Get buildings without organization
+  const getUnassignedBuildings = () => {
+    return buildings.filter(b => !b.organization_id);
+  };
+
+  // Handle building click
+  const handleBuildingClick = (building) => {
+    setSelectedBuilding(building);
+    setActiveTab('building-detail');
   };
 
   // Clock runner
@@ -459,169 +519,130 @@ export default function OwnerConsole() {
         ))}
       </div>
 
-      {/* ─── LEFT SIDEBAR ─── */}
-      <aside className="apex-sidebar">
-        <div>
-          {/* Brand */}
-          <div className="apex-sidebar-brand">
-            <div className="apex-brand-icon" style={{ padding: 3, overflow: 'hidden' }}>
-              <img
-                src="/atmarakshak_logo.png"
-                alt="Atmarakshak Logo"
-                style={{ width: '100%', height: '100%', objectFit: 'contain', borderRadius: 6 }}
-              />
-            </div>
-            <div>
-              <div className="apex-brand-name">Atmarakshak</div>
-              <div className="apex-brand-sub">OPS CONSOLE · V2.4</div>
-            </div>
+      {/* ─── GLASSY SIDEBAR ─── */}
+      <aside className="glassy-sidebar">
+        {/* Logo + Brand */}
+        <div className="sidebar-brand">
+          <div className="sidebar-logo">
+            <img
+              src="/atmarakshak_logo.png"
+              alt="Atmarakshak"
+              style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+            />
           </div>
-
-          {/* Nav List */}
-          <ul className="apex-nav-list">
-            <li>
-              <button
-                className={`apex-nav-item ${activeTab === 'overview' ? 'active' : ''}`}
-                onClick={() => setActiveTab('overview')}
-              >
-                <LayoutDashboard size={16} className="apex-nav-icon" />
-                <span>Command Overview</span>
-              </button>
-            </li>
-            <li>
-              <button
-                className={`apex-nav-item ${activeTab === 'monitoring' ? 'active' : ''}`}
-                onClick={() => setActiveTab('monitoring')}
-              >
-                <Video size={16} className="apex-nav-icon" />
-                <span>Live Monitoring</span>
-              </button>
-            </li>
-            <li>
-              <button
-                className={`apex-nav-item ${activeTab === 'incidents' ? 'active' : ''}`}
-                onClick={() => setActiveTab('incidents')}
-              >
-                <History size={16} className="apex-nav-icon" />
-                <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
-                  <span>Incident History</span>
-                  {activeIncidentsCount > 0 && (
-                    <span
-                      style={{
-                        fontFamily: 'JetBrains Mono, monospace',
-                        fontSize: '10px',
-                        background: 'rgba(251, 73, 52, 0.15)',
-                        color: '#fb4934',
-                        padding: '1px 6px',
-                        borderRadius: '4px',
-                        border: '1px solid rgba(251, 73, 52, 0.3)',
-                      }}
-                    >
-                      {activeIncidentsCount}
-                    </span>
-                  )}
-                </span>
-              </button>
-            </li>
-          </ul>
+          <span className="sidebar-brand-name">Atmarakshak</span>
         </div>
 
-        {/* User Profile & Sign Out */}
-        <div className="apex-sidebar-user">
-          <div className="apex-user-info-row">
-            <div className="apex-user-avatar">MR</div>
-            <div>
-              <div className="apex-user-name">Morgan Reed</div>
-              <div className="apex-user-role">OWNER / OPERATOR</div>
-            </div>
-          </div>
-          <button className="apex-signout-btn" onClick={handleSignOut}>
-            <LogOut size={13} />
-            <span>SIGN OUT</span>
+        {/* Navigation */}
+        <nav className="sidebar-nav">
+          <button
+            className={`sidebar-nav-btn ${activeTab === 'overview' ? 'active' : ''}`}
+            onClick={() => setActiveTab('overview')}
+          >
+            <LayoutDashboard size={20} />
+            <span>Dashboard</span>
           </button>
+          <button
+            className={`sidebar-nav-btn ${activeTab === 'incidents' ? 'active' : ''}`}
+            onClick={() => setActiveTab('incidents')}
+          >
+            <History size={20} />
+            <span>Incident History</span>
+            {activeIncidentsCount > 0 && (
+              <span className="sidebar-badge">{activeIncidentsCount}</span>
+            )}
+          </button>
+        </nav>
+
+        {/* Organizations & Buildings List */}
+        <div className="sidebar-section">
+          <div className="sidebar-section-title">Organizations & Buildings</div>
+          <div className="sidebar-tree">
+            {/* Organizations with Buildings */}
+            {organizations.map(org => {
+              const orgBuildings = getOrganizationBuildings(org.id);
+              const isExpanded = expandedOrgId === org.id;
+              
+              return (
+                <div key={org.id} className="tree-item">
+                  <div 
+                    className="tree-org-item"
+                    onClick={() => toggleOrganization(org.id)}
+                  >
+                    <ChevronDown 
+                      size={16} 
+                      className={`tree-chevron ${isExpanded ? 'expanded' : ''}`}
+                    />
+                    <Shield size={16} className="tree-icon org-icon" />
+                    <span className="tree-label">{org.name}</span>
+                    <span className="tree-count">{orgBuildings.length}</span>
+                  </div>
+                  {isExpanded && orgBuildings.length > 0 && (
+                    <div className="tree-children">
+                      {orgBuildings.map(building => (
+                        <div 
+                          key={building.id} 
+                          className="tree-building-item"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleBuildingClick(building);
+                          }}
+                        >
+                          <Layers size={14} className="tree-icon building-icon" />
+                          <span className="tree-label">{building.name}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+
+            {/* Unassigned Buildings - shown directly */}
+            {getUnassignedBuildings().map(building => (
+              <div key={building.id} className="tree-item">
+                <div 
+                  className="tree-building-item tree-building-direct"
+                  onClick={() => handleBuildingClick(building)}
+                >
+                  <Layers size={16} className="tree-icon building-icon" />
+                  <span className="tree-label">{building.name}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Action Buttons */}
+        <div className="sidebar-actions">
+          <button
+            className="sidebar-action-btn"
+            onClick={() => setActiveTab('add-organization')}
+          >
+            <span>+ Add Organization</span>
+          </button>
+          <button
+            className="sidebar-action-btn"
+            onClick={() => setActiveTab('add-building')}
+          >
+            <span>+ Add Building</span>
+          </button>
+        </div>
+
+        {/* Profile */}
+        <div className="sidebar-profile">
+          <div className="sidebar-profile-avatar">MR</div>
+          <div className="sidebar-profile-info">
+            <div className="sidebar-profile-name">Morgan Reed</div>
+            <div className="sidebar-profile-role">Owner</div>
+          </div>
         </div>
       </aside>
 
       {/* ─── MAIN CONTENT VIEWPORT ─── */}
       <main className="apex-main-viewport">
-        {/* Top Header */}
-        <header className="apex-top-header">
-          <div className="apex-header-left">
-            <div className="apex-breadcrumb-block">
-              <div className="apex-breadcrumb-path">
-                ATMARAKSHAK &gt; {activeTab === 'overview' ? 'COMMAND OVERVIEW' : activeTab === 'monitoring' ? 'LIVE MONITORING' : 'INCIDENT HISTORY'}
-              </div>
-              <h1 className="apex-page-title">
-                {activeTab === 'overview' && 'Owner command center'}
-                {activeTab === 'monitoring' && 'Live monitoring'}
-                {activeTab === 'incidents' && 'Incident management'}
-              </h1>
-            </div>
-
-            {/* Selectors for facility/org in Monitoring & Incidents */}
-            {(activeTab === 'monitoring' || activeTab === 'incidents' || activeTab === 'overview') && (
-              <div className="apex-header-selectors">
-                <select
-                  value={selectedOrgId}
-                  onChange={(e) => {
-                    setSelectedOrgId(e.target.value);
-                    const org = ORGANIZATIONS.find((o) => o.id === e.target.value);
-                    if (org && org.facilities.length > 0) {
-                      setSelectedFacilityId(org.facilities[0].id);
-                    }
-                  }}
-                  className="apex-select-pill"
-                >
-                  {ORGANIZATIONS.map((org) => (
-                    <option key={org.id} value={org.id}>
-                      {org.code} — {org.name.toUpperCase()}
-                    </option>
-                  ))}
-                </select>
-
-                <select
-                  value={selectedFacilityId}
-                  onChange={(e) => setSelectedFacilityId(e.target.value)}
-                  className="apex-select-pill"
-                >
-                  {currentOrg.facilities.map((fac) => (
-                    <option key={fac.id} value={fac.id}>
-                      {fac.code} — {fac.name.toUpperCase()}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            )}
-          </div>
-
-          <div className="apex-header-right">
-            <div className="apex-nominal-pill">
-              <div className="apex-pulse-dot" />
-              <span>SYSTEM NOMINAL</span>
-            </div>
-            <div className="apex-user-badge-pill">
-              <div
-                style={{
-                  width: 20,
-                  height: 20,
-                  borderRadius: '50%',
-                  background: '#373d38',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: 10,
-                  color: '#eae7df',
-                }}
-              >
-                MR
-              </div>
-              <span>Morgan Reed</span>
-            </div>
-          </div>
-        </header>
-
         {/* Content Body */}
-        <div className="apex-content-area">
+        <div className="apex-content-area-new">
           {/* ═════════════════════════════════════════════════════════════ */}
           {/* TAB 1: COMMAND OVERVIEW                                      */}
           {/* ═════════════════════════════════════════════════════════════ */}
@@ -673,72 +694,98 @@ export default function OwnerConsole() {
 
               {/* Matrix + Readiness Grid */}
               <div className="apex-overview-grid">
-                {/* Left: Organization Safety Matrix */}
+                {/* Left: Safety Matrix */}
                 <div className="apex-panel">
                   <div className="apex-panel-header">
-                    <span className="apex-panel-title">ORGANIZATION SAFETY MATRIX</span>
-                    <span className="apex-tag-badge">2 REGISTERED</span>
+                    <span className="apex-panel-title">SAFETY MATRIX</span>
+                    <span className="apex-tag-badge">{organizations.length} ORGS · {buildings.length} BUILDINGS</span>
                   </div>
 
-                  <div className="apex-org-card-list">
-                    {ORGANIZATIONS.map((org) => {
-                      const isSelected = selectedOrgId === org.id;
-                      return (
-                        <div
-                          key={org.id}
-                          className={`apex-org-card ${isSelected ? 'selected' : ''}`}
-                          onClick={() => {
-                            setSelectedOrgId(org.id);
-                            if (org.facilities.length > 0) {
-                              setSelectedFacilityId(org.facilities[0].id);
-                            }
-                          }}
-                        >
-                          <div>
-                            <div className="apex-org-name">
-                              <span style={{ width: 8, height: 8, borderRadius: 2, background: isSelected ? '#fe8019' : '#525b54' }} />
-                              <span>{org.name}</span>
-                            </div>
-                            <div className="apex-org-sub">
-                              {org.code} · {org.buildingsCount.toString().padStart(2, '0')} buildings
-                            </div>
-                          </div>
+                  {/* Organizations */}
+                  <div className="safety-matrix-section">
+                    <div className="safety-section-label">ORGANIZATIONS</div>
+                    <div className="apex-org-card-list">
+                      {organizations.length > 0 ? (
+                        organizations.map((org) => {
+                          const orgBuildings = getOrganizationBuildings(org.id);
+                          return (
+                            <div
+                              key={org.id}
+                              className="apex-org-card"
+                            >
+                              <div>
+                                <div className="apex-org-name">
+                                  <Shield size={16} style={{ color: '#fe8019' }} />
+                                  <span>{org.name}</span>
+                                </div>
+                                <div className="apex-org-sub">
+                                  {org.organization_type} · {orgBuildings.length} buildings
+                                </div>
+                              </div>
 
-                          <div className="apex-org-stats">
-                            <div className="apex-stat-col">
-                              <div className="apex-stat-label">SAFETY</div>
-                              <div className="apex-stat-val green">{org.safetyScore}%</div>
+                              <div className="apex-org-stats">
+                                <div className="apex-stat-col">
+                                  <div className="apex-stat-label">STATUS</div>
+                                  <div className={`apex-stat-val ${org.status === 'ACTIVE' ? 'green' : 'amber'}`}>
+                                    {org.status}
+                                  </div>
+                                </div>
+                              </div>
                             </div>
-                            <div className="apex-stat-col">
-                              <div className="apex-stat-label">ALERTS</div>
-                              <div className="apex-stat-val amber">{org.alertsCount}</div>
-                            </div>
-                          </div>
+                          );
+                        })
+                      ) : (
+                        <div style={{ padding: '20px', textAlign: 'center', color: 'var(--apex-text-muted)', fontSize: '13px' }}>
+                          No organizations found. Click "Add Organization" to create one.
                         </div>
-                      );
-                    })}
+                      )}
+                    </div>
                   </div>
 
-                  {/* Selected Org summary banner */}
-                  <div className="apex-selected-org-bar">
-                    <div>
-                      <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 10, color: 'var(--apex-text-muted)', display: 'block' }}>
-                        SELECTED ORGANIZATION
-                      </span>
-                      <span style={{ fontSize: 14, fontWeight: 700, color: '#eae7df' }}>
-                        {currentOrg.name}
-                      </span>
+                  {/* Buildings */}
+                  <div className="safety-matrix-section">
+                    <div className="safety-section-label">BUILDINGS</div>
+                    <div className="apex-org-card-list">
+                      {buildings.length > 0 ? (
+                        buildings.slice(0, 5).map((building) => {
+                          const org = organizations.find(o => o.id === building.organization_id);
+                          return (
+                            <div
+                              key={building.id}
+                              className="apex-org-card"
+                            >
+                              <div>
+                                <div className="apex-org-name">
+                                  <Layers size={16} style={{ color: '#83a598' }} />
+                                  <span>{building.name}</span>
+                                </div>
+                                <div className="apex-org-sub">
+                                  {building.building_type} · {building.number_of_floors} floors · {org ? org.name : 'No organization'}
+                                </div>
+                              </div>
+
+                              <div className="apex-org-stats">
+                                <div className="apex-stat-col">
+                                  <div className="apex-stat-label">STATUS</div>
+                                  <div className={`apex-stat-val ${building.status === 'ACTIVE' ? 'green' : 'amber'}`}>
+                                    {building.status}
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })
+                      ) : (
+                        <div style={{ padding: '20px', textAlign: 'center', color: 'var(--apex-text-muted)', fontSize: '13px' }}>
+                          No buildings found. Click "Add Building" to create one.
+                        </div>
+                      )}
                     </div>
-                    <div style={{ display: 'flex', gap: 20, fontFamily: 'JetBrains Mono, monospace', fontSize: 11 }}>
-                      <div>
-                        <span style={{ color: 'var(--apex-text-muted)', marginRight: 6 }}>BUILDINGS</span>
-                        <strong style={{ color: '#eae7df' }}>{currentOrg.buildingsCount}</strong>
+                    {buildings.length > 5 && (
+                      <div style={{ padding: '12px 18px', textAlign: 'center', fontSize: '12px', color: 'var(--apex-text-muted)', borderTop: '1px solid var(--apex-border-dim)' }}>
+                        + {buildings.length - 5} more buildings
                       </div>
-                      <div>
-                        <span style={{ color: 'var(--apex-text-muted)', marginRight: 6 }}>ALERTS</span>
-                        <strong style={{ color: '#fabd2f' }}>{currentOrg.alertsCount}</strong>
-                      </div>
-                    </div>
+                    )}
                   </div>
                 </div>
 
@@ -1217,13 +1264,31 @@ export default function OwnerConsole() {
               )}
             </div>
           )}
-        </div>
 
-        {/* Console Footer */}
-        <footer className="apex-footer-bar">
-          <div>ATMARAKSHAK / ALL DATA STREAMS ENCRYPTED</div>
-          <div>UTC · BUILD 2.4.18</div>
-        </footer>
+          {/* ═════════════════════════════════════════════════════════════ */}
+          {/* TAB 4: ADD ORGANIZATION                                       */}
+          {/* ═════════════════════════════════════════════════════════════ */}
+          {activeTab === 'add-organization' && (
+            <AddOrganization onBack={() => setActiveTab('overview')} />
+          )}
+
+          {/* ═════════════════════════════════════════════════════════════ */}
+          {/* TAB 5: ADD BUILDING                                           */}
+          {/* ═════════════════════════════════════════════════════════════ */}
+          {activeTab === 'add-building' && (
+            <AddBuilding onBack={() => setActiveTab('overview')} />
+          )}
+
+          {/* ═════════════════════════════════════════════════════════════ */}
+          {/* TAB 6: BUILDING DETAIL                                        */}
+          {/* ═════════════════════════════════════════════════════════════ */}
+          {activeTab === 'building-detail' && (
+            <BuildingDetail 
+              building={selectedBuilding} 
+              onBack={() => setActiveTab('overview')} 
+            />
+          )}
+        </div>
       </main>
     </div>
   );

@@ -52,6 +52,19 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.GEOGRAPHY('POINT', 4326),
       allowNull: false,
       comment: 'PostGIS geography point (latitude, longitude)'
+    },
+    address_type: {
+      type: DataTypes.STRING(50),
+      allowNull: true,
+      validate: {
+        isIn: [['BUILDING', 'FIRE_STATION', 'ORGANIZATION', 'OTHER']]
+      },
+      comment: 'Type of address: BUILDING, FIRE_STATION, ORGANIZATION, OTHER'
+    },
+    fire_station_name: {
+      type: DataTypes.STRING(255),
+      allowNull: true,
+      comment: 'Name of fire station (if address_type is FIRE_STATION)'
     }
   }, {
     tableName: 'addresses',
