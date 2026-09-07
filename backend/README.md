@@ -6,6 +6,7 @@ Backend server for the Atmarakshak Fire Detection System. Built with Node.js, Ex
 
 - 🔥 Fire incident frame management API
 - 🚒 Nearest fire station finder (OpenStreetMap)
+- 📧 Automatic email alerts to fire department (45-second threshold)
 - 🐘 PostgreSQL database with Sequelize ORM
 - 🐳 Docker containerized database
 - 🔄 Auto-sync models to database
@@ -130,6 +131,9 @@ npm start
 # Test database connection
 npm run test:db
 
+# Test email configuration
+npm run test:email
+
 # Database setup and management
 npm run db:setup                  # Sync database schema with models
 npm run reset:db                  # Reset database (CAUTION: destroys data)
@@ -142,6 +146,8 @@ npm run update:fire-stations      # Update nearest fire station for all building
 ```
 
 For detailed information on the nearest fire station feature, see [NEAREST_FIRE_STATION.md](./docs/NEAREST_FIRE_STATION.md).
+
+**Email Notifications:** See [EMAIL_SETUP_GUIDE.md](./EMAIL_SETUP_GUIDE.md) for quick setup or [docs/EMAIL_NOTIFICATIONS.md](./docs/EMAIL_NOTIFICATIONS.md) for complete documentation.
 
 ## API Endpoints
 
@@ -160,6 +166,7 @@ GET  /api/incidents/:incidentId/summary          # Get incident details
 GET  /api/incidents/:incidentId/frames/:index    # Get frame image
 GET  /api/incidents/:incidentId/metadata         # Get detection metadata
 GET  /api/incidents/:incidentId/hologram         # Get 3D hologram data
+POST /api/incidents/:id/acknowledge              # Acknowledge alert (sends email if ≤45s)
 ```
 
 ### Fire Stations
@@ -280,6 +287,15 @@ See [src/models/README.md](./src/models/README.md) for detailed model documentat
 | `DB_PASSWORD` | postgres | Database password |
 | `API_CORS_ORIGIN` | http://localhost:5173 | CORS origin |
 | `PGADMIN_PORT` | 5050 | pgAdmin web UI port |
+| `SMTP_HOST` | smtp.gmail.com | Email SMTP server |
+| `SMTP_PORT` | 587 | Email SMTP port |
+| `SMTP_USER` | - | Email account username |
+| `SMTP_PASSWORD` | - | Email account password/app password |
+| `EMAIL_FROM` | - | Email sender address |
+| `FIRE_DEPARTMENT_EMAIL` | - | Fire department recipient email |
+| `FRONTEND_URL` | http://localhost:5173 | Frontend URL for links |
+
+**Email Setup:** See [EMAIL_SETUP_GUIDE.md](./EMAIL_SETUP_GUIDE.md) for configuration instructions.
 
 ## Docker Commands
 
@@ -419,10 +435,13 @@ pytest
 
 ## Documentation
 
+- [EMAIL_SETUP_GUIDE.md](./EMAIL_SETUP_GUIDE.md) - Quick email notification setup (5 minutes)
+- [docs/EMAIL_NOTIFICATIONS.md](./docs/EMAIL_NOTIFICATIONS.md) - Complete email documentation
 - [STRUCTURE.md](./STRUCTURE.md) - Detailed project structure
 - [README_DOCKER.md](./README_DOCKER.md) - Docker setup guide
 - [src/models/README.md](./src/models/README.md) - Model creation guide
 - [docs/DATABASE_SETUP.md](./docs/DATABASE_SETUP.md) - Database documentation
+- [docs/NEAREST_FIRE_STATION.md](./docs/NEAREST_FIRE_STATION.md) - Fire station finder documentation
 
 ## Contributing
 

@@ -39,6 +39,7 @@ import AddBuilding from './AddBuilding';
 import BuildingDetail from './BuildingDetail';
 import { useFireAlerts } from '../hooks/useFireAlerts';
 import FireAlertNotification from './FireAlertNotification';
+import TimerDebugPanel from './TimerDebugPanel';
 import './ApexConsole.css';
 
 // ─── SEEDED ORGANIZATIONS & SITES ────────────────────────────────────
@@ -1484,6 +1485,9 @@ export default function OwnerConsole() {
           )}
         </div>
       </main>
+
+      {/* ─── TIMER DEBUG PANEL (Bottom-Left) ─── */}
+      <TimerDebugPanel activeAlerts={activeAlerts} />
     </div>
   );
 }
