@@ -24,6 +24,11 @@ export default function FireAlertNotification({ alert, onAcknowledge, onDismiss 
     camera_location
   } = alert;
 
+  // Debug: Log only when timeRemaining changes significantly (every 5 seconds)
+  if (timeRemaining % 5 === 0 || timeRemaining <= 5) {
+    console.log(`🔔 Alert ${incident_number}: ${timeRemaining}s, escalated=${escalated}`);
+  }
+
   // Format time remaining as MM:SS
   const formatTime = (seconds) => {
     const mins = Math.floor(seconds / 60);

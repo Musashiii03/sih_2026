@@ -36,7 +36,7 @@ module.exports = (sequelize, DataTypes) => {
       defaultValue: 'DETECTED',
       validate: {
         isIn: [[
-          'DETECTED', 'REPORTED', 'VERIFIED', 'DISPATCHED', 'RESPONDING',
+          'DETECTED', 'REPORTED', 'VERIFIED', 'ESCALATED', 'DISPATCHED', 'RESPONDING',
           'ON_SCENE', 'CONTAINED', 'RESOLVED', 'FALSE_ALARM', 'CLOSED'
         ]]
       }

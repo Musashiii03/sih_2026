@@ -957,3 +957,377 @@ exports.getActiveFireAlerts = async (req, res, next) => {
     next(error);
   }
 };
+
+/**
+ * Acknowledge incident alert
+ * If acknowledged within 45 seconds, automatically sends email to fire department
+ */
+exports.acknowledgeIncident = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+
+    const incident = await Incident.findByPk(id, {
+      include: [
+        {
+          model: Building,
+          as: 'building',
+          include: [
+            {
+              model: Address,
+              as: 'address',
+              attributes: {
+                include: [
+                  [sequelize.fn('ST_Y', sequelize.cast(sequelize.col('building.address.location'), 'geometry')), 'latitude'],
+                  [sequelize.fn('ST_X', sequelize.cast(sequelize.col('building.address.location'), 'geometry')), 'longitude']
+                ]
+              }
+            },
+            {
+              model: Address,
+              as: 'nearestFireStation',
+              attributes: {
+                include: [
+                  [sequelize.fn('ST_Y', sequelize.cast(sequelize.col('building.nearestFireStation.location'), 'geometry')), 'latitude'],
+                  [sequelize.fn('ST_X', sequelize.cast(sequelize.col('building.nearestFireStation.location'), 'geometry')), 'longitude']
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    });
+
+    if (!incident) {
+      return res.status(404).json({
+        success: false,
+        message: 'Incident not found'
+      });
+    }
+
+    const acknowledgedAt = new Date();
+    const detectedAt = new Date(incident.detected_at);
+    const timeDiffSeconds = (acknowledgedAt - detectedAt) / 1000;
+
+    console.log(`📋 Acknowledging incident ${incident.incident_number}`);
+    console.log(`⏱️  Time since detection: ${timeDiffSeconds.toFixed(1)} seconds`);
+
+    // Update incident with acknowledgment timestamp
+    await incident.update({
+      acknowledged_at: acknowledgedAt,
+      status: 'VERIFIED' // Change from DETECTED to VERIFIED on acknowledgment
+    });
+
+    // Create timeline entry for acknowledgment
+    await IncidentTimeline.create({
+      incident_id: incident.id,
+      event_type: 'INCIDENT_ACKNOWLEDGED',
+      description: `Incident acknowledged by building owner after ${timeDiffSeconds.toFixed(0)} seconds`,
+      actor_type: 'USER',
+      actor_user_id: null, // In production, this would be the logged-in user
+      metadata: {
+        time_to_acknowledge_seconds: timeDiffSeconds,
+        acknowledged_at: acknowledgedAt
+      },
+      occurred_at: acknowledgedAt
+    });
+
+    // Check if acknowledged within 45 seconds - if yes, send email to fire department
+    let emailResult = null;
+    if (timeDiffSeconds <= 45) {
+      console.log(`🚨 Alert acknowledged within 45 seconds - sending email to fire department`);
+      
+      const emailService = require('../services/email.service');
+      
+      // Build full dashboard URL
+      const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+      const dashboardUrl = `${frontendUrl}/${incident.dashboard_url}`;
+
+      // Prepare building data for email
+      const buildingData = {
+        name: incident.building?.name || 'Unknown Building',
+        building_type: incident.building?.building_type,
+        number_of_floors: incident.building?.number_of_floors,
+        total_area: incident.building?.total_area,
+        height: incident.building?.height,
+        has_fire_alarm: incident.building?.has_fire_alarm,
+        has_sprinkler: incident.building?.has_sprinkler,
+        has_fire_extinguishers: incident.building?.has_fire_extinguishers,
+        fire_station_distance_km: incident.building?.fire_station_distance_km,
+        address: incident.building?.address ? {
+          address_line_1: incident.building.address.address_line_1,
+          address_line_2: incident.building.address.address_line_2,
+          locality: incident.building.address.locality,
+          city: incident.building.address.city,
+          district: incident.building.address.district,
+          state: incident.building.address.state,
+          postal_code: incident.building.address.postal_code
+        } : null,
+        nearest_fire_station: incident.building?.nearestFireStation ? {
+          fire_station_name: incident.building.nearestFireStation.fire_station_name,
+          address_line_1: incident.building.nearestFireStation.address_line_1,
+          phone: '101'
+        } : null
+      };
+
+      // Send email
+      emailResult = await emailService.sendFireDepartmentAlert(
+        {
+          incident_number: incident.incident_number,
+          severity: incident.severity,
+          detected_at: incident.detected_at,
+          confidence_score: incident.confidence_score
+        },
+        buildingData,
+        dashboardUrl
+      );
+
+      if (emailResult.success) {
+        console.log(`✅ Fire department email sent successfully to ${emailResult.recipient}`);
+        
+        // Create timeline entry for email notification
+        await IncidentTimeline.create({
+          incident_id: incident.id,
+          event_type: 'NOTIFICATION_SENT',
+          description: `Fire department notified via email (acknowledged within 45s)`,
+          actor_type: 'SYSTEM',
+          actor_user_id: null,
+          metadata: {
+            notification_type: 'EMAIL',
+            recipient: emailResult.recipient,
+            message_id: emailResult.messageId,
+            trigger: 'EARLY_ACKNOWLEDGMENT'
+          },
+          occurred_at: new Date()
+        });
+      } else {
+        console.error(`❌ Failed to send fire department email: ${emailResult.error}`);
+        
+        // Create timeline entry for failed notification
+        await IncidentTimeline.create({
+          incident_id: incident.id,
+          event_type: 'NOTIFICATION_FAILED',
+          description: `Failed to notify fire department: ${emailResult.error}`,
+          actor_type: 'SYSTEM',
+          actor_user_id: null,
+          metadata: {
+            notification_type: 'EMAIL',
+            error: emailResult.error,
+            trigger: 'EARLY_ACKNOWLEDGMENT'
+          },
+          occurred_at: new Date()
+        });
+      }
+    } else {
+      console.log(`ℹ️  Alert acknowledged after ${timeDiffSeconds.toFixed(1)}s - no automatic email (> 45s threshold)`);
+    }
+
+    res.json({
+      success: true,
+      message: 'Incident acknowledged successfully',
+      data: {
+        incident: {
+          id: incident.id,
+          incident_number: incident.incident_number,
+          acknowledged_at: acknowledgedAt,
+          time_to_acknowledge_seconds: timeDiffSeconds
+        },
+        email_sent: emailResult ? emailResult.success : false,
+        email_recipient: emailResult?.recipient || null,
+        within_threshold: timeDiffSeconds <= 45
+      }
+    });
+
+  } catch (error) {
+    console.error('Error acknowledging incident:', error);
+    next(error);
+  }
+};
+
+/**
+ * Auto-escalate incident (timer expired without acknowledgment)
+ * Sends email to fire department automatically
+ */
+exports.escalateIncident = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+
+    const incident = await Incident.findByPk(id, {
+      include: [
+        {
+          model: Building,
+          as: 'building',
+          include: [
+            {
+              model: Address,
+              as: 'address',
+              attributes: {
+                include: [
+                  [sequelize.fn('ST_Y', sequelize.cast(sequelize.col('building.address.location'), 'geometry')), 'latitude'],
+                  [sequelize.fn('ST_X', sequelize.cast(sequelize.col('building.address.location'), 'geometry')), 'longitude']
+                ]
+              }
+            },
+            {
+              model: Address,
+              as: 'nearestFireStation',
+              attributes: {
+                include: [
+                  [sequelize.fn('ST_Y', sequelize.cast(sequelize.col('building.nearestFireStation.location'), 'geometry')), 'latitude'],
+                  [sequelize.fn('ST_X', sequelize.cast(sequelize.col('building.nearestFireStation.location'), 'geometry')), 'longitude']
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    });
+
+    if (!incident) {
+      return res.status(404).json({
+        success: false,
+        message: 'Incident not found'
+      });
+    }
+
+    const escalatedAt = new Date();
+    const detectedAt = new Date(incident.detected_at);
+    const timeDiffSeconds = (escalatedAt - detectedAt) / 1000;
+
+    console.log(`🚨 AUTO-ESCALATING incident ${incident.incident_number}`);
+    console.log(`⏰ Timer expired - no acknowledgment after ${timeDiffSeconds.toFixed(1)} seconds`);
+
+    // Update incident status to ESCALATED
+    await incident.update({
+      status: 'ESCALATED',
+      // Don't set acknowledged_at since owner never acknowledged
+    });
+
+    // Create timeline entry for auto-escalation
+    await IncidentTimeline.create({
+      incident_id: incident.id,
+      event_type: 'INCIDENT_ESCALATED',
+      description: `Incident auto-escalated after ${timeDiffSeconds.toFixed(0)} seconds - no owner acknowledgment`,
+      actor_type: 'SYSTEM',
+      actor_user_id: null,
+      metadata: {
+        escalation_reason: 'TIMER_EXPIRED',
+        time_since_detection_seconds: timeDiffSeconds,
+        timer_duration: 45,
+        escalated_at: escalatedAt
+      },
+      occurred_at: escalatedAt
+    });
+
+    // Send email to fire department
+    console.log(`📧 Sending fire department alert email (auto-escalation)...`);
+    
+    const emailService = require('../services/email.service');
+    
+    // Build full dashboard URL
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+    const dashboardUrl = `${frontendUrl}/${incident.dashboard_url}`;
+
+    // Prepare building data for email
+    const buildingData = {
+      name: incident.building?.name || 'Unknown Building',
+      building_type: incident.building?.building_type,
+      number_of_floors: incident.building?.number_of_floors,
+      total_area: incident.building?.total_area,
+      height: incident.building?.height,
+      has_fire_alarm: incident.building?.has_fire_alarm,
+      has_sprinkler: incident.building?.has_sprinkler,
+      has_fire_extinguishers: incident.building?.has_fire_extinguishers,
+      fire_station_distance_km: incident.building?.fire_station_distance_km,
+      address: incident.building?.address ? {
+        address_line_1: incident.building.address.address_line_1,
+        address_line_2: incident.building.address.address_line_2,
+        locality: incident.building.address.locality,
+        city: incident.building.address.city,
+        district: incident.building.address.district,
+        state: incident.building.address.state,
+        postal_code: incident.building.address.postal_code
+      } : null,
+      nearest_fire_station: incident.building?.nearestFireStation ? {
+        fire_station_name: incident.building.nearestFireStation.fire_station_name,
+        address_line_1: incident.building.nearestFireStation.address_line_1,
+        phone: '101'
+      } : null
+    };
+
+    // Modify incident data to indicate auto-escalation
+    const incidentData = {
+      incident_number: incident.incident_number,
+      severity: incident.severity,
+      detected_at: incident.detected_at,
+      confidence_score: incident.confidence_score,
+      escalation_type: 'AUTO_ESCALATED',
+      escalation_reason: 'No owner response within 45 seconds'
+    };
+
+    // Send email
+    const emailResult = await emailService.sendFireDepartmentAlert(
+      incidentData,
+      buildingData,
+      dashboardUrl
+    );
+
+    if (emailResult.success) {
+      console.log(`✅ Fire department email sent successfully to ${emailResult.recipient}`);
+      
+      // Create timeline entry for email notification
+      await IncidentTimeline.create({
+        incident_id: incident.id,
+        event_type: 'NOTIFICATION_SENT',
+        description: `Fire department notified via email (auto-escalation - timer expired)`,
+        actor_type: 'SYSTEM',
+        actor_user_id: null,
+        metadata: {
+          notification_type: 'EMAIL',
+          recipient: emailResult.recipient,
+          message_id: emailResult.messageId,
+          trigger: 'AUTO_ESCALATION',
+          timer_expired: true
+        },
+        occurred_at: new Date()
+      });
+    } else {
+      console.error(`❌ Failed to send fire department email: ${emailResult.error}`);
+      
+      // Create timeline entry for failed notification
+      await IncidentTimeline.create({
+        incident_id: incident.id,
+        event_type: 'NOTIFICATION_FAILED',
+        description: `Failed to notify fire department: ${emailResult.error}`,
+        actor_type: 'SYSTEM',
+        actor_user_id: null,
+        metadata: {
+          notification_type: 'EMAIL',
+          error: emailResult.error,
+          trigger: 'AUTO_ESCALATION',
+          timer_expired: true
+        },
+        occurred_at: new Date()
+      });
+    }
+
+    res.json({
+      success: true,
+      message: 'Incident auto-escalated successfully',
+      data: {
+        incident: {
+          id: incident.id,
+          incident_number: incident.incident_number,
+          escalated_at: escalatedAt,
+          time_since_detection_seconds: timeDiffSeconds
+        },
+        email_sent: emailResult ? emailResult.success : false,
+        email_recipient: emailResult?.recipient || null,
+        escalation_reason: 'TIMER_EXPIRED'
+      }
+    });
+
+  } catch (error) {
+    console.error('Error auto-escalating incident:', error);
+    next(error);
+  }
+};
