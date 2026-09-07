@@ -1,0 +1,328 @@
+/**
+ * FireAlertNotification Styles
+ * 
+ * Gruvbox-themed fire alert notification with slide-in animation
+ * Colors: #fb4934 (red), #fe8019 (orange), #fabd2f (yellow)
+ */
+
+/* Main notification container */
+.fire-alert-notification {
+  position: relative;
+  width: 380px;
+  background: linear-gradient(135deg, #2a2520 0%, #1d2021 100%);
+  border: 2px solid #fb4934;
+  border-radius: 12px;
+  box-shadow: 
+    0 8px 24px rgba(251, 73, 52, 0.3),
+    0 4px 12px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(251, 73, 52, 0.2);
+  overflow: hidden;
+  animation: slideInRight 0.4s cubic-bezier(0.22, 0.61, 0.36, 1);
+  margin-bottom: 12px;
+}
+
+/* Slide-in animation */
+@keyframes slideInRight {
+  from {
+    transform: translateX(120%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+/* Urgent state (last 10 seconds) */
+.fire-alert-notification.urgent {
+  border-color: #fe8019;
+  animation: pulseUrgent 1s ease-in-out infinite;
+}
+
+@keyframes pulseUrgent {
+  0%, 100% {
+    border-color: #fe8019;
+    box-shadow: 
+      0 8px 24px rgba(254, 128, 25, 0.4),
+      0 4px 12px rgba(0, 0, 0, 0.5);
+  }
+  50% {
+    border-color: #fb4934;
+    box-shadow: 
+      0 8px 32px rgba(251, 73, 52, 0.6),
+      0 4px 12px rgba(0, 0, 0, 0.5);
+  }
+}
+
+/* Escalated state */
+.fire-alert-notification.escalated {
+  border-color: #fabd2f;
+  background: linear-gradient(135deg, #2a2520 0%, #282828 100%);
+}
+
+/* Fire icon container */
+.fire-alert-icon {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(251, 73, 52, 0.15);
+  border: 1px solid rgba(251, 73, 52, 0.3);
+  border-radius: 10px;
+  z-index: 1;
+}
+
+.fire-icon-flame {
+  color: #fb4934;
+  animation: flameFlicker 2s ease-in-out infinite;
+}
+
+@keyframes flameFlicker {
+  0%, 100% { 
+    transform: scale(1) translateY(0);
+    opacity: 1;
+  }
+  50% { 
+    transform: scale(1.1) translateY(-2px);
+    opacity: 0.9;
+  }
+}
+
+/* Content area */
+.fire-alert-content {
+  padding: 16px 16px 16px 76px;
+  color: #f7f5ed;
+}
+
+/* Header */
+.fire-alert-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.fire-alert-status {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 700;
+  color: #fb4934;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.fire-alert-notification.escalated .fire-alert-status {
+  color: #fabd2f;
+}
+
+.fire-alert-incident-id {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  color: #8b928a;
+  background: rgba(139, 146, 138, 0.1);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+/* Building name */
+.fire-alert-building {
+  font-size: 16px;
+  font-weight: 700;
+  color: #f7f5ed;
+  margin-bottom: 6px;
+  line-height: 1.3;
+}
+
+.building-code {
+  font-size: 12px;
+  font-weight: 400;
+  color: #8b928a;
+  margin-left: 6px;
+}
+
+/* Details */
+.fire-alert-details {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 10px;
+}
+
+.alert-detail-item {
+  font-size: 11px;
+  color: #bdae93;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* Timer */
+.fire-alert-timer {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 10px;
+  background: rgba(251, 73, 52, 0.1);
+  border: 1px solid rgba(251, 73, 52, 0.2);
+  border-radius: 6px;
+  margin-bottom: 12px;
+}
+
+.fire-alert-notification.urgent .fire-alert-timer {
+  background: rgba(254, 128, 25, 0.15);
+  border-color: rgba(254, 128, 25, 0.3);
+}
+
+.fire-alert-notification.escalated .fire-alert-timer {
+  background: rgba(250, 189, 47, 0.1);
+  border-color: rgba(250, 189, 47, 0.2);
+}
+
+.fire-alert-timer svg {
+  color: #fb4934;
+  flex-shrink: 0;
+}
+
+.fire-alert-notification.urgent .fire-alert-timer svg {
+  color: #fe8019;
+  animation: pulse 1s ease-in-out infinite;
+}
+
+.fire-alert-notification.escalated .fire-alert-timer svg {
+  color: #fabd2f;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+.timer-text {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  font-weight: 600;
+  color: #f7f5ed;
+}
+
+/* Actions */
+.fire-alert-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.fire-alert-btn-acknowledge {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px 16px;
+  background: linear-gradient(135deg, #fb4934 0%, #cc241d 100%);
+  border: none;
+  border-radius: 6px;
+  color: #f7f5ed;
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(251, 73, 52, 0.3);
+}
+
+.fire-alert-btn-acknowledge:hover {
+  background: linear-gradient(135deg, #fe8019 0%, #fb4934 100%);
+  box-shadow: 0 4px 12px rgba(251, 73, 52, 0.4);
+  transform: translateY(-1px);
+}
+
+.fire-alert-btn-acknowledge:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 6px rgba(251, 73, 52, 0.3);
+}
+
+.fire-alert-btn-dismiss {
+  padding: 10px 12px;
+  background: rgba(139, 146, 138, 0.1);
+  border: 1px solid rgba(139, 146, 138, 0.2);
+  border-radius: 6px;
+  color: #8b928a;
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.fire-alert-btn-dismiss:hover {
+  background: rgba(139, 146, 138, 0.2);
+  border-color: rgba(139, 146, 138, 0.3);
+  color: #bdae93;
+}
+
+.fire-alert-btn-escalated {
+  width: 100%;
+  padding: 10px 16px;
+  background: rgba(250, 189, 47, 0.15);
+  border: 1px solid rgba(250, 189, 47, 0.3);
+  border-radius: 6px;
+  color: #fabd2f;
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.fire-alert-btn-escalated:hover {
+  background: rgba(250, 189, 47, 0.2);
+  border-color: rgba(250, 189, 47, 0.4);
+}
+
+/* Progress bar */
+.fire-alert-progress-bar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: rgba(139, 146, 138, 0.1);
+  overflow: hidden;
+}
+
+.fire-alert-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #fb4934 0%, #fe8019 100%);
+  box-shadow: 0 0 8px rgba(251, 73, 52, 0.5);
+}
+
+.fire-alert-notification.urgent .fire-alert-progress-fill {
+  background: linear-gradient(90deg, #fe8019 0%, #fabd2f 100%);
+  animation: progressPulse 1s ease-in-out infinite;
+}
+
+@keyframes progressPulse {
+  0%, 100% {
+    box-shadow: 0 0 8px rgba(254, 128, 25, 0.5);
+  }
+  50% {
+    box-shadow: 0 0 16px rgba(254, 128, 25, 0.8);
+  }
+}
+
+/* Responsive adjustments */
+@media (max-width: 480px) {
+  .fire-alert-notification {
+    width: calc(100vw - 24px);
+    max-width: 380px;
+  }
+  
+  .fire-alert-building {
+    font-size: 14px;
+  }
+  
+  .fire-alert-btn-acknowledge {
+    font-size: 12px;
+    padding: 9px 14px;
+  }
+}

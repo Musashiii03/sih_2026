@@ -4,7 +4,7 @@
  * Handles fire incident operations including creating incidents from AI detection data
  */
 
-const { Incident, IncidentDetection, Building, Camera, Evidence, Address, sequelize } = require('../models');
+const { Incident, IncidentDetection, Building, Camera, Evidence, Address, IncidentTimeline, sequelize } = require('../models');
 const { Op } = require('sequelize');
 const path = require('path');
 const fs = require('fs').promises;
@@ -85,6 +85,66 @@ exports.createIncident = async (req, res, next) => {
       confidence_score: statistics?.avg_fire_confidence || 0,
       dashboard_url: dashboardUrl
     });
+
+    console.log(`✅ Created incident ${incidentNumber} with ID ${incident.id}`);
+
+    // Create timeline entries for incident creation and detection
+    const timelineEntries = [];
+    
+    // Timeline entry: Incident Created
+    const incidentCreatedEntry = await IncidentTimeline.create({
+      incident_id: incident.id,
+      event_type: 'INCIDENT_CREATED',
+      description: `Incident ${incidentNumber} created by AI detection system`,
+      actor_type: 'SYSTEM',
+      actor_user_id: null,
+      metadata: {
+        source: 'sync-fire-incidents',
+        incident_type: 'FIRE',
+        severity: severity,
+        priority: priority
+      },
+      occurred_at: incident.detected_at
+    });
+    timelineEntries.push(incidentCreatedEntry);
+    
+    // Timeline entry: Fire Detected
+    const fireDetectedEntry = await IncidentTimeline.create({
+      incident_id: incident.id,
+      event_type: 'FIRE_DETECTED',
+      description: `Fire detected by ${cameraRecord?.camera_code || 'CCTV AI'} with ${(statistics?.avg_fire_confidence * 100 || 0).toFixed(1)}% confidence`,
+      actor_type: 'AI',
+      actor_user_id: null,
+      metadata: {
+        camera_code: cameraRecord?.camera_code || camera_id,
+        camera_id: cameraRecord?.id,
+        confidence_score: statistics?.avg_fire_confidence || 0,
+        fire_detections: statistics?.total_fire_detections || 0,
+        frames_analyzed: frames?.length || 0
+      },
+      occurred_at: incident.detected_at
+    });
+    timelineEntries.push(fireDetectedEntry);
+    
+    // Timeline entry: Person Detected (if humans found)
+    if (statistics?.total_human_detections > 0) {
+      const personDetectedEntry = await IncidentTimeline.create({
+        incident_id: incident.id,
+        event_type: 'PERSON_DETECTED',
+        description: `${statistics.total_human_detections} person(s) detected in fire zone - Priority escalated to ${priority}`,
+        actor_type: 'AI',
+        actor_user_id: null,
+        metadata: {
+          human_count: statistics.total_human_detections,
+          peak_human_count: statistics.peak_human_count || statistics.total_human_detections,
+          frames_with_humans: statistics.frames_with_humans || 0
+        },
+        occurred_at: incident.detected_at
+      });
+      timelineEntries.push(personDetectedEntry);
+    }
+    
+    console.log(`✅ Created ${timelineEntries.length} timeline entries for incident ${incidentNumber}`);
 
     // Create detection records for each frame
     const detections = [];
@@ -284,6 +344,135 @@ exports.getAllIncidents = async (req, res, next) => {
 
   } catch (error) {
     console.error('Error fetching incidents:', error);
+    next(error);
+  }
+};
+
+/**
+ * Get incident history for owner console
+ * Returns all incidents regardless of building_id with timeline data
+ */
+exports.getIncidentHistory = async (req, res, next) => {
+  try {
+    const {
+      page = 1,
+      limit = 100,
+      status,
+      search
+    } = req.query;
+
+    const offset = (page - 1) * limit;
+    const where = {};
+
+    // Apply status filter if provided
+    if (status && status !== 'ALL') {
+      if (status === 'UNACKNOWLEDGED') {
+        where.status = 'DETECTED';
+      } else if (status === 'ACKNOWLEDGED') {
+        where.status = { [Op.in]: ['VERIFIED', 'DISPATCHED', 'RESPONDING', 'ON_SCENE'] };
+      } else if (status === 'RESOLVED') {
+        where.status = { [Op.in]: ['CONTAINED', 'RESOLVED', 'CLOSED', 'FALSE_ALARM'] };
+      }
+    }
+
+    // Apply search filter if provided (incident_number or building name)
+    if (search && search.trim() !== '') {
+      where[Op.or] = [
+        { incident_number: { [Op.iLike]: `%${search}%` } },
+        { description: { [Op.iLike]: `%${search}%` } }
+      ];
+    }
+
+    const { count, rows: incidents } = await Incident.findAndCountAll({
+      where,
+      limit: parseInt(limit),
+      offset: parseInt(offset),
+      order: [['detected_at', 'DESC']],
+      include: [
+        {
+          model: Building,
+          as: 'building',
+          attributes: ['id', 'name', 'building_code'],
+          include: [{
+            model: Address,
+            as: 'address',
+            attributes: ['address_line_1', 'city', 'state']
+          }]
+        },
+        {
+          model: Camera,
+          as: 'detected_by_camera',
+          attributes: ['id', 'camera_code', 'name']
+        },
+        {
+          model: IncidentTimeline,
+          as: 'timeline',
+          order: [['occurred_at', 'ASC']],
+          limit: 10
+        },
+        {
+          model: Evidence,
+          as: 'evidence',
+          limit: 1,
+          order: [['captured_at', 'ASC']],
+          attributes: ['id', 'file_path', 'file_name']
+        }
+      ]
+    });
+
+    // Transform data for frontend
+    const transformedIncidents = incidents.map(incident => {
+      const building = incident.building;
+      const address = building?.address;
+      
+      return {
+        id: incident.incident_number,
+        incident_id: incident.id,
+        incident_number: incident.incident_number,
+        type: incident.incident_type,
+        location: building ? `${building.name}` : 'Unknown Location',
+        building_id: incident.building_id,
+        building_name: building?.name,
+        building_code: building?.building_code,
+        address: address ? `${address.address_line_1}, ${address.city}` : null,
+        camera: incident.detected_by_camera?.camera_code || 'Unknown',
+        severity: incident.severity,
+        confidence: Math.round((incident.confidence_score || 0) * 100),
+        status: incident.status === 'DETECTED' ? 'UNACKNOWLEDGED' : 
+                incident.status === 'VERIFIED' || incident.status === 'DISPATCHED' ? 'ACKNOWLEDGED' : 
+                'RESOLVED',
+        created: new Date(incident.detected_at).toLocaleString('en-US', { 
+          month: 'short', 
+          day: '2-digit', 
+          hour: '2-digit', 
+          minute: '2-digit',
+          hour12: true 
+        }),
+        detected_at: incident.detected_at,
+        acknowledged_at: incident.acknowledged_at,
+        resolved_at: incident.resolved_at,
+        description: incident.description,
+        timeline: incident.timeline || [],
+        image: incident.evidence?.[0]?.file_path || null,
+        dashboard_url: incident.dashboard_url
+      };
+    });
+
+    res.json({
+      success: true,
+      data: {
+        incidents: transformedIncidents,
+        pagination: {
+          total: count,
+          page: parseInt(page),
+          limit: parseInt(limit),
+          pages: Math.ceil(count / limit)
+        }
+      }
+    });
+
+  } catch (error) {
+    console.error('Error fetching incident history:', error);
     next(error);
   }
 };
@@ -703,6 +892,68 @@ exports.getIncidentDashboardData = async (req, res, next) => {
 
   } catch (error) {
     console.error('Error fetching incident dashboard data:', error);
+    next(error);
+  }
+};
+
+/**
+ * Get active fire alerts for real-time monitoring
+ * Returns unacknowledged fire incidents for building_id = 1 (demo)
+ */
+exports.getActiveFireAlerts = async (req, res, next) => {
+  try {
+    // For demo purposes, hardcoded to building_id = 1
+    // In production, this would filter by user's owned buildings
+    const targetBuildingId = 1;
+
+    const activeAlerts = await Incident.findAll({
+      where: {
+        building_id: targetBuildingId,
+        incident_type: 'FIRE',
+        status: 'DETECTED'
+      },
+      include: [
+        {
+          model: Building,
+          as: 'building',
+          attributes: ['id', 'name', 'building_code', 'building_type']
+        },
+        {
+          model: Camera,
+          as: 'detected_by_camera',
+          attributes: ['id', 'camera_code', 'name', 'floor_number', 'room_name']
+        }
+      ],
+      order: [['detected_at', 'DESC']],
+      limit: 10
+    });
+
+    // Format simplified response for alerts
+    const formattedAlerts = activeAlerts.map(incident => ({
+      id: incident.id,
+      incident_number: incident.incident_number,
+      building_id: incident.building_id,
+      building_name: incident.building ? incident.building.name : 'Unknown Building',
+      building_code: incident.building ? incident.building.building_code : null,
+      severity: incident.severity,
+      priority: incident.priority,
+      confidence_score: incident.confidence_score,
+      detected_at: incident.detected_at,
+      camera_code: incident.detected_by_camera ? incident.detected_by_camera.camera_code : null,
+      camera_location: incident.detected_by_camera ? 
+        `${incident.detected_by_camera.floor_number ? `Floor ${incident.detected_by_camera.floor_number}` : ''} ${incident.detected_by_camera.room_name || ''}`.trim() 
+        : null,
+      dashboard_url: incident.dashboard_url
+    }));
+
+    res.json({
+      success: true,
+      count: formattedAlerts.length,
+      data: formattedAlerts
+    });
+
+  } catch (error) {
+    console.error('Error fetching active fire alerts:', error);
     next(error);
   }
 };

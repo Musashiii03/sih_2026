@@ -1108,3 +1108,98 @@
   color: var(--apex-text-dim);
   letter-spacing: 0.08em;
 }
+
+
+/* ═══════════════════════════════════════════════════════════════════════
+   FIRE ALERT BUILDING HIGHLIGHTING
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* Building with fire alert */
+.tree-building-item.building-fire-alert {
+  background: linear-gradient(90deg, 
+    rgba(251, 73, 52, 0.15) 0%, 
+    rgba(251, 73, 52, 0.08) 100%
+  ) !important;
+  border: 1px solid rgba(251, 73, 52, 0.4) !important;
+  border-left: 3px solid #fb4934 !important;
+  animation: buildingFirePulse 2s ease-in-out infinite;
+  position: relative;
+  overflow: visible;
+}
+
+/* Pulsing animation for fire alert buildings */
+@keyframes buildingFirePulse {
+  0%, 100% {
+    border-color: rgba(251, 73, 52, 0.4);
+    box-shadow: 0 0 8px rgba(251, 73, 52, 0.2);
+  }
+  50% {
+    border-color: rgba(254, 128, 25, 0.6);
+    box-shadow: 0 0 16px rgba(254, 128, 25, 0.3);
+  }
+}
+
+/* Fire icon for buildings with alerts */
+.fire-alert-icon {
+  color: #fb4934 !important;
+  animation: fireIconFlicker 1.5s ease-in-out infinite;
+  margin-right: 4px;
+}
+
+@keyframes fireIconFlicker {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(1.1);
+  }
+}
+
+/* Fire alert badge */
+.fire-alert-badge {
+  margin-left: auto;
+  font-size: 14px;
+  animation: fireEmojiBounce 1s ease-in-out infinite;
+}
+
+@keyframes fireEmojiBounce {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-2px);
+  }
+}
+
+/* Hover state for fire alert buildings */
+.tree-building-item.building-fire-alert:hover {
+  background: linear-gradient(90deg, 
+    rgba(251, 73, 52, 0.25) 0%, 
+    rgba(251, 73, 52, 0.15) 100%
+  ) !important;
+  border-color: rgba(254, 128, 25, 0.6) !important;
+  box-shadow: 0 2px 12px rgba(251, 73, 52, 0.3);
+  transform: translateX(2px);
+}
+
+/* Make building text more prominent when fire alert */
+.tree-building-item.building-fire-alert .tree-label {
+  color: #f7f5ed !important;
+  font-weight: 600;
+}
+
+/* Ensure fire alert buildings are visible even when parent org is collapsed */
+.tree-org-item {
+  position: relative;
+}
+
+/* Add subtle fire indicator on organization if it has buildings with alerts */
+.tree-org-item.has-fire-alert::before {
+  content: '🔥';
+  position: absolute;
+  left: -8px;
+  font-size: 12px;
+  animation: fireEmojiBounce 1s ease-in-out infinite;
+}
