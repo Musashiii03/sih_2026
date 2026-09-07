@@ -65,15 +65,15 @@ export default function AddBuilding({ onBack }) {
       // Prepare data - convert empty strings to null for optional numeric fields
       const submitData = {
         ...formData,
-        organization_id: formData.organization_id || null,
+        organization_id: formData.organization_id ? parseInt(formData.organization_id) : null,
         number_of_floors: parseInt(formData.number_of_floors),
         number_of_units: parseInt(formData.number_of_units),
         construction_year: formData.construction_year ? parseInt(formData.construction_year) : null,
         total_area: formData.total_area ? parseFloat(formData.total_area) : null,
         height: formData.height ? parseFloat(formData.height) : null,
-        // Temporary address_id - in production this should be handled properly
-        address_id: 1 
+        // address_id is optional — omit rather than hardcode a non-existent FK
       };
+      delete submitData.address_id;
 
       const response = await fetch('/api/buildings', {
         method: 'POST',

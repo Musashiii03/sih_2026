@@ -40,6 +40,7 @@ import {
   aggregateStats
 } from '../hooks/useIncidentData';
 import './DispatchConsole.css';
+import { useTheme } from '../context/ThemeContext';
 
 // Facility & Regional Enrichment
 const ENRICHMENT = {
@@ -76,8 +77,8 @@ function ImageModal({ frame, incidentId, onClose }) {
       <div
         onClick={e => e.stopPropagation()}
         style={{
-          background: '#212423',
-          border: '1px solid #3c423e',
+          background: 'var(--dc-surface)',
+          border: '1px solid var(--dc-border)',
           borderRadius: 12,
           overflow: 'hidden',
           maxWidth: 820,
@@ -90,15 +91,15 @@ function ImageModal({ frame, incidentId, onClose }) {
           justifyContent: 'space-between',
           alignItems: 'center',
           padding: '12px 18px',
-          background: '#161817',
-          borderBottom: '1px solid #323633'
+          background: 'var(--dc-surface-alt)',
+          borderBottom: '1px solid var(--dc-border)'
         }}>
-          <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 12, fontWeight: 700, color: '#f7f5ed' }}>
+          <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 12, fontWeight: 700, color: 'var(--dc-text-primary)' }}>
             FRAME #{frame.frame_index} · CONFIDENCE: {(frame.fire_confidence * 100).toFixed(1)}%
           </span>
           <button
             onClick={onClose}
-            style={{ background: 'none', border: 'none', color: '#8b928a', cursor: 'pointer', display: 'flex' }}
+            style={{ background: 'none', border: 'none', color: 'var(--dc-text-muted)', cursor: 'pointer', display: 'flex' }}
           >
             <X size={18} />
           </button>
@@ -126,8 +127,8 @@ function CameraQueueItem({ camera, selected, onClick }) {
         display: 'flex', 
         alignItems: 'center', 
         justifyContent: 'center',
-        background: '#1a1d1b',
-        border: '1px solid #323633'
+        background: 'var(--dc-surface-alt)',
+        border: '1px solid var(--dc-border)'
       }}>
         <Radio size={32} color={selected ? '#fe8019' : '#8b928a'} />
       </div>
@@ -147,7 +148,7 @@ function CameraQueueItem({ camera, selected, onClick }) {
 
         <div className="dc-queue-foot">
           <span>{camera.camera_type || 'FIXED'}</span>
-          <span style={{ color: '#8b928a' }}>
+          <span style={{ color: 'var(--dc-text-muted)' }}>
             {camera.floor_number ? `Floor ${camera.floor_number}` : camera.location_description || 'Location N/A'}
           </span>
         </div>
@@ -244,8 +245,8 @@ function IncidentDetail({ incident, summary, hologram, metadataStats, onSelectFr
             </div>
 
             {stageView === 'cctv' && (
-              <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 11, color: '#8b928a' }}>
-                CAMERA: <strong style={{ color: '#eae7df' }}>{selectedCamera?.camera_code || incident?.camera_id || summary?.camera_id || 'CAM-01'}</strong>
+              <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 11, color: 'var(--dc-text-muted)' }}>
+                CAMERA: <strong style={{ color: 'var(--dc-text-primary)' }}>{selectedCamera?.camera_code || incident?.camera_id || summary?.camera_id || 'CAM-01'}</strong>
               </div>
             )}
           </div>
@@ -261,7 +262,7 @@ function IncidentDetail({ incident, summary, hologram, metadataStats, onSelectFr
               severity={severity}
             />
           ) : (
-            <div style={{ borderRadius: 8, overflow: 'hidden', border: '1px solid #323633', background: '#121413' }}>
+            <div style={{ borderRadius: 8, overflow: 'hidden', border: '1px solid var(--dc-border)', background: 'var(--dc-bg-deep)' }}>
               <Atmarakshak3DHero theme="dark" minHeight="380px" maxHeight="440px" />
             </div>
           )}
@@ -335,7 +336,7 @@ function IncidentDetail({ incident, summary, hologram, metadataStats, onSelectFr
               <Brain size={14} color="#fe8019" />
               <span>Neural Diagnostic Assessment</span>
             </div>
-            <ul style={{ fontSize: 13, lineHeight: 1.65, color: '#c5c2b8', margin: 0, paddingLeft: 20 }}>
+            <ul style={{ fontSize: 13, lineHeight: 1.65, color: 'var(--dc-text-secondary)', margin: 0, paddingLeft: 20 }}>
               {diagnosticPoints.map((point, idx) => (
                 <li key={idx} style={{ marginBottom: idx < diagnosticPoints.length - 1 ? 6 : 0 }}>
                   {point}
@@ -344,8 +345,8 @@ function IncidentDetail({ incident, summary, hologram, metadataStats, onSelectFr
             </ul>
 
             {/* Confirmation Sequence */}
-            <div style={{ marginTop: 8, background: '#181a19', padding: '10px 14px', borderRadius: 8, border: '1px solid #2d322f' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, fontFamily: "'JetBrains Mono', monospace", color: '#8b928a', marginBottom: 8 }}>
+            <div className="dc-temporal-bar">
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, fontFamily: "'JetBrains Mono', monospace", color: 'var(--dc-text-muted)', marginBottom: 8 }}>
                 <span>TEMPORAL VERIFICATION</span>
                 <strong style={{ color: '#4ade80' }}>{framesConf}/{framesTotal} CONFIRMED</strong>
               </div>
@@ -357,7 +358,7 @@ function IncidentDetail({ incident, summary, hologram, metadataStats, onSelectFr
                       flex: 1,
                       height: '100%',
                       borderRadius: 3,
-                      background: idx < framesConf ? '#fb4934' : '#2b302c',
+                      background: idx < framesConf ? '#fb4934' : 'var(--dc-bar-empty)',
                       boxShadow: idx < framesConf ? '0 0 8px rgba(251, 73, 52, 0.4)' : 'none'
                     }}
                   />
@@ -374,30 +375,30 @@ function IncidentDetail({ incident, summary, hologram, metadataStats, onSelectFr
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
               <div>
-                <div style={{ fontSize: 14, fontWeight: 700, color: '#f7f5ed' }}>
+                <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--dc-text-primary)' }}>
                   {dashboardData?.building?.name || ENRICHMENT.building}
                 </div>
-                <div style={{ fontSize: 12, color: '#8b928a', marginTop: 2 }}>
+                <div style={{ fontSize: 12, color: 'var(--dc-text-muted)', marginTop: 2 }}>
                   {dashboardData?.building?.address ? 
                     `${dashboardData.building.address.address_line_1}, ${dashboardData.building.address.locality}, ${dashboardData.building.address.city} — ${dashboardData.building.address.postal_code}` 
                     : ENRICHMENT.address}
                 </div>
                 {dashboardData?.building?.address && (
-                  <div style={{ fontSize: 11, color: '#8b928a', marginTop: 4, fontFamily: "'JetBrains Mono', monospace" }}>
+                  <div style={{ fontSize: 11, color: 'var(--dc-text-muted)', marginTop: 4, fontFamily: "'JetBrains Mono', monospace" }}>
                     📍 {dashboardData.building.address.latitude?.toFixed(6)}, {dashboardData.building.address.longitude?.toFixed(6)}
                   </div>
                 )}
               </div>
               <div style={{ display: 'flex', gap: 14 }}>
-                <div style={{ background: '#181a19', padding: '8px 12px', borderRadius: 6, border: '1px solid #2d322f' }}>
-                  <div style={{ fontSize: 10, color: '#8b928a', textTransform: 'uppercase' }}>Floors</div>
-                  <div style={{ fontSize: 16, fontWeight: 700, color: '#eae7df' }}>
+                <div className="dc-info-box">
+                  <div style={{ fontSize: 10, color: 'var(--dc-text-muted)', textTransform: 'uppercase' }}>Floors</div>
+                  <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--dc-text-primary)' }}>
                     {dashboardData?.building?.number_of_floors ? `1 → ${dashboardData.building.number_of_floors}` : ENRICHMENT.floors}
                   </div>
                 </div>
-                <div style={{ background: '#181a19', padding: '8px 12px', borderRadius: 6, border: '1px solid #2d322f' }}>
-                  <div style={{ fontSize: 10, color: '#8b928a', textTransform: 'uppercase' }}>Type</div>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: '#fe8019' }}>
+                <div className="dc-info-box">
+                  <div style={{ fontSize: 10, color: 'var(--dc-text-muted)', textTransform: 'uppercase' }}>Type</div>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--dc-orange)' }}>
                     {dashboardData?.building?.building_type || 'OFFICE'}
                   </div>
                 </div>
@@ -439,11 +440,11 @@ function IncidentDetail({ incident, summary, hologram, metadataStats, onSelectFr
                 width: '100%',
                 minHeight: 80,
                 resize: 'vertical',
-                background: '#181a19',
-                border: '1px solid #323633',
+                background: 'var(--dc-surface-alt)',
+                border: '1px solid var(--dc-border)',
                 borderRadius: 8,
                 padding: '10px 14px',
-                color: '#eae7df',
+                color: 'var(--dc-text-primary)',
                 fontFamily: 'Manrope, sans-serif',
                 fontSize: 12.5,
                 lineHeight: 1.6,
@@ -469,7 +470,7 @@ function IncidentDetail({ incident, summary, hologram, metadataStats, onSelectFr
               </span>
             )}
           </div>
-          <div style={{ borderRadius: 8, overflow: 'hidden', border: '1px solid #323633', background: '#121413' }}>
+          <div style={{ borderRadius: 8, overflow: 'hidden', border: '1px solid var(--dc-border)', background: 'var(--dc-bg-deep)' }}>
             <Atmarakshak3DHero theme="dark" minHeight="440px" maxHeight="520px" />
           </div>
         </div>
@@ -486,7 +487,7 @@ function IncidentDetail({ incident, summary, hologram, metadataStats, onSelectFr
           {/* Show frames from summary (current detection) */}
           {evidFrames.length > 0 && (
             <>
-              <div style={{ fontSize: 11, fontWeight: 700, color: '#8b928a', marginBottom: 8, textTransform: 'uppercase' }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--dc-text-muted)', marginBottom: 8, textTransform: 'uppercase' }}>
                 Current Detection Frames
               </div>
               <div className="dc-evidence-grid">
@@ -507,7 +508,7 @@ function IncidentDetail({ incident, summary, hologram, metadataStats, onSelectFr
           {/* Show frames from database evidence table */}
           {dashboardData?.evidence_frames && dashboardData.evidence_frames.length > 0 && (
             <>
-              <div style={{ fontSize: 11, fontWeight: 700, color: '#8b928a', margin: '16px 0 8px', textTransform: 'uppercase' }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--dc-text-muted)', margin: '16px 0 8px', textTransform: 'uppercase' }}>
                 Stored Evidence Frames ({dashboardData.evidence_frames.length})
               </div>
               <div className="dc-evidence-grid">
@@ -527,7 +528,7 @@ function IncidentDetail({ incident, summary, hologram, metadataStats, onSelectFr
                       padding: '2px 4px', 
                       borderRadius: 3,
                       fontSize: 9,
-                      color: '#eae7df'
+                      color: 'var(--dc-text-primary)'
                     }}>
                       {evidence.file_name}
                     </div>
@@ -538,7 +539,7 @@ function IncidentDetail({ incident, summary, hologram, metadataStats, onSelectFr
           )}
 
           {evidFrames.length === 0 && (!dashboardData?.evidence_frames || dashboardData.evidence_frames.length === 0) && (
-            <div style={{ padding: 24, textAlign: 'center', color: '#8b928a', fontSize: 12 }}>
+            <div style={{ padding: 24, textAlign: 'center', color: 'var(--dc-text-muted)', fontSize: 12 }}>
               No evidence frames available for this incident.
             </div>
           )}
@@ -568,25 +569,7 @@ function IncidentDetail({ incident, summary, hologram, metadataStats, onSelectFr
         ) : (
           <button
             onClick={() => setResolved(true)}
-            style={{
-              width: '100%',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: 8,
-              padding: 13,
-              borderRadius: 8,
-              background: '#2b302c',
-              border: '1px solid #3c423e',
-              color: '#c5c2b8',
-              fontFamily: "'Manrope', sans-serif",
-              fontSize: 13,
-              fontWeight: 700,
-              cursor: 'pointer',
-              transition: 'all 0.15s ease'
-            }}
-            onMouseEnter={e => { e.currentTarget.style.background = '#4ade80'; e.currentTarget.style.color = '#121413'; }}
-            onMouseLeave={e => { e.currentTarget.style.background = '#2b302c'; e.currentTarget.style.color = '#c5c2b8'; }}
+            className="dc-resolve-btn"
           >
             <CheckCircle2 size={16} />
             <span>MARK INCIDENT AS RESOLVED</span>
@@ -595,19 +578,7 @@ function IncidentDetail({ incident, summary, hologram, metadataStats, onSelectFr
       </div>
 
       {/* System Footer */}
-      <footer style={{
-        marginTop: 16,
-        padding: '12px 16px',
-        background: '#1a1d1b',
-        border: '1px solid #2b302c',
-        borderRadius: 8,
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        fontSize: 11,
-        color: '#8b928a',
-        fontFamily: "'JetBrains Mono', monospace"
-      }}>
+      <footer className="dc-erss-footer">
         <span>🇮🇳 Routed via India ERSS 112 Multi-Hazard Emergency Framework</span>
         <span>Atmarakshak OS v2.4 · Zonal API: localhost:3001</span>
       </footer>
@@ -640,39 +611,39 @@ function RightDispatch({ incident, summary, dashboardData }) {
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       {/* 1. Geospatial Transit Map */}
       <div className="dc-station-card" style={{ padding: 12 }}>
-        <div style={{ fontSize: 11, fontWeight: 700, color: '#8b928a', textTransform: 'uppercase', marginBottom: 8 }}>
+        <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--dc-text-muted)', textTransform: 'uppercase', marginBottom: 8 }}>
           📍 Live Transit Routing
         </div>
-        <div style={{ borderRadius: 8, overflow: 'hidden', border: '1px solid #323633' }}>
+        <div style={{ borderRadius: 8, overflow: 'hidden', border: '1px solid var(--dc-border)' }}>
           <DispatchMap inc={ENRICHMENT} dashboardData={dashboardData} />
         </div>
       </div>
 
       {/* 2. Nearest Station Command */}
       <div className="dc-station-card">
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, fontWeight: 700, color: '#4ade80' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, fontWeight: 700, color: 'var(--dc-green)' }}>
           <Truck size={15} />
           <span>NEAREST FIRE COMMAND</span>
         </div>
 
-        <div style={{ fontSize: 15, fontWeight: 700, color: '#f7f5ed' }}>
+        <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--dc-text-primary)' }}>
           {stationName}
         </div>
 
         {fireStation.address_line_1 && (
-          <div style={{ fontSize: 11, color: '#8b928a', marginTop: 4 }}>
+          <div style={{ fontSize: 11, color: 'var(--dc-text-muted)', marginTop: 4 }}>
             {fireStation.address_line_1}
           </div>
         )}
 
         <div className="dc-station-grid">
           <div className="dc-station-box">
-            <div style={{ fontSize: 10, color: '#8b928a', textTransform: 'uppercase', marginBottom: 2 }}>Distance</div>
-            <div className="dc-station-num" style={{ color: '#fabd2f' }}>{stationDist}</div>
+            <div style={{ fontSize: 10, color: 'var(--dc-text-muted)', textTransform: 'uppercase', marginBottom: 2 }}>Distance</div>
+            <div className="dc-station-num" style={{ color: 'var(--dc-amber)' }}>{stationDist}</div>
           </div>
           <div className="dc-station-box">
-            <div style={{ fontSize: 10, color: '#8b928a', textTransform: 'uppercase', marginBottom: 2 }}>Arrival ETA</div>
-            <div className="dc-station-num" style={{ color: '#4ade80' }}>{stationEta}</div>
+            <div style={{ fontSize: 10, color: 'var(--dc-text-muted)', textTransform: 'uppercase', marginBottom: 2 }}>Arrival ETA</div>
+            <div className="dc-station-num" style={{ color: 'var(--dc-green)' }}>{stationEta}</div>
           </div>
         </div>
 
@@ -687,7 +658,7 @@ function RightDispatch({ incident, summary, dashboardData }) {
 
       {/* 3. Fleet Deployment */}
       <div className="dc-station-card">
-        <div style={{ fontSize: 11, fontWeight: 700, color: '#8b928a', textTransform: 'uppercase' }}>
+        <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--dc-text-muted)', textTransform: 'uppercase' }}>
           🚒 Assigned Response Fleet
         </div>
 
@@ -697,28 +668,15 @@ function RightDispatch({ incident, summary, dashboardData }) {
             return (
               <div key={u.id} className="dc-unit-pill">
                 <div>
-                  <div style={{ fontSize: 12.5, fontWeight: 700, color: '#f7f5ed' }}>{u.name}</div>
-                  <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, color: '#8b928a' }}>
+                  <div style={{ fontSize: 12.5, fontWeight: 700, color: 'var(--dc-text-primary)' }}>{u.name}</div>
+                  <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, color: 'var(--dc-text-muted)' }}>
                     {u.id} · ETA {u.eta}
                   </div>
                 </div>
 
                 <button
                   onClick={() => toggleDispatch(u.id)}
-                  style={{
-                    padding: '5px 12px',
-                    borderRadius: 6,
-                    border: isSent ? '1px solid #4ade80' : '1px solid rgba(254, 128, 25, 0.4)',
-                    background: isSent ? 'rgba(74, 222, 128, 0.15)' : 'rgba(254, 128, 25, 0.15)',
-                    color: isSent ? '#4ade80' : '#fe8019',
-                    fontFamily: "'JetBrains Mono', monospace",
-                    fontSize: 10.5,
-                    fontWeight: 700,
-                    cursor: 'pointer',
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: 4
-                  }}
+                  className={`dc-unit-dispatch-btn ${isSent ? 'dispatched' : ''}`}
                 >
                   {isSent ? '✓ EN ROUTE' : 'DISPATCH'}
                 </button>
@@ -730,32 +688,19 @@ function RightDispatch({ incident, summary, dashboardData }) {
 
       {/* 4. Building Owner Card */}
       <div className="dc-station-card">
-        <div style={{ fontSize: 11, fontWeight: 700, color: '#8b928a', textTransform: 'uppercase' }}>
+        <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--dc-text-muted)', textTransform: 'uppercase' }}>
           Facility Custodian
         </div>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div>
-            <div style={{ fontSize: 14, fontWeight: 700, color: '#f7f5ed' }}>{ENRICHMENT.owner}</div>
-            <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 11, color: '#8b928a', marginTop: 2 }}>
+            <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--dc-text-primary)' }}>{ENRICHMENT.owner}</div>
+            <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 11, color: 'var(--dc-text-muted)', marginTop: 2 }}>
               {ENRICHMENT.ownerPhone}
             </div>
           </div>
           <a
             href={`tel:${ENRICHMENT.ownerPhone}`}
-            style={{
-              padding: '6px 12px',
-              borderRadius: 6,
-              background: 'rgba(74, 222, 128, 0.15)',
-              border: '1px solid rgba(74, 222, 128, 0.3)',
-              color: '#4ade80',
-              fontFamily: "'JetBrains Mono', monospace",
-              fontSize: 11,
-              fontWeight: 700,
-              textDecoration: 'none',
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 4
-            }}
+            className="dc-owner-call-btn"
           >
             <Phone size={12} />
             <span>CALL</span>
@@ -770,6 +715,7 @@ function RightDispatch({ incident, summary, dashboardData }) {
 export default function DispatchConsole() {
   const { incidentId: urlIncidentId } = useParams();
   const navigate = useNavigate();
+  const { theme, toggle: toggleTheme } = useTheme();
 
   const {
     incidents,
@@ -901,7 +847,7 @@ export default function DispatchConsole() {
           )}
 
           {loading && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: '#8b928a' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: 'var(--dc-text-muted)' }}>
               <Loader2 size={13} style={{ animation: 'spin 1s linear infinite' }} />
               <span>SYNCHRONIZING TELEMETRY...</span>
             </div>
@@ -937,6 +883,18 @@ export default function DispatchConsole() {
           <div className="dc-clock">
             {new Date().toLocaleTimeString('en-IN')} IST
           </div>
+
+          <button
+            className="dc-theme-toggle-btn"
+            onClick={toggleTheme}
+            title={theme === 'dark' ? 'Switch to Light' : 'Switch to Dark'}
+          >
+            {theme === 'dark'
+              ? <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+              : <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            }
+            {theme === 'dark' ? 'Light' : 'Dark'}
+          </button>
         </div>
       </header>
 
@@ -948,12 +906,12 @@ export default function DispatchConsole() {
           {/* Building Cameras Heading */}
           <div style={{ 
             padding: '16px 16px 12px 16px',
-            borderBottom: '1px solid #2d322f'
+            borderBottom: '1px solid var(--dc-border)'
           }}>
             <h2 style={{ 
               fontSize: 15,
               fontWeight: 700,
-              color: '#f7f5ed',
+              color: 'var(--dc-text-primary)',
               margin: 0,
               display: 'flex',
               alignItems: 'center',
@@ -979,14 +937,14 @@ export default function DispatchConsole() {
 
           <div className="dc-queue-list">
             {loadingCameras && (
-              <div style={{ padding: 24, textAlign: 'center', color: '#8b928a', fontSize: 12 }}>
+              <div style={{ padding: 24, textAlign: 'center', color: 'var(--dc-text-muted)', fontSize: 12 }}>
                 <Loader2 size={16} style={{ animation: 'spin 1s linear infinite', margin: '0 auto 8px' }} />
                 Loading cameras...
               </div>
             )}
 
             {!loadingCameras && cameras.length === 0 && (
-              <div style={{ padding: 32, textAlign: 'center', color: '#8b928a', fontSize: 13 }}>
+              <div style={{ padding: 32, textAlign: 'center', color: 'var(--dc-text-muted)', fontSize: 13 }}>
                 No cameras available for this building.
               </div>
             )}
@@ -1021,7 +979,7 @@ export default function DispatchConsole() {
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              color: '#8b928a',
+              color: 'var(--dc-text-muted)',
               fontSize: 14
             }}>
               Select an incident from the queue to inspect telemetry

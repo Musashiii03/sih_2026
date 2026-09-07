@@ -4,7 +4,6 @@ import LandingPage from './components/LandingPage';
 import OwnerConsole from './components/OwnerConsole';
 import DispatchConsole from './components/DispatchConsole';
 import LoginPage from './components/LoginPage';
-import ThemeToggle from './components/ThemeToggle';
 
 // ══════════════════════════════════════════════════
 // OWNER SIDEBAR — visible on /owner routes
@@ -181,7 +180,6 @@ function DispatchLayout() {
 export default function App() {
   return (
     <BrowserRouter>
-      <ThemeToggle />
       <Routes>
         <Route path="/"           element={<LandingPage />} />
         <Route path="/login"      element={<LoginPage />} />
