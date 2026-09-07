@@ -24,6 +24,14 @@ router.post('/', incidentController.createIncident);
 router.get('/', incidentController.getAllIncidents);
 
 /**
+ * @route   GET /api/incidents/history
+ * @desc    Get incident history for owner console (all incidents with timeline)
+ * @access  Public
+ * @query   page, limit, status, search
+ */
+router.get('/history', incidentController.getIncidentHistory);
+
+/**
  * @route   GET /api/incidents/statistics
  * @desc    Get incident statistics
  * @access  Public
@@ -32,11 +40,11 @@ router.get('/', incidentController.getAllIncidents);
 router.get('/statistics', incidentController.getIncidentStatistics);
 
 /**
- * @route   GET /api/incidents/:id
- * @desc    Get incident by ID
+ * @route   GET /api/incidents/active-alerts
+ * @desc    Get active fire alerts for real-time monitoring (building_id = 1)
  * @access  Public
  */
-router.get('/:id', incidentController.getIncidentById);
+router.get('/active-alerts', incidentController.getActiveFireAlerts);
 
 /**
  * @route   GET /api/incidents/number/:incident_number
@@ -59,6 +67,13 @@ router.get('/dashboard/:incident_number', incidentController.getIncidentDashboar
  * @query   page, limit, status
  */
 router.get('/building/:building_id', incidentController.getIncidentsByBuilding);
+
+/**
+ * @route   GET /api/incidents/:id
+ * @desc    Get incident by ID
+ * @access  Public
+ */
+router.get('/:id', incidentController.getIncidentById);
 
 /**
  * @route   PATCH /api/incidents/:id/status

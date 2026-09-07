@@ -8,13 +8,22 @@ import { ArrowLeft, Video, Layers, MapPin, Phone, Truck, Building2, AlertTriangl
 import CctvStreamPlayer from './CctvStreamPlayer';
 import IsometricHologram from './IsometricHologram';
 import DispatchMap from './DispatchMap';
+import IncidentDetailView from './IncidentDetailView';
 import './BuildingDetail.css';
 
-export default function BuildingDetail({ building, onBack }) {
+export default function BuildingDetail({ building, onBack, activeIncidentId, onVerifyIncident }) {
   const [viewMode, setViewMode] = useState('cctv'); // 'cctv' or 'hologram'
   const [cameras, setCameras] = useState([]);
   const [selectedCamera, setSelectedCamera] = useState(null);
   const [nearestStation, setNearestStation] = useState(null);
+  const [showIncidentView, setShowIncidentView] = useState(false);
+
+  // Show incident view if activeIncidentId is provided
+  useEffect(() => {
+    if (activeIncidentId) {
+      setShowIncidentView(true);
+    }
+  }, [activeIncidentId]);
 
   useEffect(() => {
     if (building) {
@@ -25,28 +34,110 @@ export default function BuildingDetail({ building, onBack }) {
 
   const fetchCameras = async () => {
     try {
-      const response = await fetch(`/api/cameras`);
+
+      console.log('🔄 Fetching cameras from API...');
+      
+      // Fetch ALL cameras regardless of building_id
+      const response = await fetch(`http://localhost:3001/api/cameras?limit=100`);
+      
+      console.log('📡 Response status:', response.status);
+      
       if (response.ok) {
         const data = await response.json();
-        // API returns { cameras: [...], count: N } from cameras.yaml
-        const raw = data.cameras || data.data?.cameras || [];
-        // Normalize fields so the rest of the component works
-        const cameraList = raw.map(c => ({
-          ...c,
-          camera_code: c.camera_code || c.id,
-          name: c.name,
-          location: c.sector || c.location || '',
-          stream_url: c.camera_stream_url || c.source || null,
-          status: c.enabled === false ? 'OFFLINE' : 'ONLINE',
-        }));
-        setCameras(cameraList);
+        console.log('📦 Raw API response:', data);
+        
+        // Handle response structure - could be data.cameras or data.data.cameras
+        const cameraList = data.data?.cameras || data.cameras || [];
+        
+        console.log('📹 Parsed cameras:', cameraList.length, 'cameras found');
+
         if (cameraList.length > 0) {
+          console.log('✅ Setting cameras:', cameraList);
+          setCameras(cameraList);
           setSelectedCamera(cameraList[0]);
+        } else {
+          console.warn('⚠️ No cameras in API response, using mock data');
+          setMockCameras();
         }
+      } else {
+        console.error('❌ Failed to fetch cameras. Status:', response.status);
+        setMockCameras();
       }
     } catch (error) {
-      console.error('Error fetching cameras:', error);
+      console.error('❌ Error fetching cameras:', error);
+      setMockCameras();
     }
+  };
+
+  const setMockCameras = () => {
+    const mockCameras = [
+      {
+        id: 1,
+        camera_code: "CAM-01",
+        name: "Lobby Main Entrance",
+        status: "ONLINE",
+        floor_number: 0,
+        room_name: "Main Lobby",
+        location_description: "Covering main entrance and reception area"
+      },
+      {
+        id: 2,
+        camera_code: "CAM-02",
+        name: "Floor 5 Corridor",
+        status: "ONLINE",
+        floor_number: 5,
+        room_name: "Main Corridor",
+        location_description: "Monitoring hallway and emergency exits"
+      },
+      {
+        id: 3,
+        camera_code: "CAM-03",
+        name: "Parking Level B1",
+        status: "ONLINE",
+        floor_number: -1,
+        room_name: "Basement Parking",
+        location_description: "Monitoring basement parking area"
+      },
+      {
+        id: 4,
+        camera_code: "CAM-04",
+        name: "Reception Area",
+        status: "ONLINE",
+        floor_number: 0,
+        room_name: "Reception",
+        location_description: "Main reception desk coverage"
+      },
+      {
+        id: 5,
+        camera_code: "CAM-05",
+        name: "Server Room Floor 10",
+        status: "ONLINE",
+        floor_number: 10,
+        room_name: "Server Room",
+        location_description: "Critical server infrastructure monitoring"
+      },
+      {
+        id: 6,
+        camera_code: "CAM-06",
+        name: "Building Entrance",
+        status: "ONLINE",
+        floor_number: 0,
+        room_name: "Main Gate",
+        location_description: "Residential building main entrance"
+      },
+      {
+        id: 7,
+        camera_code: "CAM-07",
+        name: "Floor 15 Common Area",
+        status: "ONLINE",
+        floor_number: 15,
+        room_name: "Common Area",
+        location_description: "Common area and lift lobby"
+      }
+    ];
+    console.log('⚠️ Using mock camera data:', mockCameras.length, 'cameras');
+    setCameras(mockCameras);
+    setSelectedCamera(mockCameras[0]);
   };
 
   const fetchNearestStation = async () => {
@@ -61,6 +152,22 @@ export default function BuildingDetail({ building, onBack }) {
   };
 
   if (!building) return null;
+
+  // If showing incident view, render IncidentDetailView instead
+  if (showIncidentView && activeIncidentId) {
+    return (
+      <IncidentDetailView
+        incidentNumber={activeIncidentId}
+        building={building}
+        onBack={() => {
+          setShowIncidentView(false);
+          // If user wants to go back further, call parent onBack
+          // Otherwise stay on building detail
+        }}
+        onVerifyIncident={onVerifyIncident}
+      />
+    );
+  }
 
   return (
     <div className="building-detail-container">
@@ -114,7 +221,7 @@ export default function BuildingDetail({ building, onBack }) {
                     onClick={() => setViewMode('cctv')}
                   >
                     <Radio size={12} />
-                    <span>OPTICAL CCTV</span>
+                    <span>CAMERA VIEW</span>
                   </button>
                   <button
                     className={`dc-mode-pill ${viewMode === 'hologram' ? 'active' : ''}`}
@@ -136,17 +243,39 @@ export default function BuildingDetail({ building, onBack }) {
             {/* Video/Hologram Display */}
             <div style={{ padding: 14 }}>
               {viewMode === 'cctv' ? (
-                selectedCamera ? (
-                  <CctvStreamPlayer
-                    cameraId={selectedCamera.camera_code}
-                    streamUrl={selectedCamera.stream_url}
-                  />
-                ) : (
-                  <div className="no-camera-placeholder">
-                    <Video size={48} style={{ opacity: 0.3 }} />
-                    <p>No cameras available for this building</p>
+                <div className="cctv-placeholder-container">
+                  {/* Placeholder CCTV Image */}
+                  <div className="cctv-placeholder">
+                    <img 
+                      src="https://images.unsplash.com/photo-1557597774-9d273605dfa9?w=800&q=80" 
+                      alt="CCTV Feed Placeholder"
+                      className="cctv-placeholder-image"
+                      onError={(e) => {
+                        // Fallback to a solid color background if image fails
+                        e.target.style.display = 'none';
+                        e.target.parentElement.style.background = 'linear-gradient(135deg, #1d2021 0%, #282828 100%)';
+                      }}
+                    />
+                    <div className="cctv-placeholder-overlay">
+                      <Video size={48} className="cctv-placeholder-icon" />
+                      {selectedCamera ? (
+                        <>
+                          <p className="cctv-placeholder-text">{selectedCamera.name || 'Camera Feed'}</p>
+                          <p className="cctv-placeholder-camera">{selectedCamera.camera_code}</p>
+                          {(selectedCamera.floor_number || selectedCamera.room_name) && (
+                            <p className="cctv-placeholder-details">
+                              {selectedCamera.floor_number && `Floor ${selectedCamera.floor_number}`}
+                              {selectedCamera.floor_number && selectedCamera.room_name && ' · '}
+                              {selectedCamera.room_name}
+                            </p>
+                          )}
+                        </>
+                      ) : (
+                        <p className="cctv-placeholder-text">Select a camera to view</p>
+                      )}
+                    </div>
                   </div>
-                )
+                </div>
               ) : (
                 <div style={{ borderRadius: 8, overflow: 'hidden', border: '1px solid #323633', background: '#121413' }}>
                   <IsometricHologram buildingId={building.id} theme="dark" minHeight="380px" maxHeight="440px" />
@@ -155,37 +284,66 @@ export default function BuildingDetail({ building, onBack }) {
             </div>
           </div>
 
-          {/* Camera Grid */}
-          {cameras.length > 0 && (
-            <div className="camera-grid-section">
-              <div className="section-header">
-                <h3 className="section-title">Available Cameras</h3>
-                <span className="section-badge">{cameras.length} ONLINE</span>
-              </div>
-              <div className="camera-grid">
+          {/* Cameras Section */}
+          <div className="cameras-section">
+            <div className="cameras-section-header">
+              <h2 className="cameras-section-title">
+                <Video size={20} />
+                <span>Cameras</span>
+              </h2>
+              <span className="cameras-count-badge">
+                {cameras.length} {cameras.length === 1 ? 'Camera' : 'Cameras'}
+              </span>
+            </div>
+
+            {cameras.length > 0 ? (
+              <div className="cameras-list">
                 {cameras.map(camera => (
                   <div
                     key={camera.id}
-                    className={`camera-card ${selectedCamera?.id === camera.id ? 'selected' : ''}`}
+                    className={`camera-list-item ${selectedCamera?.id === camera.id ? 'selected' : ''}`}
                     onClick={() => {
                       setSelectedCamera(camera);
                       setViewMode('cctv');
                     }}
                   >
-                    <div className="camera-card-header">
-                      <Video size={16} />
-                      <span className="camera-code">{camera.camera_code}</span>
-                      <span className={`camera-status ${camera.status === 'ONLINE' ? 'online' : 'offline'}`} />
+                    <div className="camera-list-icon">
+                      <Video size={18} />
                     </div>
-                    <div className="camera-card-body">
-                      <p className="camera-name">{camera.name}</p>
-                      <p className="camera-location">{camera.location || 'No location'}</p>
+                    <div className="camera-list-content">
+                      <div className="camera-list-header">
+                        <span className="camera-list-code">{camera.camera_code}</span>
+                        <span className={`camera-list-status ${camera.status === 'ONLINE' ? 'online' : 'offline'}`}>
+                          <span className="status-dot"></span>
+                          {camera.status || 'ONLINE'}
+                        </span>
+                      </div>
+                      <p className="camera-list-name">{camera.name || 'Unnamed Camera'}</p>
+                      {camera.location_description && (
+                        <p className="camera-list-location">{camera.location_description}</p>
+                      )}
+                      {(camera.floor_number || camera.room_name) && (
+                        <p className="camera-list-details">
+                          {camera.floor_number && `Floor ${camera.floor_number}`}
+                          {camera.floor_number && camera.room_name && ' · '}
+                          {camera.room_name}
+                        </p>
+                      )}
+                    </div>
+                    <div className="camera-list-arrow">
+                      <Radio size={16} />
                     </div>
                   </div>
                 ))}
               </div>
-            </div>
-          )}
+            ) : (
+              <div className="no-cameras-message">
+                <Video size={48} style={{ opacity: 0.3 }} />
+                <p>No cameras configured for this building</p>
+                <small>Add cameras to monitor this facility</small>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Right Column - Transit & Station Info */}

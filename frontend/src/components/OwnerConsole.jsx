@@ -37,6 +37,8 @@ import {
 import AddOrganization from './AddOrganization';
 import AddBuilding from './AddBuilding';
 import BuildingDetail from './BuildingDetail';
+import { useFireAlerts } from '../hooks/useFireAlerts';
+import FireAlertNotification from './FireAlertNotification';
 import './ApexConsole.css';
 
 // ─── SEEDED ORGANIZATIONS & SITES ────────────────────────────────────
@@ -272,9 +274,32 @@ const INITIAL_INCIDENTS = [
 export default function OwnerConsole() {
   const navigate = useNavigate();
 
+  // Fire Alerts Hook
+  const { 
+    activeAlerts, 
+    acknowledgeAlert, 
+    dismissAlert,
+    verifyAlert,
+    buildingsWithAlerts,
+    alertCount,
+    _allAlerts,
+    _seenIncidentIds
+  } = useFireAlerts();
+
+  // Debug logging
+  useEffect(() => {
+    console.log('📊 OwnerConsole - Fire Alerts State:');
+    console.log('   Active Alerts:', activeAlerts);
+    console.log('   All Alerts (debug):', _allAlerts);
+    console.log('   Seen Incident IDs:', _seenIncidentIds);
+    console.log('   Buildings with Alerts:', buildingsWithAlerts);
+    console.log('   Alert Count:', alertCount);
+  }, [activeAlerts, _allAlerts, _seenIncidentIds, buildingsWithAlerts, alertCount]);
+
   // Navigation tabs: 'overview' | 'monitoring' | 'incidents' | 'add-organization' | 'add-building' | 'building-detail'
   const [activeTab, setActiveTab] = useState('overview');
   const [selectedBuilding, setSelectedBuilding] = useState(null);
+  const [activeIncidentForBuilding, setActiveIncidentForBuilding] = useState(null);
 
   // Organizations & Buildings from API
   const [organizations, setOrganizations] = useState([]);
@@ -321,6 +346,7 @@ export default function OwnerConsole() {
   useEffect(() => {
     fetchOrganizations();
     fetchBuildings();
+    fetchIncidents();
   }, []);
 
   const fetchOrganizations = async () => {
@@ -347,6 +373,32 @@ export default function OwnerConsole() {
     }
   };
 
+  const fetchIncidents = async () => {
+    try {
+      console.log('📋 Fetching incident history from API...');
+      const response = await fetch('http://localhost:3001/api/incidents/history?limit=100');
+      if (response.ok) {
+        const data = await response.json();
+        console.log('✅ Fetched incidents:', data.data.incidents);
+        
+        if (data.success && data.data.incidents.length > 0) {
+          setIncidents(data.data.incidents);
+          // Set first incident as selected if none selected
+          if (!selectedIncidentId && data.data.incidents.length > 0) {
+            setSelectedIncidentId(data.data.incidents[0].id);
+          }
+        } else {
+          console.log('ℹ️ No incidents found, using mock data');
+          // Keep INITIAL_INCIDENTS as fallback
+        }
+      }
+    } catch (error) {
+      console.error('❌ Error fetching incidents:', error);
+      console.log('ℹ️ Using mock incident data as fallback');
+      // Keep INITIAL_INCIDENTS as fallback
+    }
+  };
+
   // Toggle organization expansion
   const toggleOrganization = (orgId) => {
     setExpandedOrgId(expandedOrgId === orgId ? null : orgId);
@@ -365,6 +417,7 @@ export default function OwnerConsole() {
   // Handle building click
   const handleBuildingClick = (building) => {
     setSelectedBuilding(building);
+    setActiveIncidentForBuilding(null); // Clear any active incident
     setActiveTab('building-detail');
   };
 
@@ -485,6 +538,33 @@ export default function OwnerConsole() {
     showToast(`Incident ${selectedIncident.id} marked as resolved`, 'success');
   };
 
+  // Navigate to building dashboard from incident history
+  const handleViewBuildingDashboard = (incident) => {
+    if (!incident || !incident.building_id) {
+      showToast('Building information not available for this incident', 'alert');
+      return;
+    }
+
+    console.log('📍 Navigating to building dashboard for incident:', incident.incident_number);
+    
+    // Find the building
+    const building = buildings.find(b => b.id === incident.building_id);
+    
+    if (building) {
+      // Set the active incident for the building view
+      setActiveIncidentForBuilding(incident.incident_number);
+      
+      // Navigate to building detail view
+      setSelectedBuilding(building);
+      setActiveTab('building-detail');
+      
+      showToast(`Opening ${building.name} dashboard`, 'info');
+    } else {
+      console.warn(`Building ${incident.building_id} not found`);
+      showToast(`Building not found for incident ${incident.incident_number}`, 'alert');
+    }
+  };
+
   // Sign out handler
   const handleSignOut = () => {
     showToast('Session closed', 'info');
@@ -493,8 +573,83 @@ export default function OwnerConsole() {
     }, 600);
   };
 
+  // Handle fire alert acknowledgment
+  const handleAcknowledgeFireAlert = async (incidentNumber) => {
+    console.log(`🔔 Acknowledging fire alert: ${incidentNumber}`);
+    
+    const result = await acknowledgeAlert(incidentNumber);
+    
+    console.log('Acknowledgment result:', result);
+    
+    if (result.success && result.alert) {
+      showToast(`Incident ${incidentNumber} acknowledged`, 'success');
+      
+      // Refresh incidents list to show updated status
+      fetchIncidents();
+      
+      // Find the building for this alert
+      const alertBuilding = buildings.find(b => b.id === result.alert.building_id);
+      
+      console.log('Found building:', alertBuilding);
+      
+      if (alertBuilding) {
+        // Set the active incident for the building
+        setActiveIncidentForBuilding(incidentNumber);
+        
+        // Navigate to building detail view
+        setSelectedBuilding(alertBuilding);
+        setActiveTab('building-detail');
+      } else {
+        console.warn(`Building ${result.alert.building_id} not found in buildings list`);
+        showToast(`Building not found for incident ${incidentNumber}`, 'alert');
+      }
+    } else {
+      const errorMsg = result.error || 'Unknown error';
+      console.error(`Failed to acknowledge: ${errorMsg}`);
+      showToast(`Failed to acknowledge incident ${incidentNumber}: ${errorMsg}`, 'alert');
+    }
+  };
+
+  // Show toast when alert is auto-escalated
+  useEffect(() => {
+    const escalatedAlerts = activeAlerts.filter(a => a.escalated && a.timeRemaining === 0);
+    
+    escalatedAlerts.forEach(alert => {
+      // Only show toast once when escalated
+      if (!alert.toastShown) {
+        showToast(
+          `Incident ${alert.incident_number} auto-escalated to fire department (placeholder)`, 
+          'alert'
+        );
+        // Mark toast as shown to prevent duplicates
+        alert.toastShown = true;
+      }
+    });
+  }, [activeAlerts]);
+
   return (
     <div className="apex-app-root">
+      {/* ─── FIRE ALERT NOTIFICATIONS (Top-Right) ─── */}
+      <div style={{
+        position: 'fixed',
+        top: '20px',
+        right: '20px',
+        zIndex: 10000,
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '12px',
+        maxWidth: '400px'
+      }}>
+        {activeAlerts.map((alert) => (
+          <FireAlertNotification
+            key={alert.incident_number}
+            alert={alert}
+            onAcknowledge={handleAcknowledgeFireAlert}
+            onDismiss={dismissAlert}
+          />
+        ))}
+      </div>
+
       {/* ─── FLOATING TOASTS ─── */}
       <div className="apex-toast-stack">
         {toasts.map((t) => (
@@ -562,11 +717,12 @@ export default function OwnerConsole() {
             {organizations.map(org => {
               const orgBuildings = getOrganizationBuildings(org.id);
               const isExpanded = expandedOrgId === org.id;
+              const hasFireAlertInOrg = orgBuildings.some(b => buildingsWithAlerts.includes(b.id));
               
               return (
                 <div key={org.id} className="tree-item">
                   <div 
-                    className="tree-org-item"
+                    className={`tree-org-item ${hasFireAlertInOrg ? 'has-fire-alert' : ''}`}
                     onClick={() => toggleOrganization(org.id)}
                   >
                     <ChevronDown 
@@ -579,19 +735,27 @@ export default function OwnerConsole() {
                   </div>
                   {isExpanded && orgBuildings.length > 0 && (
                     <div className="tree-children">
-                      {orgBuildings.map(building => (
-                        <div 
-                          key={building.id} 
-                          className="tree-building-item"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleBuildingClick(building);
-                          }}
-                        >
-                          <Layers size={14} className="tree-icon building-icon" />
-                          <span className="tree-label">{building.name}</span>
-                        </div>
-                      ))}
+                      {orgBuildings.map(building => {
+                        const hasFireAlert = buildingsWithAlerts.includes(building.id);
+                        
+                        return (
+                          <div 
+                            key={building.id} 
+                            className={`tree-building-item ${hasFireAlert ? 'building-fire-alert' : ''}`}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleBuildingClick(building);
+                            }}
+                          >
+                            {hasFireAlert && <Flame size={14} className="tree-icon fire-alert-icon" />}
+                            <Layers size={14} className="tree-icon building-icon" />
+                            <span className="tree-label">{building.name}</span>
+                            {hasFireAlert && (
+                              <span className="fire-alert-badge" title="Fire detected">🔥</span>
+                            )}
+                          </div>
+                        );
+                      })}
                     </div>
                   )}
                 </div>
@@ -599,17 +763,25 @@ export default function OwnerConsole() {
             })}
 
             {/* Unassigned Buildings - shown directly */}
-            {getUnassignedBuildings().map(building => (
-              <div key={building.id} className="tree-item">
-                <div 
-                  className="tree-building-item tree-building-direct"
-                  onClick={() => handleBuildingClick(building)}
-                >
-                  <Layers size={16} className="tree-icon building-icon" />
-                  <span className="tree-label">{building.name}</span>
+            {getUnassignedBuildings().map(building => {
+              const hasFireAlert = buildingsWithAlerts.includes(building.id);
+              
+              return (
+                <div key={building.id} className="tree-item">
+                  <div 
+                    className={`tree-building-item tree-building-direct ${hasFireAlert ? 'building-fire-alert' : ''}`}
+                    onClick={() => handleBuildingClick(building)}
+                  >
+                    {hasFireAlert && <Flame size={16} className="tree-icon fire-alert-icon" />}
+                    <Layers size={16} className="tree-icon building-icon" />
+                    <span className="tree-label">{building.name}</span>
+                    {hasFireAlert && (
+                      <span className="fire-alert-badge" title="Fire detected">🔥</span>
+                    )}
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
 
@@ -1220,6 +1392,23 @@ export default function OwnerConsole() {
                     />
                   </div>
 
+                  {/* View Building Dashboard Button */}
+                  {selectedIncident.building_id && (
+                    <button 
+                      className="apex-ack-btn" 
+                      onClick={() => handleViewBuildingDashboard(selectedIncident)}
+                      style={{ 
+                        background: 'rgba(139, 92, 246, 0.2)', 
+                        borderColor: '#a78bfa', 
+                        color: '#c4b5fd',
+                        marginBottom: '12px'
+                      }}
+                    >
+                      <span>VIEW BUILDING DASHBOARD</span>
+                      <ArrowRight size={14} />
+                    </button>
+                  )}
+
                   {/* Action CTA Button */}
                   {selectedIncident.status === 'UNACKNOWLEDGED' && (
                     <button className="apex-ack-btn" onClick={handleAcknowledge}>
@@ -1285,7 +1474,12 @@ export default function OwnerConsole() {
           {activeTab === 'building-detail' && (
             <BuildingDetail 
               building={selectedBuilding} 
-              onBack={() => setActiveTab('overview')} 
+              onBack={() => {
+                setActiveTab('overview');
+                setActiveIncidentForBuilding(null); // Clear incident when going back
+              }}
+              activeIncidentId={activeIncidentForBuilding}
+              onVerifyIncident={verifyAlert}
             />
           )}
         </div>

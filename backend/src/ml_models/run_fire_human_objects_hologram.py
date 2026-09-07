@@ -32,38 +32,47 @@ logging.basicConfig(
 # 1. INITIALIZE MODELS
 # ============================================================================
 
-FIRE_MODEL_PATH = "universal_fire_master_100pct.pt"
-HUMAN_MODEL_PATH = "universal_human_master.pt"
+# Model paths - look in finalModels folder first, then current directory
+MODELS_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..', 'finalModels'))
+if not os.path.exists(MODELS_DIR):
+    MODELS_DIR = '.'
+
+FIRE_MODEL_PATH = os.path.join(MODELS_DIR, "universal_fire_master_100pct.pt")
+SMOKE_MODEL_PATH = os.path.join(MODELS_DIR, "smoke_v8s_production.pt")
+ANIMAL_MODEL_PATH = os.path.join(MODELS_DIR, "animal_model.pt")
+HUMAN_MODEL_PATH = os.path.join(MODELS_DIR, "rescue_human_master_best.pt")
+OBJECT_MODEL_PATH = os.path.join(MODELS_DIR, "yolov8n.pt")
 
 # Check models exist
-if not os.path.exists(FIRE_MODEL_PATH):
-    print(f"❌ Fire model not found: {FIRE_MODEL_PATH}")
-    sys.exit(1)
+models_to_load = {
+    'Fire': FIRE_MODEL_PATH,
+    'Smoke': SMOKE_MODEL_PATH,
+    'Animal': ANIMAL_MODEL_PATH,
+    'Human': HUMAN_MODEL_PATH,
+    'Object': OBJECT_MODEL_PATH
+}
 
-if not os.path.exists(HUMAN_MODEL_PATH):
-    candidates = [f for f in os.listdir('.') if 'human' in f.lower() and f.endswith('.pt')]
-    if candidates:
-        HUMAN_MODEL_PATH = candidates[0]
-    else:
-        print(f"❌ Human model not found: {HUMAN_MODEL_PATH}")
+for model_name, model_path in models_to_load.items():
+    if not os.path.exists(model_path):
+        print(f"❌ {model_name} model not found: {model_path}")
         sys.exit(1)
 
-print(f"🔥 Loading Fire Model: {FIRE_MODEL_PATH} ...")
+print(f"\n🔥 Loading Fire Model: {os.path.basename(FIRE_MODEL_PATH)} ...")
 fire_model = YOLO(FIRE_MODEL_PATH)
 
-print(f"👤 Loading Human Model: {HUMAN_MODEL_PATH} ...")
+print(f"� Loading Smoke Model: {os.path.basename(SMOKE_MODEL_PATH)} ...")
+smoke_model = YOLO(SMOKE_MODEL_PATH)
+
+print(f"🦌 Loading Animal Model: {os.path.basename(ANIMAL_MODEL_PATH)} ...")
+animal_model = YOLO(ANIMAL_MODEL_PATH)
+
+print(f"� Loading Human Model: {os.path.basename(HUMAN_MODEL_PATH)} ...")
 human_model = YOLO(HUMAN_MODEL_PATH)
 
-# Try to load COCO model for object detection (furniture, etc.)
-print(f"📦 Loading Object Detection Model (COCO)...")
-try:
-    object_model = YOLO('yolov8n.pt')  # YOLOv8 nano for general objects
-    DETECT_OBJECTS = True
-    print("✅ Object detection enabled")
-except Exception as e:
-    print(f"⚠️ Object detection disabled: {e}")
-    object_model = None
-    DETECT_OBJECTS = False
+print(f"📦 Loading Object Detection Model: {os.path.basename(OBJECT_MODEL_PATH)} ...")
+object_model = YOLO(OBJECT_MODEL_PATH)
+
+print("✅ All 5 models loaded successfully\n")
 
 # Relevant COCO classes for indoor fire scenarios
 RELEVANT_OBJECTS = {
@@ -96,9 +105,9 @@ class EnhancedStorageManager(StorageManager):
     """Extended storage manager that saves fire, human, and object detections"""
     
     def save_incident_with_all_detections(self, frames, incident_id, camera_id, location, 
-                                         fire_data, human_data, object_data):
+                                         fire_data, smoke_data, animal_data, human_data, object_data):
         """
-        Save incident with comprehensive detection data
+        Save incident with comprehensive detection data from all 5 models
         
         Args:
             frames: List of Frame objects (dataclass)
@@ -106,6 +115,8 @@ class EnhancedStorageManager(StorageManager):
             camera_id: Camera identifier
             location: Location description
             fire_data: Dict mapping frame_index -> list of fire bboxes
+            smoke_data: Dict mapping frame_index -> list of smoke bboxes
+            animal_data: Dict mapping frame_index -> list of animal bboxes
             human_data: Dict mapping frame_index -> list of human bboxes
             object_data: Dict mapping frame_index -> list of object bboxes
         """
@@ -132,7 +143,7 @@ class EnhancedStorageManager(StorageManager):
             frame_path = frames_dir / frame_filename
             cv2.imwrite(str(frame_path), frame_obj.image)
             
-            # Enhanced metadata with ALL detections
+            # Enhanced metadata with ALL detections from 5 models
             metadata = {
                 'frame_index': frame_idx,
                 'timestamp': frame_obj.timestamp,
@@ -142,6 +153,16 @@ class EnhancedStorageManager(StorageManager):
                     'count': len(fire_data.get(frame_idx, [])),
                     'confidence': frame_obj.confidence,
                     'bounding_boxes': fire_data.get(frame_idx, [])
+                },
+                'smoke': {
+                    'detected': frame_idx in smoke_data and len(smoke_data[frame_idx]) > 0,
+                    'count': len(smoke_data.get(frame_idx, [])),
+                    'bounding_boxes': smoke_data.get(frame_idx, [])
+                },
+                'animals': {
+                    'detected': frame_idx in animal_data and len(animal_data[frame_idx]) > 0,
+                    'count': len(animal_data.get(frame_idx, [])),
+                    'bounding_boxes': animal_data.get(frame_idx, [])
                 },
                 'humans': {
                     'detected': frame_idx in human_data and len(human_data[frame_idx]) > 0,
@@ -168,6 +189,8 @@ class EnhancedStorageManager(StorageManager):
                 'timestamp_readable': metadata['timestamp_readable'],
                 'fire_confidence': frame_obj.confidence,
                 'fire_count': metadata['fire']['count'],
+                'smoke_count': metadata['smoke']['count'],
+                'animal_count': metadata['animals']['count'],
                 'human_count': metadata['humans']['count'],
                 'object_count': metadata['objects']['count'],
                 'image_path': str(frame_path.absolute()),
@@ -185,6 +208,8 @@ class EnhancedStorageManager(StorageManager):
             'frames': saved_frames,
             'statistics': {
                 'total_fire_detections': sum(f['fire_count'] for f in saved_frames),
+                'total_smoke_detections': sum(f['smoke_count'] for f in saved_frames),
+                'total_animal_detections': sum(f['animal_count'] for f in saved_frames),
                 'total_human_detections': sum(f['human_count'] for f in saved_frames),
                 'total_object_detections': sum(f['object_count'] for f in saved_frames),
                 'avg_fire_confidence': np.mean([f['fire_confidence'] for f in saved_frames])
@@ -198,6 +223,8 @@ class EnhancedStorageManager(StorageManager):
         
         logging.info(f"Saved incident {incident_id}: {len(saved_frames)} frames, "
                     f"{summary['statistics']['total_fire_detections']} fires, "
+                    f"{summary['statistics']['total_smoke_detections']} smoke, "
+                    f"{summary['statistics']['total_animal_detections']} animals, "
                     f"{summary['statistics']['total_human_detections']} humans, "
                     f"{summary['statistics']['total_object_detections']} objects")
         
@@ -217,7 +244,7 @@ root = tk.Tk()
 root.withdraw()
 root.attributes('-topmost', True)
 video_path = filedialog.askopenfilename(
-    title="Select Video for Fire/Human/Object Detection",
+    title="Select Video for 5-Model Detection (Fire/Smoke/Animal/Human/Object)",
     filetypes=[("Video Files", "*.mp4 *.avi *.mov *.mkv *.wmv"), ("All Files", "*.*")]
 )
 
@@ -245,11 +272,13 @@ def preprocess_white_background(frame):
 
 # Storage for all detections per frame
 all_fire_detections = {}
+all_smoke_detections = {}
+all_animal_detections = {}
 all_human_detections = {}
 all_object_detections = {}
 frame_counter = 0
 
-print("\n🚀 Playing video with Fire/Human/Object detection. Press 'q' to stop.")
+print("\n🚀 Playing video with Fire/Smoke/Animal/Human/Object detection. Press 'q' to stop.")
 prev_time = time.time()
 
 while cap.isOpened():
@@ -261,50 +290,64 @@ while cap.isOpened():
     processed_frame = preprocess_white_background(frame)
     
     # ========================================================================
-    # RUN ALL MODELS
+    # RUN ALL 5 MODELS
     # ========================================================================
     
-    # Fire detection
+    # 1. Fire detection
     fire_results = fire_model.predict(
         source=processed_frame,
-        conf=0.30,
+        conf=0.25,
         iou=0.45,
-        imgsz=640,
         verbose=False
     )[0]
     
-    # Human detection
+    # 2. Smoke detection
+    smoke_results = smoke_model.predict(
+        source=processed_frame,
+        conf=0.28,
+        iou=0.45,
+        verbose=False
+    )[0]
+    
+    # 3. Animal detection
+    animal_results = animal_model.predict(
+        source=frame,
+        conf=0.70,
+        iou=0.45,
+        verbose=False
+    )[0]
+    
+    # 4. Human detection
     human_results = human_model.predict(
         source=frame,
-        conf=0.40,
+        conf=0.45,
         iou=0.45,
-        imgsz=640,
         verbose=False
     )[0]
     
-    # Object detection (if enabled)
-    if DETECT_OBJECTS:
-        object_results = object_model.predict(
-            source=frame,
-            conf=0.50,
-            iou=0.45,
-            imgsz=640,
-            verbose=False,
-            classes=list(RELEVANT_OBJECTS.keys())
-        )[0]
-    else:
-        object_results = None
+    # 5. Object detection
+    object_results = object_model.predict(
+        source=frame,
+        conf=0.50,
+        iou=0.45,
+        verbose=False,
+        classes=list(RELEVANT_OBJECTS.keys())
+    )[0]
     
     # ========================================================================
-    # PROCESS DETECTIONS
+    # PROCESS DETECTIONS FROM ALL 5 MODELS
     # ========================================================================
     
     display_frame = frame.copy()
     fire_count = 0
+    smoke_count = 0
+    animal_count = 0
     human_count = 0
     object_count = 0
     
     fire_bboxes = []
+    smoke_bboxes = []
+    animal_bboxes = []
     human_bboxes = []
     object_bboxes = []
     
@@ -312,27 +355,61 @@ while cap.isOpened():
     for box in fire_results.boxes:
         cls_id = int(box.cls[0].item())
         conf = float(box.conf[0].item())
-        label_name = fire_results.names[cls_id].lower()
+        x1, y1, x2, y2 = map(int, box.xyxy[0].tolist())
         
-        if "smoke" in label_name:
-            continue
+        fire_count += 1
+        fire_bboxes.append({
+            'x': x1,
+            'y': y1,
+            'width': x2 - x1,
+            'height': y2 - y1,
+            'confidence': conf,
+            'class': 'fire'
+        })
         
-        if "fire" in label_name:
-            fire_count += 1
-            x1, y1, x2, y2 = map(int, box.xyxy[0].tolist())
-            
-            fire_bboxes.append({
-                'x': x1,
-                'y': y1,
-                'width': x2 - x1,
-                'height': y2 - y1,
-                'confidence': conf,
-                'class': 'fire'
-            })
-            
-            cv2.rectangle(display_frame, (x1, y1), (x2, y2), (0, 0, 255), 2)
-            cv2.putText(display_frame, f"FIRE {conf:.2f}", (x1, max(20, y1 - 8)),
-                       cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 255), 2)
+        cv2.rectangle(display_frame, (x1, y1), (x2, y2), (0, 0, 255), 3)
+        cv2.putText(display_frame, f"FIRE {conf:.2f}", (x1, max(25, y1 - 8)),
+                   cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
+    
+    # Process SMOKE detections
+    for box in smoke_results.boxes:
+        cls_id = int(box.cls[0].item())
+        conf = float(box.conf[0].item())
+        x1, y1, x2, y2 = map(int, box.xyxy[0].tolist())
+        
+        smoke_count += 1
+        smoke_bboxes.append({
+            'x': x1,
+            'y': y1,
+            'width': x2 - x1,
+            'height': y2 - y1,
+            'confidence': conf,
+            'class': 'smoke'
+        })
+        
+        cv2.rectangle(display_frame, (x1, y1), (x2, y2), (0, 165, 255), 2)
+        cv2.putText(display_frame, f"SMOKE {conf:.2f}", (x1, max(20, y1 - 8)),
+                   cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 165, 255), 2)
+    
+    # Process ANIMAL detections
+    for box in animal_results.boxes:
+        cls_id = int(box.cls[0].item())
+        conf = float(box.conf[0].item())
+        x1, y1, x2, y2 = map(int, box.xyxy[0].tolist())
+        
+        animal_count += 1
+        animal_bboxes.append({
+            'x': x1,
+            'y': y1,
+            'width': x2 - x1,
+            'height': y2 - y1,
+            'confidence': conf,
+            'class': 'animal'
+        })
+        
+        cv2.rectangle(display_frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
+        cv2.putText(display_frame, f"ANIMAL {conf:.2f}", (x1, max(20, y1 - 8)),
+                   cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
     
     # Process HUMAN detections
     for box in human_results.boxes:
@@ -355,30 +432,29 @@ while cap.isOpened():
                    cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 0), 2)
     
     # Process OBJECT detections
-    if object_results:
-        for box in object_results.boxes:
-            cls_id = int(box.cls[0].item())
-            conf = float(box.conf[0].item())
-            x1, y1, x2, y2 = map(int, box.xyxy[0].tolist())
-            
-            obj_name = RELEVANT_OBJECTS.get(cls_id, 'object')
-            object_count += 1
-            
-            object_bboxes.append({
-                'x': x1,
-                'y': y1,
-                'width': x2 - x1,
-                'height': y2 - y1,
-                'confidence': conf,
-                'class': obj_name
-            })
-            
-            cv2.rectangle(display_frame, (x1, y1), (x2, y2), (0, 255, 255), 2)
-            cv2.putText(display_frame, f"{obj_name.upper()} {conf:.2f}", (x1, max(20, y1 - 8)),
-                       cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 255), 2)
+    for box in object_results.boxes:
+        cls_id = int(box.cls[0].item())
+        conf = float(box.conf[0].item())
+        x1, y1, x2, y2 = map(int, box.xyxy[0].tolist())
+        
+        obj_name = RELEVANT_OBJECTS.get(cls_id, 'object')
+        object_count += 1
+        
+        object_bboxes.append({
+            'x': x1,
+            'y': y1,
+            'width': x2 - x1,
+            'height': y2 - y1,
+            'confidence': conf,
+            'class': obj_name
+        })
+        
+        cv2.rectangle(display_frame, (x1, y1), (x2, y2), (0, 255, 255), 2)
+        cv2.putText(display_frame, f"{obj_name.upper()} {conf:.2f}", (x1, max(20, y1 - 8)),
+                   cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 255), 2)
     
     # ========================================================================
-    # FRAME EXTRACTION WITH ALL DETECTIONS
+    # FRAME EXTRACTION WITH ALL 5 DETECTIONS
     # ========================================================================
     
     if frame_extractor is not None and enhanced_storage is not None:
@@ -400,8 +476,10 @@ while cap.isOpened():
                     avg_confidence = sum(b['confidence'] for b in fire_bboxes) / len(fire_bboxes)
                     frame_extractor.extract_frame(frame, current_time, avg_confidence, fire_bboxes)
                     
-                    # Store ALL detections for this frame
+                    # Store ALL detections from ALL 5 models for this frame
                     all_fire_detections[frame_counter] = fire_bboxes
+                    all_smoke_detections[frame_counter] = smoke_bboxes
+                    all_animal_detections[frame_counter] = animal_bboxes
                     all_human_detections[frame_counter] = human_bboxes
                     all_object_detections[frame_counter] = object_bboxes
             
@@ -413,26 +491,36 @@ while cap.isOpened():
                         selected_frames = frame_selector.select_frames(extracted_frames)
                         incident_id = f"INC-{time.strftime('%Y%m%d-%H%M%S')}"
                         
-                        # Save with ALL detections
+                        # Save with ALL detections from ALL 5 models
                         summary = enhanced_storage.save_incident_with_all_detections(
                             frames=selected_frames,
                             incident_id=incident_id,
                             camera_id="CAM-01",
                             location="Video Source",
                             fire_data=all_fire_detections,
+                            smoke_data=all_smoke_detections,
+                            animal_data=all_animal_detections,
                             human_data=all_human_detections,
                             object_data=all_object_detections
                         )
                         
                         print(f"✅ Saved incident: {incident_id}")
                         print(f"   🔥 Fire: {summary['statistics']['total_fire_detections']}")
-                        print(f"   👤 Humans: {summary['statistics']['total_human_detections']}")
+                        print(f"   � Smoke: {summary['statistics']['total_smoke_detections']}")
+                        print(f"   🦌 Animals: {summary['statistics']['total_animal_detections']}")
+                        print(f"   �👤 Humans: {summary['statistics']['total_human_detections']}")
                         print(f"   📦 Objects: {summary['statistics']['total_object_detections']}")
+                        print(f"\n🎬 Frame extraction complete! Closing video...\n")
                         
                         # Clear detection storage
                         all_fire_detections.clear()
+                        all_smoke_detections.clear()
+                        all_animal_detections.clear()
                         all_human_detections.clear()
                         all_object_detections.clear()
+                        
+                        # Close video after successful extraction
+                        break  # Exit the main loop
                         
                 except Exception as e:
                     logging.error(f"Frame extraction error: {e}", exc_info=True)
@@ -441,7 +529,7 @@ while cap.isOpened():
             logging.error(f"Detection storage error: {e}", exc_info=True)
     
     # ========================================================================
-    # DISPLAY HUD
+    # DISPLAY HUD WITH ALL 5 DETECTIONS
     # ========================================================================
     
     curr_time = time.time()
@@ -462,25 +550,30 @@ while cap.isOpened():
             elif current_severity.value == "critical":
                 severity_color = (0, 0, 255)  # Red
     
-    cv2.rectangle(display_frame, (10, 10), (440, 120), (0, 0, 0), -1)
+    # HUD Background
+    cv2.rectangle(display_frame, (10, 10), (440, 140), (0, 0, 0), -1)
     cv2.putText(display_frame, f"FPS: {fps:.1f}", (20, 32), 
                cv2.FONT_HERSHEY_SIMPLEX, 0.65, (255, 255, 255), 2)
     
-    # Display fire count with severity indicator
+    # Display all detection counts
     fire_text = f"Fire: {fire_count}{severity_text}"
     cv2.putText(display_frame, fire_text, (20, 54), 
                cv2.FONT_HERSHEY_SIMPLEX, 0.65, severity_color if fire_count > 0 else (0, 0, 255), 2)
-    cv2.putText(display_frame, f"Humans: {human_count}", (20, 76), 
-               cv2.FONT_HERSHEY_SIMPLEX, 0.65, (255, 255, 0), 2)
-    cv2.putText(display_frame, f"Objects: {object_count}", (20, 98), 
-               cv2.FONT_HERSHEY_SIMPLEX, 0.65, (0, 255, 255), 2)
+    cv2.putText(display_frame, f"Smoke: {smoke_count}", (20, 76), 
+               cv2.FONT_HERSHEY_SIMPLEX, 0.65, (0, 165, 255) if smoke_count > 0 else (140, 140, 140), 2)
+    cv2.putText(display_frame, f"Animals: {animal_count}", (20, 98), 
+               cv2.FONT_HERSHEY_SIMPLEX, 0.65, (0, 255, 0) if animal_count > 0 else (140, 140, 140), 2)
+    cv2.putText(display_frame, f"Humans: {human_count}", (230, 54), 
+               cv2.FONT_HERSHEY_SIMPLEX, 0.65, (255, 255, 0) if human_count > 0 else (140, 140, 140), 2)
+    cv2.putText(display_frame, f"Objects: {object_count}", (230, 76), 
+               cv2.FONT_HERSHEY_SIMPLEX, 0.65, (0, 255, 255) if object_count > 0 else (140, 140, 140), 2)
     
     # Show extraction status
     if frame_extractor is not None and frame_extractor.extraction_active:
-        cv2.putText(display_frame, "Recording Frames...", (20, 118), 
+        cv2.putText(display_frame, "Recording Frames...", (20, 120), 
                    cv2.FONT_HERSHEY_SIMPLEX, 0.55, (0, 255, 255), 2)
     
-    cv2.imshow("Fire/Human/Object Detection", display_frame)
+    cv2.imshow("Fire/Smoke/Animal/Human/Object Detection", display_frame)
     
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
@@ -490,4 +583,7 @@ while cap.isOpened():
 cap.release()
 cv2.destroyAllWindows()
 
-print("\n✅ Detection complete!")
+print("\n✅ 5-Model Detection complete!")
+print(f"📊 Models used: Fire, Smoke, Animal, Human, Object")
+print(f"💾 All detections saved to incident folders with comprehensive metadata")
+print(f"🎬 Video closed after frame extraction completion")

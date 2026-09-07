@@ -396,3 +396,362 @@
   background: #4ade80;
   box-shadow: 0 0 8px rgba(74, 222, 128, 0.5);
 }
+
+
+/* ═══════════════════════════════════════════════════════════════════════
+   CCTV PLACEHOLDER
+   ═══════════════════════════════════════════════════════════════════════ */
+
+.cctv-placeholder-container {
+  width: 100%;
+}
+
+.cctv-placeholder {
+  position: relative;
+  width: 100%;
+  height: 400px;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid #323633;
+  background: linear-gradient(135deg, #1d2021 0%, #282828 100%);
+}
+
+.cctv-placeholder-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0.4;
+}
+
+.cctv-placeholder-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(
+    135deg,
+    rgba(29, 32, 33, 0.7) 0%,
+    rgba(40, 40, 40, 0.8) 100%
+  );
+  backdrop-filter: blur(4px);
+}
+
+.cctv-placeholder-icon {
+  color: #fe8019;
+  opacity: 0.8;
+  margin-bottom: 16px;
+  animation: cctvPulse 2s ease-in-out infinite;
+}
+
+@keyframes cctvPulse {
+  0%, 100% {
+    opacity: 0.6;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.05);
+  }
+}
+
+.cctv-placeholder-text {
+  font-size: 18px;
+  font-weight: 600;
+  color: #f7f5ed;
+  margin: 0 0 8px;
+}
+
+.cctv-placeholder-camera {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  color: #8b928a;
+  margin: 0 0 8px;
+  padding: 4px 12px;
+  background: rgba(139, 146, 138, 0.15);
+  border-radius: 4px;
+  border: 1px solid rgba(139, 146, 138, 0.2);
+}
+
+.cctv-placeholder-details {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  color: #bdae93;
+  margin: 0;
+  padding: 4px 12px;
+  background: rgba(254, 128, 25, 0.1);
+  border-radius: 4px;
+  border: 1px solid rgba(254, 128, 25, 0.2);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   CAMERAS SECTION
+   ═══════════════════════════════════════════════════════════════════════ */
+
+.cameras-section {
+  margin-top: 24px;
+  background: linear-gradient(135deg, #2a2520 0%, #1d2021 100%);
+  border: 1px solid #323633;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.cameras-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 24px;
+  background: rgba(139, 146, 138, 0.05);
+  border-bottom: 1px solid #323633;
+}
+
+.cameras-section-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 18px;
+  font-weight: 700;
+  color: #f7f5ed;
+  margin: 0;
+}
+
+.cameras-section-title svg {
+  color: #fe8019;
+}
+
+.cameras-count-badge {
+  padding: 6px 14px;
+  background: rgba(254, 128, 25, 0.15);
+  border: 1px solid rgba(254, 128, 25, 0.3);
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #fe8019;
+  font-family: 'JetBrains Mono', monospace;
+  text-transform: uppercase;
+}
+
+/* Cameras List */
+.cameras-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.camera-list-item {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 24px;
+  border-bottom: 1px solid rgba(50, 54, 51, 0.5);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: transparent;
+}
+
+.camera-list-item:last-child {
+  border-bottom: none;
+}
+
+.camera-list-item:hover {
+  background: rgba(254, 128, 25, 0.05);
+  padding-left: 28px;
+}
+
+.camera-list-item.selected {
+  background: rgba(254, 128, 25, 0.1);
+  border-left: 4px solid #fe8019;
+  padding-left: 20px;
+}
+
+.camera-list-icon {
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(139, 146, 138, 0.1);
+  border: 1px solid rgba(139, 146, 138, 0.2);
+  border-radius: 8px;
+  flex-shrink: 0;
+  transition: all 0.2s ease;
+}
+
+.camera-list-item:hover .camera-list-icon {
+  background: rgba(254, 128, 25, 0.15);
+  border-color: rgba(254, 128, 25, 0.3);
+}
+
+.camera-list-item.selected .camera-list-icon {
+  background: rgba(254, 128, 25, 0.2);
+  border-color: rgba(254, 128, 25, 0.4);
+}
+
+.camera-list-icon svg {
+  color: #8b928a;
+}
+
+.camera-list-item:hover .camera-list-icon svg,
+.camera-list-item.selected .camera-list-icon svg {
+  color: #fe8019;
+}
+
+.camera-list-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.camera-list-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 6px;
+}
+
+.camera-list-code {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  font-weight: 700;
+  color: #f7f5ed;
+}
+
+.camera-list-status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.camera-list-status.online {
+  color: #b8bb26;
+  background: rgba(184, 187, 38, 0.15);
+  border: 1px solid rgba(184, 187, 38, 0.3);
+}
+
+.camera-list-status.offline {
+  color: #fb4934;
+  background: rgba(251, 73, 52, 0.15);
+  border: 1px solid rgba(251, 73, 52, 0.3);
+}
+
+.status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  animation: statusBlink 2s ease-in-out infinite;
+}
+
+@keyframes statusBlink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.camera-list-name {
+  font-size: 15px;
+  font-weight: 600;
+  color: #eae7df;
+  margin: 0 0 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.camera-list-location {
+  font-size: 12px;
+  color: #8b928a;
+  margin: 0 0 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.camera-list-details {
+  font-size: 11px;
+  color: #bdae93;
+  margin: 0;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.camera-list-arrow {
+  flex-shrink: 0;
+  opacity: 0;
+  transition: all 0.2s ease;
+  color: #8b928a;
+}
+
+.camera-list-item:hover .camera-list-arrow {
+  opacity: 1;
+  color: #fe8019;
+  transform: translateX(4px);
+}
+
+.camera-list-item.selected .camera-list-arrow {
+  opacity: 1;
+  color: #fe8019;
+}
+
+/* No Cameras Message */
+.no-cameras-message {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 24px;
+  text-align: center;
+}
+
+.no-cameras-message svg {
+  color: #8b928a;
+  margin-bottom: 16px;
+}
+
+.no-cameras-message p {
+  font-size: 15px;
+  font-weight: 600;
+  color: #bdae93;
+  margin: 0 0 8px;
+}
+
+.no-cameras-message small {
+  font-size: 12px;
+  color: #8b928a;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .cctv-placeholder {
+    height: 280px;
+  }
+
+  .cameras-section-header {
+    padding: 14px 18px;
+  }
+
+  .cameras-section-title {
+    font-size: 16px;
+  }
+
+  .camera-list-item {
+    padding: 14px 18px;
+  }
+
+  .camera-list-item:hover {
+    padding-left: 22px;
+  }
+
+  .camera-list-icon {
+    width: 38px;
+    height: 38px;
+  }
+}
