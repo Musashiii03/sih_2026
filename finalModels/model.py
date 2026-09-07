@@ -29,8 +29,8 @@ fps = cap.get(cv2.CAP_PROP_FPS)
 fps = 30.0 if fps <= 0 or fps > 120 else fps
 frame_delay = 1.0 / fps
 
-# 2. Hardcoded Model Paths
-models_dir = os.path.expandvars(r"%USERPROFILE%\OneDrive\Desktop\all models")
+# 2. Model Paths (using current directory)
+models_dir = os.path.dirname(os.path.abspath(__file__))
 fire_model_path   = os.path.join(models_dir, "universal_fire_master_100pct.pt")
 smoke_model_path  = os.path.join(models_dir, "smoke_v8s_production.pt")
 animal_model_path = os.path.join(models_dir, "animal_model.pt")
@@ -318,9 +318,8 @@ while cap.isOpened():
         cv2.putText(frame, status_text, (20, 40), cv2.FONT_HERSHEY_SIMPLEX, 0.85, status_color, 2)
         cv2.imshow("Locked Multi-Hazard System", frame)
 
-        elapsed = time.time() - start_time
-        sleep_dur = max(0.001, frame_delay - elapsed)
-        key = cv2.waitKey(int(sleep_dur * 1000)) & 0xFF
+        # Play without frame delay for maximum speed
+        key = cv2.waitKey(1) & 0xFF
     else:
         key = cv2.waitKey(30) & 0xFF
 
