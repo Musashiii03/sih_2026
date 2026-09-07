@@ -530,7 +530,7 @@ export default function OwnerConsole() {
               style={{ width: '100%', height: '100%', objectFit: 'contain' }}
             />
           </div>
-          <span className="sidebar-brand-name">Atmarakshak</span>
+          <span className="sidebar-brand-name">ATMA<span style={{ background: 'linear-gradient(120deg, #fabd2f, #fe8019)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>RAKSHAK</span></span>
         </div>
 
         {/* Navigation */}

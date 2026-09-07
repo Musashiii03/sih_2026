@@ -25,10 +25,20 @@ export default function BuildingDetail({ building, onBack }) {
 
   const fetchCameras = async () => {
     try {
-      const response = await fetch(`/api/cameras?building_id=${building.id}`);
+      const response = await fetch(`/api/cameras`);
       if (response.ok) {
         const data = await response.json();
-        const cameraList = data.data?.cameras || [];
+        // API returns { cameras: [...], count: N } from cameras.yaml
+        const raw = data.cameras || data.data?.cameras || [];
+        // Normalize fields so the rest of the component works
+        const cameraList = raw.map(c => ({
+          ...c,
+          camera_code: c.camera_code || c.id,
+          name: c.name,
+          location: c.sector || c.location || '',
+          stream_url: c.camera_stream_url || c.source || null,
+          status: c.enabled === false ? 'OFFLINE' : 'ONLINE',
+        }));
         setCameras(cameraList);
         if (cameraList.length > 0) {
           setSelectedCamera(cameraList[0]);

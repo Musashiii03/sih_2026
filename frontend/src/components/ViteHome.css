@@ -9,16 +9,16 @@
 
 .vite-marketing-root {
   /* ── Gruvbox Dark Palette ── */
-  --color-primary: #282828;      /* bg main canvas */
-  --color-midnight: #1d2021;     /* bg0_h deepest */
-  --color-soft: #32302f;         /* bg0_s inputs / soft */
-  --color-slate: #3c3836;        /* bg1 elevated card surface */
-  --color-card-hover: #504945;   /* bg2 hover */
-  --color-nickel: #504945;       /* bg2 default borders & signature ticks */
-  --color-stroke: #665c54;       /* bg3 emphasized borders */
-  --color-border-strong: #7c6f64;/* bg4 strong borders */
+  --color-primary: #1d2021;      /* bg0_h — deepest canvas */
+  --color-midnight: #161819;     /* even deeper bg for contrast */
+  --color-soft: #282828;         /* bg — elevated surfaces */
+  --color-slate: #32302f;        /* bg0_s — card surface */
+  --color-card-hover: #3c3836;   /* bg1 — hover */
+  --color-nickel: #3c3836;       /* bg1 — default borders */
+  --color-stroke: #504945;       /* bg2 — emphasized borders */
+  --color-border-strong: #665c54;/* bg3 — strong borders */
 
-  /* Text */
+  /* Text — pushed brighter for more contrast */
   --color-white: #ebdbb2;        /* fg1 primary text */
   --color-bright: #fbf1c7;       /* fg0 brightest headline text */
   --color-grey: #d5c4a1;         /* fg2 secondary text */
@@ -163,8 +163,8 @@
   position: relative;
   max-width: 90rem;
   width: 100%;
-  border-left: 1px solid var(--color-nickel);
-  border-right: 1px solid var(--color-nickel);
+  border-left: 1px solid var(--color-stroke);
+  border-right: 1px solid var(--color-stroke);
 }
 
 .vite-wrapper--ticks {
@@ -176,7 +176,7 @@
   border-top: 5px solid transparent;
   border-bottom: 5px solid transparent;
   border-right: 5px solid transparent;
-  border-left: 5px solid var(--color-nickel);
+  border-left: 5px solid var(--color-stroke);
   width: 0;
   height: 0;
   position: absolute;
@@ -188,7 +188,7 @@
 .vite-wrapper--ticks::after {
   content: "";
   border-top: 5px solid transparent;
-  border-right: 5px solid var(--color-nickel);
+  border-right: 5px solid var(--color-stroke);
   border-bottom: 5px solid transparent;
   border-left: 5px solid transparent;
   width: 0;
@@ -200,7 +200,7 @@
 }
 
 .vite-border-t {
-  border-top: 1px solid var(--color-nickel);
+  border-top: 1px solid var(--color-stroke);
 }
 
 /* ─── Header / Navigation Bar (Floating Glass Dock) ─── */
@@ -225,19 +225,19 @@
   justify-content: space-between;
   width: 100%;
   margin: 0 auto;
-  background: transparent;
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(235, 219, 178, 0.1);
+  background: rgba(22, 24, 25, 0.75);
+  backdrop-filter: blur(20px) saturate(160%);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
+  border: 1px solid rgba(80, 73, 69, 0.5);
   border-radius: 16px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(235, 219, 178, 0.06);
   transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .vite-header:hover {
-  background: rgba(29, 32, 33, 0.25);
-  border-color: rgba(250, 189, 47, 0.25);
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
+  background: rgba(29, 32, 33, 0.88);
+  border-color: rgba(250, 189, 47, 0.3);
+  box-shadow: 0 8px 36px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(250, 189, 47, 0.08), inset 0 1px 0 rgba(235, 219, 178, 0.1);
 }
 
 .vite-marketing-root[data-theme="light"] .vite-header-wrap {
@@ -569,27 +569,31 @@
 }
 
 .vite-hero-title {
-  font-size: clamp(2.4rem, 4.8vw, 3.8rem);
-  font-weight: 800;
-  line-height: 1.1;
-  letter-spacing: -0.03em;
+  font-size: clamp(2.6rem, 5vw, 4rem);
+  font-weight: 900;
+  line-height: 1.05;
+  letter-spacing: -0.04em;
   color: var(--color-bright);
-  margin: 0 0 20px 0;
+  margin: 0 0 22px 0;
+  text-shadow: 0 2px 20px rgba(0, 0, 0, 0.4);
 }
 
 .vite-gradient-text {
-  background: linear-gradient(120deg, #fabd2f 20%, #fe8019 60%, #fb4934 100%);
+  background: linear-gradient(120deg, #fabd2f 0%, #fe8019 50%, #fb4934 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
+  background-clip: text;
   display: inline;
+  filter: drop-shadow(0 0 24px rgba(254,128,25,0.35));
 }
 
 .vite-hero-sub {
-  font-size: clamp(1.05rem, 2vw, 1.2rem);
+  font-size: clamp(1.05rem, 2vw, 1.18rem);
   color: var(--color-grey);
-  line-height: 1.65;
+  line-height: 1.7;
   max-width: 32rem;
   margin: 0 0 28px 0;
+  font-weight: 400;
 }
 
 .vite-hero-cta-group {
@@ -785,23 +789,26 @@
 
 .vite-section-title {
   font-size: clamp(2rem, 4vw, 2.9rem);
-  font-weight: 800;
-  letter-spacing: -0.03em;
+  font-weight: 900;
+  letter-spacing: -0.04em;
   color: var(--color-bright);
   margin: 0;
   max-width: 44rem;
-  background: linear-gradient(135deg, #fbf1c7 30%, #fabd2f 80%, #fe8019 100%);
+  background: linear-gradient(135deg, #fbf1c7 20%, #fabd2f 55%, #fe8019 85%, #fb4934 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
+  background-clip: text;
   transition: all 0.3s ease;
+  filter: drop-shadow(0 0 28px rgba(254,128,25,0.25));
 }
 
 .vite-section-desc {
-  font-size: 1.05rem;
+  font-size: 1.08rem;
   color: var(--color-grey);
   max-width: 38rem;
   margin: 0;
-  line-height: 1.65;
+  line-height: 1.7;
+  font-weight: 400;
 }
 
 /* ─── Feature Panels Grid ─── */
@@ -823,35 +830,50 @@
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  border-bottom: 1px solid var(--color-nickel);
+  border-bottom: 1px solid var(--color-stroke);
   overflow: hidden;
-  background: var(--color-primary);
+  background: linear-gradient(145deg, #232120 0%, #1d2021 100%);
   transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
   position: relative;
 }
 
+.vite-feature-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse 60% 40% at 50% 0%, rgba(250,189,47,0.05) 0%, transparent 70%);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.35s ease;
+}
+
+.vite-feature-card:hover::before {
+  opacity: 1;
+}
+
 .vite-feature-card:hover {
-  background: rgba(45, 43, 42, 0.75);
-  box-shadow: inset 0 0 0 1px rgba(250, 189, 47, 0.22), 0 12px 36px rgba(0, 0, 0, 0.45);
+  background: linear-gradient(145deg, #2a2625 0%, #242221 100%);
+  box-shadow: inset 0 0 0 1px rgba(250, 189, 47, 0.18), 0 16px 48px rgba(0, 0, 0, 0.6);
 }
 
 .vite-feature-text {
   padding: 40px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 14px;
   transition: transform 0.3s ease;
 }
 
 .vite-feature-card:hover .vite-feature-text {
-  transform: translateY(-2px);
+  transform: translateY(-3px);
 }
 
 .vite-feature-title {
-  font-size: 1.35rem;
-  font-weight: 700;
+  font-size: 1.4rem;
+  font-weight: 800;
   color: var(--color-bright);
   margin: 0;
+  letter-spacing: -0.02em;
   transition: color 0.25s ease;
 }
 
@@ -860,9 +882,9 @@
 }
 
 .vite-feature-desc {
-  font-size: 0.95rem;
+  font-size: 0.97rem;
   color: var(--color-grey);
-  line-height: 1.65;
+  line-height: 1.7;
   margin: 0;
   max-width: 28rem;
 }
@@ -874,7 +896,8 @@
   justify-content: center;
   overflow: hidden;
   padding: 34px 28px;
-  background: var(--color-midnight);
+  background: linear-gradient(160deg, #161819 0%, #1d2021 100%);
+  border-top: 1px solid var(--color-stroke);
 }
 
 /* Borderless Telemetry with Smooth Ambient Fade Animation */
@@ -1078,19 +1101,21 @@
 }
 
 .vite-stat-val {
-  font-size: 3.2rem;
-  font-weight: 800;
+  font-size: 3.4rem;
+  font-weight: 900;
   line-height: 1;
   color: var(--color-brand);
-  letter-spacing: -0.04em;
+  letter-spacing: -0.05em;
+  filter: drop-shadow(0 0 16px rgba(250,189,47,0.4));
 }
 
 .vite-stat-label {
-  font-size: 0.85rem;
+  font-size: 0.82rem;
   color: var(--color-dim);
-  margin-top: 8px;
+  margin-top: 10px;
   font-family: var(--font-mono);
-  letter-spacing: 0.05em;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
 }
 
 /* Testimonials Grid */
@@ -1114,27 +1139,45 @@
 }
 
 .vite-testimonial-card {
-  background: var(--color-slate);
-  border: 1px solid var(--color-nickel);
-  border-radius: 12px;
+  background: linear-gradient(145deg, #232120 0%, #1e1c1b 100%);
+  border: 1px solid var(--color-stroke);
+  border-radius: 14px;
   padding: 28px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
   gap: 20px;
-  transition: all 0.25s ease;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.vite-testimonial-card::before {
+  content: '\"';
+  position: absolute;
+  top: -8px;
+  left: 20px;
+  font-size: 72px;
+  font-weight: 900;
+  color: var(--color-brand);
+  opacity: 0.12;
+  line-height: 1;
+  font-family: Georgia, serif;
+  pointer-events: none;
 }
 
 .vite-testimonial-card:hover {
-  border-color: var(--color-brand);
-  transform: translateY(-3px);
-  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4);
+  border-color: rgba(250, 189, 47, 0.4);
+  transform: translateY(-4px);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(250,189,47,0.1), inset 0 1px 0 rgba(250,189,47,0.08);
+  background: linear-gradient(145deg, #272423 0%, #222020 100%);
 }
 
 .vite-testimonial-quote {
-  font-size: 0.94rem;
-  color: var(--color-white);
-  line-height: 1.65;
+  font-size: 0.95rem;
+  color: var(--color-grey);
+  line-height: 1.75;
+  font-weight: 400;
 }
 
 .vite-testimonial-author {
@@ -1147,14 +1190,15 @@
   width: 44px;
   height: 44px;
   border-radius: 50%;
-  border: 1px solid var(--color-nickel);
-  background: var(--color-midnight);
+  border: 1.5px solid rgba(250,189,47,0.35);
+  background: linear-gradient(135deg, #32302f 0%, #1d2021 100%);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-weight: 700;
-  font-size: 0.9rem;
+  font-weight: 800;
+  font-size: 0.88rem;
   color: var(--color-brand);
+  box-shadow: 0 0 12px rgba(250,189,47,0.15);
 }
 
 .vite-author-info {
@@ -1177,17 +1221,29 @@
 /* ─── Interactive Telemetry Simulator ─── */
 .vite-simulator {
   margin: 0 40px 60px;
-  background: var(--color-midnight);
-  border: 1px solid var(--color-nickel);
-  border-radius: 12px;
+  background: #161819;
+  border: 1px solid var(--color-stroke);
+  border-radius: 14px;
   overflow: hidden;
-  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.6);
+  box-shadow: 0 32px 80px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(250,189,47,0.06);
+  position: relative;
+}
+
+.vite-simulator::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(250,189,47,0.5), rgba(254,128,25,0.5), transparent);
+  pointer-events: none;
 }
 
 .vite-sim-header {
-  padding: 12px 18px;
-  background: var(--color-soft);
-  border-bottom: 1px solid var(--color-nickel);
+  padding: 12px 20px;
+  background: linear-gradient(90deg, #1e1c1b 0%, #232120 100%);
+  border-bottom: 1px solid var(--color-stroke);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -1213,21 +1269,24 @@
 }
 
 .vite-sim-btn {
-  background: var(--color-slate);
-  border: 1px solid var(--color-nickel);
-  color: var(--color-white);
-  border-radius: 6px;
-  padding: 5px 12px;
+  background: rgba(40, 38, 37, 0.8);
+  border: 1px solid var(--color-stroke);
+  color: var(--color-dim);
+  border-radius: 8px;
+  padding: 5px 14px;
   font-size: 0.78rem;
   font-family: var(--font-mono);
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.2s cubic-bezier(0.16,1,0.3,1);
+  letter-spacing: 0.03em;
 }
 
 .vite-sim-btn:hover {
   border-color: var(--color-brand);
-  background: rgba(250, 189, 47, 0.15);
+  background: rgba(250, 189, 47, 0.1);
   color: var(--color-brand);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(250,189,47,0.15);
 }
 
 .vite-sim-terminal {
@@ -1256,25 +1315,28 @@
   position: relative;
   overflow: hidden;
   text-align: center;
-  background: 
-    radial-gradient(ellipse 70% 60% at 50% 25%, rgba(250, 189, 47, 0.22) 0%, rgba(254, 128, 25, 0.12) 45%, rgba(29, 32, 33, 0.98) 85%),
-    linear-gradient(180deg, var(--color-midnight) 0%, #282828 50%, var(--color-midnight) 100%);
-  border-top: 1px solid rgba(250, 189, 47, 0.4);
-  border-bottom: 1px solid var(--color-nickel);
-  box-shadow: inset 0 1px 0 rgba(250, 189, 47, 0.25), inset 0 20px 50px rgba(250, 189, 47, 0.06);
+  background:
+    radial-gradient(ellipse 80% 65% at 50% 20%, rgba(254,128,25,0.28) 0%, rgba(251,73,52,0.14) 40%, rgba(22,24,25,0.98) 80%),
+    linear-gradient(180deg, #161819 0%, #1d2021 40%, #161819 100%);
+  border-top: 1px solid rgba(254, 128, 25, 0.45);
+  border-bottom: 1px solid var(--color-stroke);
+  box-shadow:
+    inset 0 1px 0 rgba(250, 189, 47, 0.35),
+    inset 0 30px 80px rgba(254, 128, 25, 0.08);
 }
 
 .vite-cta-glow {
   position: absolute;
-  top: -100px;
+  top: -120px;
   left: 50%;
   transform: translateX(-50%);
-  width: 550px;
-  height: 300px;
-  background: radial-gradient(circle, rgba(250, 189, 47, 0.28) 0%, rgba(254, 128, 25, 0.14) 50%, transparent 70%);
-  filter: blur(45px);
+  width: 700px;
+  height: 380px;
+  background: radial-gradient(circle, rgba(254,128,25,0.4) 0%, rgba(250,189,47,0.2) 35%, rgba(251,73,52,0.1) 60%, transparent 80%);
+  filter: blur(55px);
   pointer-events: none;
   z-index: 1;
+  animation: gruvPulseGlow 6s ease-in-out infinite;
 }
 
 .vite-cta-bg {
@@ -1304,8 +1366,8 @@
 
 /* ─── Footer ─── */
 .vite-footer {
-  background: var(--color-midnight);
-  border-top: 1px solid var(--color-nickel);
+  background: #161819;
+  border-top: 1px solid var(--color-stroke);
 }
 
 .vite-footer-grid {
@@ -1446,3 +1508,291 @@
   from { opacity: 0; transform: translateY(-6px); }
   to { opacity: 1; transform: translateY(0); }
 }
+
+/* ═══════════════════════════════════════════════════════════
+   LIGHT THEME — comprehensive overrides for every
+   hardcoded dark-mode value not covered by CSS vars
+   ═══════════════════════════════════════════════════════════ */
+
+/* ── Top Banner ── */
+.vite-marketing-root[data-theme="light"] .vite-top-banner {
+  background: #3c3836;  /* Gruvbox bg1 — readable dark strip on light page */
+}
+
+/* ── Wrapper border ticks ── */
+.vite-marketing-root[data-theme="light"] .vite-wrapper {
+  border-left-color: var(--color-nickel);
+  border-right-color: var(--color-nickel);
+}
+
+/* ── Header nav links ── */
+.vite-marketing-root[data-theme="light"] .vite-header {
+  background: rgba(251, 241, 199, 0.7);
+  border-color: rgba(60, 56, 54, 0.18);
+  box-shadow: 0 4px 20px rgba(60, 56, 54, 0.1);
+}
+
+.vite-marketing-root[data-theme="light"] .vite-header:hover {
+  background: rgba(235, 219, 178, 0.85);
+  border-color: rgba(181, 118, 20, 0.35);
+  box-shadow: 0 8px 30px rgba(60, 56, 54, 0.18);
+}
+
+.vite-marketing-root[data-theme="light"] .vite-nav-link {
+  color: var(--color-white);
+}
+
+.vite-marketing-root[data-theme="light"] .vite-nav-link:hover {
+  color: var(--color-bright);
+  background-color: rgba(181, 118, 20, 0.12);
+}
+
+/* ── Dropdown ── */
+.vite-marketing-root[data-theme="light"] .vite-dropdown-menu {
+  background: rgba(242, 229, 188, 0.96);
+  border-color: rgba(60, 56, 54, 0.2);
+  box-shadow: 0 12px 32px rgba(60, 56, 54, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.6);
+}
+
+.vite-marketing-root[data-theme="light"] .vite-dropdown-item {
+  color: var(--color-white);
+}
+
+.vite-marketing-root[data-theme="light"] .vite-dropdown-item:hover {
+  background-color: rgba(181, 118, 20, 0.15);
+  color: var(--color-brand);
+}
+
+/* ── Search button ── */
+.vite-marketing-root[data-theme="light"] .vite-search-btn {
+  background: rgba(235, 219, 178, 0.75);
+  border-color: rgba(60, 56, 54, 0.2);
+  color: var(--color-dim);
+}
+
+.vite-marketing-root[data-theme="light"] .vite-search-btn:hover {
+  background: rgba(181, 118, 20, 0.12);
+  border-color: rgba(181, 118, 20, 0.5);
+  color: var(--color-bright);
+}
+
+.vite-marketing-root[data-theme="light"] .vite-search-kbd {
+  background: rgba(60, 56, 54, 0.1);
+  border-color: var(--color-nickel);
+  color: var(--color-brand);
+}
+
+/* ── Hero gradient title ── */
+.vite-marketing-root[data-theme="light"] .vite-gradient-text {
+  background: linear-gradient(120deg, #af3a03 20%, #9d0006 60%, #79740e 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* ── Section title gradient ── */
+.vite-marketing-root[data-theme="light"] .vite-section-title {
+  background: linear-gradient(135deg, #282828 0%, #b57614 60%, #af3a03 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* ── Code group / terminal ── */
+.vite-marketing-root[data-theme="light"] .vite-code-group {
+  background: #3c3836;
+  border-color: var(--color-nickel);
+  box-shadow: 0 8px 24px rgba(60, 56, 54, 0.2);
+}
+
+.vite-marketing-root[data-theme="light"] .vite-code-tabs {
+  background: rgba(29, 32, 33, 0.6);
+}
+
+.vite-marketing-root[data-theme="light"] .vite-code-tab {
+  color: #d5c4a1;
+}
+
+.vite-marketing-root[data-theme="light"] .vite-code-tab:hover {
+  color: #fbf1c7;
+}
+
+.vite-marketing-root[data-theme="light"] .vite-code-tab.active {
+  background: #3c3836;
+  color: var(--color-brand);
+}
+
+.vite-marketing-root[data-theme="light"] .vite-code-body {
+  color: #ebdbb2;
+}
+
+.vite-marketing-root[data-theme="light"] .vite-copy-btn {
+  color: #bdae93;
+}
+
+.vite-marketing-root[data-theme="light"] .vite-copy-btn:hover {
+  color: var(--color-brand);
+  background: rgba(181, 118, 20, 0.1);
+}
+
+/* ── Ghost button ── */
+.vite-marketing-root[data-theme="light"] .vite-btn-ghost {
+  background: rgba(235, 219, 178, 0.8);
+  border-color: var(--color-nickel);
+  color: var(--color-bright);
+}
+
+.vite-marketing-root[data-theme="light"] .vite-btn-ghost:hover {
+  background: rgba(213, 196, 161, 0.9);
+  border-color: var(--color-brand);
+  color: var(--color-brand);
+  box-shadow: 0 6px 20px rgba(60, 56, 54, 0.15);
+}
+
+/* ── Feature cards ── */
+.vite-marketing-root[data-theme="light"] .vite-feature-card {
+  background: var(--color-primary);
+  border-bottom-color: var(--color-nickel);
+}
+
+.vite-marketing-root[data-theme="light"] .vite-feature-card:hover {
+  background: rgba(235, 219, 178, 0.65);
+  box-shadow: inset 0 0 0 1px rgba(181, 118, 20, 0.22), 0 12px 36px rgba(60, 56, 54, 0.18);
+}
+
+.vite-marketing-root[data-theme="light"] .vite-feature-visual {
+  background: var(--color-midnight);
+}
+
+/* ── IoT chips ── */
+.vite-marketing-root[data-theme="light"] .vite-iot-chip {
+  background: var(--color-slate);
+  border-color: var(--color-nickel);
+  color: var(--color-brand);
+}
+
+.vite-marketing-root[data-theme="light"] .vite-iot-chip:hover {
+  color: var(--color-bright);
+  background: rgba(181, 118, 20, 0.16);
+}
+
+/* ── Framework chips ── */
+.vite-marketing-root[data-theme="light"] .vite-framework-chip {
+  background: var(--color-slate);
+  border-color: var(--color-nickel);
+  color: var(--color-white);
+}
+
+.vite-marketing-root[data-theme="light"] .vite-framework-chip:hover,
+.vite-marketing-root[data-theme="light"] .vite-framework-chip.active {
+  background: rgba(181, 118, 20, 0.15);
+  border-color: var(--color-brand);
+  color: var(--color-brand);
+}
+
+/* ── Testimonial cards ── */
+.vite-marketing-root[data-theme="light"] .vite-testimonial-card {
+  background: var(--color-slate);
+  border-color: var(--color-nickel);
+}
+
+.vite-marketing-root[data-theme="light"] .vite-testimonial-card:hover {
+  border-color: var(--color-brand);
+  box-shadow: 0 12px 30px rgba(60, 56, 54, 0.2);
+}
+
+.vite-marketing-root[data-theme="light"] .vite-avatar {
+  background: var(--color-midnight);
+}
+
+/* ── Telemetry Simulator ── */
+.vite-marketing-root[data-theme="light"] .vite-simulator {
+  background: #3c3836;
+  border-color: var(--color-nickel);
+  box-shadow: 0 24px 64px rgba(60, 56, 54, 0.25);
+}
+
+.vite-marketing-root[data-theme="light"] .vite-sim-header {
+  background: #282828;
+  border-bottom-color: var(--color-nickel);
+}
+
+.vite-marketing-root[data-theme="light"] .vite-sim-btn {
+  background: #3c3836;
+  border-color: var(--color-nickel);
+  color: #d5c4a1;
+}
+
+.vite-marketing-root[data-theme="light"] .vite-sim-btn:hover {
+  border-color: var(--color-brand);
+  background: rgba(181, 118, 20, 0.2);
+  color: var(--color-brand);
+}
+
+.vite-marketing-root[data-theme="light"] .vite-sim-terminal {
+  color: #d5c4a1;
+}
+
+/* ── Bottom CTA ── */
+.vite-marketing-root[data-theme="light"] .vite-bottom-cta {
+  background:
+    radial-gradient(ellipse 70% 60% at 50% 25%, rgba(181, 118, 20, 0.18) 0%, rgba(175, 58, 3, 0.1) 45%, rgba(242, 229, 188, 0.98) 85%),
+    linear-gradient(180deg, var(--color-midnight) 0%, #ebdbb2 50%, var(--color-midnight) 100%);
+  border-top-color: rgba(181, 118, 20, 0.4);
+  border-bottom-color: var(--color-nickel);
+  box-shadow: inset 0 1px 0 rgba(181, 118, 20, 0.2), inset 0 20px 50px rgba(181, 118, 20, 0.06);
+}
+
+.vite-marketing-root[data-theme="light"] .vite-cta-glow {
+  background: radial-gradient(circle, rgba(181, 118, 20, 0.22) 0%, rgba(175, 58, 3, 0.1) 50%, transparent 70%);
+}
+
+/* ── Footer ── */
+.vite-marketing-root[data-theme="light"] .vite-footer {
+  background: var(--color-midnight);
+}
+
+/* ── Search Modal ── */
+.vite-marketing-root[data-theme="light"] .vite-search-overlay {
+  background: rgba(60, 56, 54, 0.55);
+}
+
+.vite-marketing-root[data-theme="light"] .vite-search-modal {
+  background: #f2e5bc;
+  border-color: var(--color-nickel);
+  box-shadow: 0 32px 80px rgba(60, 56, 54, 0.35);
+}
+
+.vite-marketing-root[data-theme="light"] .vite-search-input-wrap {
+  background: #ebdbb2;
+  border-bottom-color: var(--color-nickel);
+}
+
+.vite-marketing-root[data-theme="light"] .vite-search-input {
+  color: var(--color-bright);
+}
+
+.vite-marketing-root[data-theme="light"] .vite-search-input::placeholder {
+  color: var(--color-dim);
+}
+
+.vite-marketing-root[data-theme="light"] .vite-search-item {
+  color: var(--color-white);
+}
+
+.vite-marketing-root[data-theme="light"] .vite-search-item:hover {
+  background: rgba(181, 118, 20, 0.12);
+  color: var(--color-brand);
+}
+
+/* ── Scrollbar in light ── */
+.vite-marketing-root[data-theme="light"] ::-webkit-scrollbar-track {
+  background: var(--color-midnight);
+}
+
+.vite-marketing-root[data-theme="light"] ::-webkit-scrollbar-thumb {
+  background: var(--color-nickel);
+}
+
+.vite-marketing-root[data-theme="light"] ::-webkit-scrollbar-thumb:hover {
+  background: var(--color-stroke);
+}
+

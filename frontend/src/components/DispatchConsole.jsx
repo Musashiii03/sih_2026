@@ -829,33 +829,34 @@ export default function DispatchConsole() {
   // Fetch cameras when dashboardData is loaded and has a building
   useEffect(() => {
     const fetchCameras = async () => {
-      if (!dashboardData?.building?.id) {
-        setCameras([]);
-        return;
-      }
-
-      const buildingId = dashboardData.building.id;
-      
       setLoadingCameras(true);
       try {
-        // Fetch all cameras for this building
-        const camerasResponse = await fetch(`/api/cameras?building_id=${buildingId}&limit=100`);
+        // Fetch all cameras — cameras.yaml endpoint ignores building_id filter anyway
+        const camerasResponse = await fetch(`/api/cameras?limit=100`);
         const camerasData = await camerasResponse.json();
-        
-        // Check for cameras array directly in response (not nested in data)
-        if (camerasData.cameras && Array.isArray(camerasData.cameras)) {
-          setCameras(camerasData.cameras);
-          
-          // Auto-select the incident's camera or the first camera
+
+        // Normalize fields: cameras.yaml uses `id` not `camera_code`, `sector` not `location`
+        const raw = camerasData.cameras || camerasData.data?.cameras || [];
+        const normalized = raw.map(c => ({
+          ...c,
+          camera_code: c.camera_code || c.id,
+          name: c.name || c.id,
+          location: c.location || c.sector || '',
+          stream_url: c.stream_url || c.camera_stream_url || c.source || null,
+          status: c.enabled === false ? 'OFFLINE' : 'ONLINE',
+        }));
+
+        setCameras(normalized);
+
+        // Auto-select the incident's camera or the first camera
+        if (normalized.length > 0) {
           const selectedIncident = incidents.find(i => i.incident_id === selectedId);
-          if (camerasData.cameras.length > 0) {
-            const incidentCamera = camerasData.cameras.find(
-              c => c.camera_code === selectedIncident?.camera_id
-            );
-            setSelectedCameraId(incidentCamera ? incidentCamera.camera_code : camerasData.cameras[0].camera_code);
-          }
-        } else {
-          setCameras([]);
+          const incidentCamera = normalized.find(
+            c => c.camera_code === selectedIncident?.camera_id
+          );
+          setSelectedCameraId(
+            incidentCamera ? incidentCamera.camera_code : normalized[0].camera_code
+          );
         }
       } catch (err) {
         console.error('Error fetching cameras:', err);
@@ -887,7 +888,7 @@ export default function DispatchConsole() {
               alt="Atmarakshak Logo"
               style={{ height: 24, width: 24, objectFit: 'contain', borderRadius: 4 }}
             />
-            <h1 className="dc-brand-title">ATMARAKSHAK</h1>
+            <h1 className="dc-brand-title">ATMA<span style={{ background: 'linear-gradient(120deg, #fabd2f, #fe8019)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>RAKSHAK</span></h1>
           </div>
 
           <div className="dc-divider" />
