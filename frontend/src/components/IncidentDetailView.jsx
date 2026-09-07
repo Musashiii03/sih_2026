@@ -23,7 +23,7 @@ import './IncidentDetailView.css';
 
 const API_BASE_URL = 'http://localhost:3001/api';
 
-export default function IncidentDetailView({ incidentNumber, building, onBack }) {
+export default function IncidentDetailView({ incidentNumber, building, onBack, onVerifyIncident }) {
   const [incidentData, setIncidentData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -107,6 +107,12 @@ export default function IncidentDetailView({ incidentNumber, building, onBack })
             acknowledged_at: new Date().toISOString()
           }
         }));
+        
+        // Call the onVerifyIncident callback to remove alert from active alerts
+        if (onVerifyIncident && incidentData.incident.incident_number) {
+          onVerifyIncident(incidentData.incident.incident_number);
+        }
+        
         console.log('✅ Incident verified successfully');
       } else {
         throw new Error('Verification failed');
