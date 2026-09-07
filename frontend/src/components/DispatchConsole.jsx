@@ -113,38 +113,43 @@ function ImageModal({ frame, incidentId, onClose }) {
   );
 }
 
-// ── Horizontal Sleek Queue Item ─────────────────────────────────────────────
-function QueueItem({ incident, selected, onClick, firstFrameIndex }) {
-  const incId = incident.incident_id;
-  const date = new Date(incident.timestamp * 1000).toLocaleDateString('en-IN', {
-    day: '2-digit',
-    month: 'short'
-  });
-
+// ── Camera Queue Item ───────────────────────────────────────────────────────
+function CameraQueueItem({ camera, selected, onClick }) {
   return (
     <div
       className={`dc-queue-item ${selected ? 'selected' : ''}`}
       onClick={onClick}
+      style={{ cursor: 'pointer' }}
     >
-      {/* Thumbnail */}
-      <div className="dc-queue-thumb">
-        <img src={frameImageUrl(incId, firstFrameIndex)} alt="Thumbnail" />
+      {/* Camera Icon */}
+      <div className="dc-queue-thumb" style={{ 
+        display: 'flex', 
+        alignItems: 'center', 
+        justifyContent: 'center',
+        background: '#1a1d1b',
+        border: '1px solid #323633'
+      }}>
+        <Radio size={32} color={selected ? '#fe8019' : '#8b928a'} />
       </div>
 
-      {/* Meta Content */}
+      {/* Camera Meta Content */}
       <div className="dc-queue-meta">
         <div className="dc-queue-loc">
-          {incident.location || 'Surveillance Sector'}
+          {camera.name || camera.camera_code}
         </div>
 
         <div className="dc-queue-row">
-          <span className="dc-queue-cam">{incident.camera_id || 'CAM-01'}</span>
-          <span className="dc-queue-tag">ACTIVE HAZARD</span>
+          <span className="dc-queue-cam">{camera.camera_code}</span>
+          <span className={`dc-queue-tag ${camera.status === 'ONLINE' ? 'online' : 'offline'}`}>
+            {camera.status || 'ONLINE'}
+          </span>
         </div>
 
         <div className="dc-queue-foot">
-          <span>{incident.frame_count} frames captured</span>
-          <span style={{ color: '#4ade80' }}>{date}</span>
+          <span>{camera.camera_type || 'FIXED'}</span>
+          <span style={{ color: '#8b928a' }}>
+            {camera.floor_number ? `Floor ${camera.floor_number}` : camera.location_description || 'Location N/A'}
+          </span>
         </div>
       </div>
     </div>
@@ -152,7 +157,7 @@ function QueueItem({ incident, selected, onClick, firstFrameIndex }) {
 }
 
 // ── Center Main Incident Detail ─────────────────────────────────────────────
-function IncidentDetail({ incident, summary, hologram, metadataStats, onSelectFrame }) {
+function IncidentDetail({ incident, summary, hologram, metadataStats, onSelectFrame, selectedCamera, dashboardData }) {
   const [stageView, setStageView] = useState('cctv'); // 'cctv' | '3d'
   const [activeTab, setActiveTab] = useState('overview');
   const [notes, setNotes] = useState('');
@@ -168,11 +173,14 @@ function IncidentDetail({ incident, summary, hologram, metadataStats, onSelectFr
   const framesConf = summary?.frames?.filter(f => f.fire_count > 0).length ?? 5;
   const framesTotal = Math.max(5, framesConf, summary?.frame_count ?? 5);
 
-  const aiText = summary
-    ? `${severity} fire hazard verified across ${stats.frameCount} high-speed telemetry frames. ` +
-      `Peak optical confidence ${avgConf}%. Potential human count: ${humanCount}. Objects identified: ${stats.objectCount}. ` +
-      `Temporal neural engine: ${framesConf}/${framesTotal} confirmed sequences.`
-    : 'Synchronizing multi-sensor feed from edge detection unit...';
+  // Format diagnostic assessment as bullet points
+  const diagnosticPoints = summary ? [
+    `${severity} fire hazard verified across ${stats.frameCount} high-speed telemetry frames`,
+    `Peak optical confidence ${avgConf}%`,
+    `Potential human count: ${humanCount}`,
+    `Objects identified: ${stats.objectCount}`,
+    `Temporal neural engine: ${framesConf}/${framesTotal} confirmed sequences`
+  ] : ['Synchronizing multi-sensor feed from edge detection unit...'];
 
   const isCritical = severity === 'CRITICAL';
   const sevColor = isCritical ? '#fb4934' : '#fabd2f';
@@ -198,15 +206,6 @@ function IncidentDetail({ incident, summary, hologram, metadataStats, onSelectFr
             ● {severity}
           </span>
         </div>
-
-        <Link
-          to={`/dispatch/${incId}`}
-          className="dc-view-dossier-btn"
-          title="Open comprehensive 2-column tactical assessment"
-        >
-          <span>FULL DOSSIER</span>
-          <ExternalLink size={13} />
-        </Link>
       </div>
 
       {/* CCTV / 3D Model Stage Card */}
@@ -246,7 +245,7 @@ function IncidentDetail({ incident, summary, hologram, metadataStats, onSelectFr
 
             {stageView === 'cctv' && (
               <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 11, color: '#8b928a' }}>
-                CAMERA: <strong style={{ color: '#eae7df' }}>{incident?.camera_id ?? summary?.camera_id ?? 'CAM-01'}</strong>
+                CAMERA: <strong style={{ color: '#eae7df' }}>{selectedCamera?.camera_code || incident?.camera_id || summary?.camera_id || 'CAM-01'}</strong>
               </div>
             )}
           </div>
@@ -256,8 +255,8 @@ function IncidentDetail({ incident, summary, hologram, metadataStats, onSelectFr
           {stageView === 'cctv' ? (
             <CctvStreamPlayer
               incidentId={incId}
-              cameraId={incident?.camera_id ?? summary?.camera_id ?? 'CAM-01'}
-              streamUrl={summary?.camera_stream_url !== undefined ? summary.camera_stream_url : incident?.camera_stream_url}
+              cameraId={selectedCamera?.camera_code || incident?.camera_id || summary?.camera_id || 'CAM-01'}
+              streamUrl={selectedCamera?.stream_url || summary?.camera_stream_url || incident?.camera_stream_url}
               frameIndex={bestFrame}
               severity={severity}
             />
@@ -334,11 +333,15 @@ function IncidentDetail({ incident, summary, hologram, metadataStats, onSelectFr
           <div className="dc-card">
             <div className="dc-section-label">
               <Brain size={14} color="#fe8019" />
-              <span>YOLO Neural Diagnostic Assessment</span>
+              <span>Neural Diagnostic Assessment</span>
             </div>
-            <p style={{ fontSize: 13, lineHeight: 1.65, color: '#c5c2b8', margin: 0 }}>
-              {aiText}
-            </p>
+            <ul style={{ fontSize: 13, lineHeight: 1.65, color: '#c5c2b8', margin: 0, paddingLeft: 20 }}>
+              {diagnosticPoints.map((point, idx) => (
+                <li key={idx} style={{ marginBottom: idx < diagnosticPoints.length - 1 ? 6 : 0 }}>
+                  {point}
+                </li>
+              ))}
+            </ul>
 
             {/* Confirmation Sequence */}
             <div style={{ marginTop: 8, background: '#181a19', padding: '10px 14px', borderRadius: 8, border: '1px solid #2d322f' }}>
@@ -371,20 +374,55 @@ function IncidentDetail({ incident, summary, hologram, metadataStats, onSelectFr
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
               <div>
-                <div style={{ fontSize: 14, fontWeight: 700, color: '#f7f5ed' }}>{ENRICHMENT.building}</div>
-                <div style={{ fontSize: 12, color: '#8b928a', marginTop: 2 }}>{ENRICHMENT.address}</div>
+                <div style={{ fontSize: 14, fontWeight: 700, color: '#f7f5ed' }}>
+                  {dashboardData?.building?.name || ENRICHMENT.building}
+                </div>
+                <div style={{ fontSize: 12, color: '#8b928a', marginTop: 2 }}>
+                  {dashboardData?.building?.address ? 
+                    `${dashboardData.building.address.address_line_1}, ${dashboardData.building.address.locality}, ${dashboardData.building.address.city} — ${dashboardData.building.address.postal_code}` 
+                    : ENRICHMENT.address}
+                </div>
+                {dashboardData?.building?.address && (
+                  <div style={{ fontSize: 11, color: '#8b928a', marginTop: 4, fontFamily: "'JetBrains Mono', monospace" }}>
+                    📍 {dashboardData.building.address.latitude?.toFixed(6)}, {dashboardData.building.address.longitude?.toFixed(6)}
+                  </div>
+                )}
               </div>
               <div style={{ display: 'flex', gap: 14 }}>
                 <div style={{ background: '#181a19', padding: '8px 12px', borderRadius: 6, border: '1px solid #2d322f' }}>
                   <div style={{ fontSize: 10, color: '#8b928a', textTransform: 'uppercase' }}>Floors</div>
-                  <div style={{ fontSize: 16, fontWeight: 700, color: '#eae7df' }}>{ENRICHMENT.floors}</div>
+                  <div style={{ fontSize: 16, fontWeight: 700, color: '#eae7df' }}>
+                    {dashboardData?.building?.number_of_floors ? `1 → ${dashboardData.building.number_of_floors}` : ENRICHMENT.floors}
+                  </div>
                 </div>
                 <div style={{ background: '#181a19', padding: '8px 12px', borderRadius: 6, border: '1px solid #2d322f' }}>
-                  <div style={{ fontSize: 10, color: '#8b928a', textTransform: 'uppercase' }}>Sector</div>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: '#fe8019' }}>{incident?.camera_id || 'CAM-01'}</div>
+                  <div style={{ fontSize: 10, color: '#8b928a', textTransform: 'uppercase' }}>Type</div>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: '#fe8019' }}>
+                    {dashboardData?.building?.building_type || 'OFFICE'}
+                  </div>
                 </div>
               </div>
             </div>
+            {/* Safety Features */}
+            {dashboardData?.building && (
+              <div style={{ marginTop: 12, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                {dashboardData.building.has_fire_alarm && (
+                  <span style={{ fontSize: 11, padding: '4px 8px', borderRadius: 4, background: 'rgba(74, 222, 128, 0.15)', color: '#4ade80', border: '1px solid rgba(74, 222, 128, 0.3)' }}>
+                    🚨 Fire Alarm
+                  </span>
+                )}
+                {dashboardData.building.has_sprinkler && (
+                  <span style={{ fontSize: 11, padding: '4px 8px', borderRadius: 4, background: 'rgba(74, 222, 128, 0.15)', color: '#4ade80', border: '1px solid rgba(74, 222, 128, 0.3)' }}>
+                    💧 Sprinklers
+                  </span>
+                )}
+                {dashboardData.building.has_fire_extinguishers && (
+                  <span style={{ fontSize: 11, padding: '4px 8px', borderRadius: 4, background: 'rgba(74, 222, 128, 0.15)', color: '#4ade80', border: '1px solid rgba(74, 222, 128, 0.3)' }}>
+                    🧯 Extinguishers
+                  </span>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Operator Dispatch Notes */}
@@ -442,20 +480,68 @@ function IncidentDetail({ incident, summary, hologram, metadataStats, onSelectFr
         <div className="dc-card">
           <div className="dc-section-label">
             <Activity size={14} color="#fe8019" />
-            <span>Captured Bounding-Box Detection Frames ({evidFrames.length})</span>
+            <span>Captured Evidence Frames ({evidFrames.length + (dashboardData?.evidence_frames?.length || 0)})</span>
           </div>
-          <div className="dc-evidence-grid">
-            {evidFrames.map((f, idx) => (
-              <div
-                key={idx}
-                className="dc-evidence-item"
-                onClick={() => onSelectFrame(f)}
-                title={`Frame ${f.frame_index} · ${(f.fire_confidence * 100).toFixed(1)}%`}
-              >
-                <img src={frameImageUrl(incId, f.frame_index)} alt="Evidence Frame" />
+          
+          {/* Show frames from summary (current detection) */}
+          {evidFrames.length > 0 && (
+            <>
+              <div style={{ fontSize: 11, fontWeight: 700, color: '#8b928a', marginBottom: 8, textTransform: 'uppercase' }}>
+                Current Detection Frames
               </div>
-            ))}
-          </div>
+              <div className="dc-evidence-grid">
+                {evidFrames.map((f, idx) => (
+                  <div
+                    key={`summary-${idx}`}
+                    className="dc-evidence-item"
+                    onClick={() => onSelectFrame(f)}
+                    title={`Frame ${f.frame_index} · ${(f.fire_confidence * 100).toFixed(1)}%`}
+                  >
+                    <img src={frameImageUrl(incId, f.frame_index)} alt="Evidence Frame" />
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+
+          {/* Show frames from database evidence table */}
+          {dashboardData?.evidence_frames && dashboardData.evidence_frames.length > 0 && (
+            <>
+              <div style={{ fontSize: 11, fontWeight: 700, color: '#8b928a', margin: '16px 0 8px', textTransform: 'uppercase' }}>
+                Stored Evidence Frames ({dashboardData.evidence_frames.length})
+              </div>
+              <div className="dc-evidence-grid">
+                {dashboardData.evidence_frames.map((evidence, idx) => (
+                  <div
+                    key={`evidence-${idx}`}
+                    className="dc-evidence-item"
+                    title={evidence.description || `Evidence ${evidence.file_name}`}
+                  >
+                    <img src={`/api/incidents/${incId}/frames/${evidence.file_name.match(/\d+/)?.[0] || idx}`} alt={evidence.description} />
+                    <div style={{ 
+                      position: 'absolute', 
+                      bottom: 4, 
+                      left: 4, 
+                      right: 4,
+                      background: 'rgba(0,0,0,0.7)', 
+                      padding: '2px 4px', 
+                      borderRadius: 3,
+                      fontSize: 9,
+                      color: '#eae7df'
+                    }}>
+                      {evidence.file_name}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+
+          {evidFrames.length === 0 && (!dashboardData?.evidence_frames || dashboardData.evidence_frames.length === 0) && (
+            <div style={{ padding: 24, textAlign: 'center', color: '#8b928a', fontSize: 12 }}>
+              No evidence frames available for this incident.
+            </div>
+          )}
         </div>
       )}
 
@@ -507,12 +593,30 @@ function IncidentDetail({ incident, summary, hologram, metadataStats, onSelectFr
           </button>
         )}
       </div>
+
+      {/* System Footer */}
+      <footer style={{
+        marginTop: 16,
+        padding: '12px 16px',
+        background: '#1a1d1b',
+        border: '1px solid #2b302c',
+        borderRadius: 8,
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        fontSize: 11,
+        color: '#8b928a',
+        fontFamily: "'JetBrains Mono', monospace"
+      }}>
+        <span>🇮🇳 Routed via India ERSS 112 Multi-Hazard Emergency Framework</span>
+        <span>Atmarakshak OS v2.4 · Zonal API: localhost:3001</span>
+      </footer>
     </div>
   );
 }
 
 // ── Right Tactical Action Column ───────────────────────────────────────────
-function RightDispatch({ incident, summary }) {
+function RightDispatch({ incident, summary, dashboardData }) {
   const [dispatchedUnits, setDispatchedUnits] = useState({});
 
   const units = [
@@ -525,6 +629,13 @@ function RightDispatch({ incident, summary }) {
     setDispatchedUnits(prev => ({ ...prev, [unitId]: !prev[unitId] }));
   }
 
+  // Get fire station data from dashboardData or fallback to ENRICHMENT
+  const fireStation = dashboardData?.building?.nearest_fire_station || {};
+  const stationName = fireStation.fire_station_name || ENRICHMENT.station;
+  const stationDist = fireStation.distance_km ? `${fireStation.distance_km} km` : ENRICHMENT.stationDist;
+  const stationEta = fireStation.distance_km ? `~${Math.ceil(fireStation.distance_km * 3)} min` : ENRICHMENT.stationEta;
+  const stationPhone = fireStation.phone || ENRICHMENT.stationPhone;
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       {/* 1. Geospatial Transit Map */}
@@ -533,7 +644,7 @@ function RightDispatch({ incident, summary }) {
           📍 Live Transit Routing
         </div>
         <div style={{ borderRadius: 8, overflow: 'hidden', border: '1px solid #323633' }}>
-          <DispatchMap inc={ENRICHMENT} />
+          <DispatchMap inc={ENRICHMENT} dashboardData={dashboardData} />
         </div>
       </div>
 
@@ -545,26 +656,32 @@ function RightDispatch({ incident, summary }) {
         </div>
 
         <div style={{ fontSize: 15, fontWeight: 700, color: '#f7f5ed' }}>
-          {ENRICHMENT.station}
+          {stationName}
         </div>
+
+        {fireStation.address_line_1 && (
+          <div style={{ fontSize: 11, color: '#8b928a', marginTop: 4 }}>
+            {fireStation.address_line_1}
+          </div>
+        )}
 
         <div className="dc-station-grid">
           <div className="dc-station-box">
             <div style={{ fontSize: 10, color: '#8b928a', textTransform: 'uppercase', marginBottom: 2 }}>Distance</div>
-            <div className="dc-station-num" style={{ color: '#fabd2f' }}>{ENRICHMENT.stationDist}</div>
+            <div className="dc-station-num" style={{ color: '#fabd2f' }}>{stationDist}</div>
           </div>
           <div className="dc-station-box">
             <div style={{ fontSize: 10, color: '#8b928a', textTransform: 'uppercase', marginBottom: 2 }}>Arrival ETA</div>
-            <div className="dc-station-num" style={{ color: '#4ade80' }}>{ENRICHMENT.stationEta}</div>
+            <div className="dc-station-num" style={{ color: '#4ade80' }}>{stationEta}</div>
           </div>
         </div>
 
         <a
-          href={`tel:${ENRICHMENT.stationPhone}`}
+          href={`tel:${stationPhone}`}
           className="dc-dispatch-cta"
         >
           <Phone size={14} />
-          <span>CALL STATION DIRECT (101)</span>
+          <span>CALL STATION DIRECT ({stationPhone})</span>
         </a>
       </div>
 
@@ -667,22 +784,97 @@ export default function DispatchConsole() {
   } = useIncidentData();
 
   const [modalFrame, setModalFrame] = useState(null);
+  const [cameras, setCameras] = useState([]);
+  const [selectedCameraId, setSelectedCameraId] = useState(null);
+  const [loadingCameras, setLoadingCameras] = useState(false);
+  const [dashboardData, setDashboardData] = useState(null); // Full DB data with building, fire station, evidence
 
-  // Synchronize URL param with selectedId on load
+  // Fetch full dashboard data from DB
   useEffect(() => {
-    if (urlIncidentId && incidents.some(i => i.incident_id === urlIncidentId)) {
-      setSelectedId(urlIncidentId);
-    }
-  }, [urlIncidentId, incidents, setSelectedId]);
+    const fetchDashboardData = async () => {
+      if (!selectedId) return;
+      
+      try {
+        const response = await fetch(`/api/incidents/dashboard/${selectedId}`);
+        const data = await response.json();
+        if (data.success) {
+          setDashboardData(data.data);
+        }
+      } catch (err) {
+        console.error('Error fetching dashboard data:', err);
+      }
+    };
 
-  function handleSelectIncident(id) {
-    setSelectedId(id);
-    // Gracefully update the URL dynamically without full page reload
-    navigate(`/dispatch/${id}`, { replace: true });
+    fetchDashboardData();
+  }, [selectedId]);
+
+  // Synchronize URL param with selectedId on load or when URL changes
+  useEffect(() => {
+    if (urlIncidentId) {
+      // URL has an incident ID, select it
+      if (incidents.some(i => i.incident_id === urlIncidentId)) {
+        setSelectedId(urlIncidentId);
+      }
+    } else if (!urlIncidentId && selectedId) {
+      // No URL incident ID but we have a selected one, update URL
+      navigate(`/dispatch/${selectedId}`, { replace: true });
+    } else if (!urlIncidentId && incidents.length > 0) {
+      // No URL incident ID and no selection, select first incident and update URL
+      const firstIncident = incidents[0].incident_id;
+      setSelectedId(firstIncident);
+      navigate(`/dispatch/${firstIncident}`, { replace: true });
+    }
+  }, [urlIncidentId, incidents, selectedId, setSelectedId, navigate]);
+
+  // Fetch cameras when dashboardData is loaded and has a building
+  useEffect(() => {
+    const fetchCameras = async () => {
+      if (!dashboardData?.building?.id) {
+        setCameras([]);
+        return;
+      }
+
+      const buildingId = dashboardData.building.id;
+      
+      setLoadingCameras(true);
+      try {
+        // Fetch all cameras for this building
+        const camerasResponse = await fetch(`/api/cameras?building_id=${buildingId}&limit=100`);
+        const camerasData = await camerasResponse.json();
+        
+        // Check for cameras array directly in response (not nested in data)
+        if (camerasData.cameras && Array.isArray(camerasData.cameras)) {
+          setCameras(camerasData.cameras);
+          
+          // Auto-select the incident's camera or the first camera
+          const selectedIncident = incidents.find(i => i.incident_id === selectedId);
+          if (camerasData.cameras.length > 0) {
+            const incidentCamera = camerasData.cameras.find(
+              c => c.camera_code === selectedIncident?.camera_id
+            );
+            setSelectedCameraId(incidentCamera ? incidentCamera.camera_code : camerasData.cameras[0].camera_code);
+          }
+        } else {
+          setCameras([]);
+        }
+      } catch (err) {
+        console.error('Error fetching cameras:', err);
+        setCameras([]);
+      } finally {
+        setLoadingCameras(false);
+      }
+    };
+
+    fetchCameras();
+  }, [dashboardData?.building?.id, selectedId]);
+
+  function handleSelectCamera(cameraCode) {
+    setSelectedCameraId(cameraCode);
   }
 
   const selectedIncident = incidents.find(i => i.incident_id === selectedId) ?? incidents[0];
   const firstFrameIndex = summary?.frames?.[0]?.frame_index ?? 0;
+  const selectedCamera = cameras.find(c => c.camera_code === selectedCameraId);
 
   return (
     <div className="dc-root">
@@ -690,18 +882,15 @@ export default function DispatchConsole() {
       <header className="dc-topbar">
         <div className="dc-topbar-left">
           <div className="dc-topbar-brand">
-            <div className="dc-brand-icon">
-              <Radio size={16} />
-            </div>
-            <h1 className="dc-brand-title">Mumbai Central — ERSS 112</h1>
+            <img
+              src="/atmarakshak_logo.png"
+              alt="Atmarakshak Logo"
+              style={{ height: 24, width: 24, objectFit: 'contain', borderRadius: 4 }}
+            />
+            <h1 className="dc-brand-title">ATMARAKSHAK</h1>
           </div>
 
           <div className="dc-divider" />
-
-          <div className="dc-operator-chip">
-            <span>OPERATOR:</span>
-            <span className="dc-operator-name">Amara Singh</span>
-          </div>
 
           {!loading && (
             <div className="dc-active-badge">
@@ -747,54 +936,66 @@ export default function DispatchConsole() {
           <div className="dc-clock">
             {new Date().toLocaleTimeString('en-IN')} IST
           </div>
-
-          <Link to="/" className="dc-nav-link">
-            ← ATMARAKSHAK HOME
-          </Link>
         </div>
       </header>
 
       {/* ─── SPACIOUS 3-COLUMN WORKSPACE ───────────────────────────────── */}
       <div className="dc-workspace">
         
-        {/* Left Column: Incident Queue */}
+        {/* Left Column: Camera Queue */}
         <aside className="dc-queue-col">
-          <div className="dc-queue-header">
-            <div className="dc-queue-title">
-              <Flame size={14} color="#fb4934" />
-              <span>Incident Queue</span>
-            </div>
-            <span style={{
-              fontFamily: "'JetBrains Mono', monospace",
-              fontSize: 11,
+          {/* Building Cameras Heading */}
+          <div style={{ 
+            padding: '16px 16px 12px 16px',
+            borderBottom: '1px solid #2d322f'
+          }}>
+            <h2 style={{ 
+              fontSize: 15,
               fontWeight: 700,
-              color: '#fe8019'
+              color: '#f7f5ed',
+              margin: 0,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 10,
+              letterSpacing: '0.3px'
             }}>
-              {incidents.length}
-            </span>
+              <Radio size={18} color="#fe8019" />
+              Building Cameras
+              <span style={{
+                marginLeft: 'auto',
+                fontFamily: "'JetBrains Mono', monospace",
+                fontSize: 12,
+                fontWeight: 600,
+                color: '#fe8019',
+                background: 'rgba(254, 128, 25, 0.1)',
+                padding: '2px 8px',
+                borderRadius: 4
+              }}>
+                {cameras.length}
+              </span>
+            </h2>
           </div>
 
           <div className="dc-queue-list">
-            {loading && (
+            {loadingCameras && (
               <div style={{ padding: 24, textAlign: 'center', color: '#8b928a', fontSize: 12 }}>
                 <Loader2 size={16} style={{ animation: 'spin 1s linear infinite', margin: '0 auto 8px' }} />
-                Loading active incidents...
+                Loading cameras...
               </div>
             )}
 
-            {!loading && incidents.length === 0 && (
+            {!loadingCameras && cameras.length === 0 && (
               <div style={{ padding: 32, textAlign: 'center', color: '#8b928a', fontSize: 13 }}>
-                No active hazard incidents reported.
+                No cameras available for this building.
               </div>
             )}
 
-            {incidents.map((inc) => (
-              <QueueItem
-                key={inc.incident_id}
-                incident={inc}
-                firstFrameIndex={firstFrameIndex}
-                selected={selectedIncident?.incident_id === inc.incident_id}
-                onClick={() => handleSelectIncident(inc.incident_id)}
+            {cameras.map((cam) => (
+              <CameraQueueItem
+                key={cam.id}
+                camera={cam}
+                selected={selectedCameraId === cam.camera_code}
+                onClick={() => handleSelectCamera(cam.camera_code)}
               />
             ))}
           </div>
@@ -810,6 +1011,8 @@ export default function DispatchConsole() {
               hologram={hologram}
               metadataStats={metadataStats}
               onSelectFrame={setModalFrame}
+              selectedCamera={selectedCamera}
+              dashboardData={dashboardData}
             />
           ) : (
             <div style={{
@@ -827,16 +1030,10 @@ export default function DispatchConsole() {
 
         {/* Right Column: Tactical Action & Station Command */}
         <aside className="dc-tactical-col">
-          <RightDispatch incident={selectedIncident} summary={summary} />
+          <RightDispatch incident={selectedIncident} summary={summary} dashboardData={dashboardData} />
         </aside>
 
       </div>
-
-      {/* ─── SYSTEM FOOTER ─────────────────────────────────────────────── */}
-      <footer className="dc-footer">
-        <span>🇮🇳 Routed via India ERSS 112 Multi-Hazard Emergency Framework</span>
-        <span>Atmarakshak OS v2.4 · Zonal API: localhost:3001</span>
-      </footer>
 
       {/* Frame Enlargement Modal */}
       {modalFrame && (

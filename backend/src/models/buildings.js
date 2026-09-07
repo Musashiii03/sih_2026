@@ -38,6 +38,15 @@ module.exports = (sequelize, DataTypes) => {
         key: 'id'
       }
     },
+    organization_id: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      references: {
+        model: 'organizations',
+        key: 'id'
+      },
+      comment: 'Organization that owns or manages this building'
+    },
     number_of_floors: {
       type: DataTypes.INTEGER,
       allowNull: false
@@ -92,6 +101,20 @@ module.exports = (sequelize, DataTypes) => {
       allowNull: false,
       defaultValue: false
     },
+    nearest_fire_station_id: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      references: {
+        model: 'addresses',
+        key: 'id'
+      },
+      comment: 'Foreign key to addresses table storing nearest fire station location'
+    },
+    fire_station_distance_km: {
+      type: DataTypes.DECIMAL(8, 2),
+      allowNull: true,
+      comment: 'Distance to nearest fire station in kilometers'
+    },
     status: {
       type: DataTypes.STRING(30),
       allowNull: false,
@@ -126,6 +149,18 @@ module.exports = (sequelize, DataTypes) => {
     Building.belongsTo(models.Address, {
       foreignKey: 'address_id',
       as: 'address'
+    });
+
+    // Building belongs to an organization
+    Building.belongsTo(models.Organization, {
+      foreignKey: 'organization_id',
+      as: 'organization'
+    });
+
+    // Building has nearest fire station (address)
+    Building.belongsTo(models.Address, {
+      foreignKey: 'nearest_fire_station_id',
+      as: 'nearestFireStation'
     });
 
     // Building has many units

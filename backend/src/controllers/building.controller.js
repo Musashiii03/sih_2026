@@ -189,3 +189,57 @@ exports.getBuildingStatistics = async (req, res, next) => {
     next(error);
   }
 };
+
+/**
+ * Create new building
+ */
+exports.createBuilding = async (req, res, next) => {
+  try {
+    const buildingData = req.body;
+
+    // Validate required fields
+    if (!buildingData.building_code || !buildingData.name || !buildingData.building_type) {
+      return res.status(400).json({
+        success: false,
+        message: 'Building code, name, and type are required'
+      });
+    }
+
+    // Check if building code already exists
+    const existing = await Building.findOne({
+      where: { building_code: buildingData.building_code }
+    });
+
+    if (existing) {
+      return res.status(400).json({
+        success: false,
+        message: 'Building code already exists'
+      });
+    }
+
+    // Create building
+    const building = await Building.create(buildingData);
+
+    res.status(201).json({
+      success: true,
+      message: 'Building created successfully',
+      data: building
+    });
+
+  } catch (error) {
+    console.error('Error creating building:', error);
+    
+    if (error.name === 'SequelizeValidationError') {
+      return res.status(400).json({
+        success: false,
+        message: 'Validation error',
+        errors: error.errors.map(e => ({
+          field: e.path,
+          message: e.message
+        }))
+      });
+    }
+
+    next(error);
+  }
+};

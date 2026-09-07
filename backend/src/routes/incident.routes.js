@@ -46,6 +46,13 @@ router.get('/:id', incidentController.getIncidentById);
 router.get('/number/:incident_number', incidentController.getIncidentByNumber);
 
 /**
+ * @route   GET /api/incidents/dashboard/:incident_number
+ * @desc    Get full incident dashboard data with all relations
+ * @access  Public
+ */
+router.get('/dashboard/:incident_number', incidentController.getIncidentDashboardData);
+
+/**
  * @route   GET /api/incidents/building/:building_id
  * @desc    Get incidents by building ID
  * @access  Public

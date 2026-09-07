@@ -5,11 +5,11 @@
  *  GET /api/incidents                       → incident list
  *  GET /api/incidents/:id/summary           → summary.json (frame-level fire/human/object counts)
  *  GET /api/incidents/:id/hologram          → hologram_data JSON (3D coordinates)
- *  GET /api/incidents/:id/humans            → aggregated human detections from per-frame metadata
+ *  GET /api/incidents/:id/metadata          → aggregated human detections from per-frame metadata
  *  GET /api/incidents/:id/frames/:n         → JPEG image (used directly as <img src>)
  *
  * Human count priority (most authoritative first):
- *   1. /humans endpoint  → reads per-frame metadata JSONs, returns peak_human_count
+ *   1. /metadata endpoint  → reads per-frame metadata JSONs, returns peak_human_count
  *   2. summary.statistics.total_human_detections  → aggregate from summary
  *   3. max(frame.human_count) across summary.frames  → per-frame peak from summary
  *   4. hologram.persons.length  → count of persons mapped to 3D space
@@ -73,11 +73,11 @@ export function useIncidentData() {
     Promise.all([
       fetchJson(`/api/incidents/${id}/summary`).catch(() => null),
       fetchJson(`/api/incidents/${id}/hologram`).catch(() => null),
-      fetchJson(`/api/incidents/${id}/humans`).catch(() => null),
-    ]).then(([sum, holo, humans]) => {
+      fetchJson(`/api/incidents/${id}/metadata`).catch(() => null),
+    ]).then(([sum, holo, metadata]) => {
       setSummary(sum);
       setHologram(holo);
-      setHumanData(humans);
+      setHumanData(metadata);
     });
   }, []);
 
@@ -167,5 +167,102 @@ export function aggregateStats(summary, humanData = null, hologram = null) {
     humanFrames: humanData?.frames_with_humans  ?? 0,
     humanTotal:  humanData?.total_human_detections ?? 0,
     humanSource: humanData?.data_source ?? 'summary',
+  };
+}
+
+/**
+ * useSingleIncidentData
+ * 
+ * Hook for fetching data for a specific incident by ID
+ * Used in the dynamic IncidentDashboard pages
+ * Now includes full building, address, fire station, and evidence data
+ * 
+ * @param {string} incidentId - The incident ID to fetch
+ * @returns {object} - { incident, summary, hologram, humanData, dashboardData, loading, error, refresh }
+ */
+export function useSingleIncidentData(incidentId) {
+  const [incident, setIncident] = useState(null);
+  const [summary, setSummary] = useState(null);
+  const [hologram, setHologram] = useState(null);
+  const [humanData, setHumanData] = useState(null);
+  const [dashboardData, setDashboardData] = useState(null); // Full DB data with relations
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  const loadIncidentData = useCallback(async (isSilent = false) => {
+    if (!incidentId) return;
+
+    try {
+      if (!isSilent) setLoading(true);
+      setError(null);
+
+      // Fetch all data in parallel
+      const [summaryData, hologramData, metadataData, fullDashboardData] = await Promise.all([
+        fetchJson(`/api/incidents/${incidentId}/summary`).catch(() => null),
+        fetchJson(`/api/incidents/${incidentId}/hologram`).catch(() => null),
+        fetchJson(`/api/incidents/${incidentId}/metadata`).catch(() => null),
+        fetchJson(`/api/incidents/dashboard/${incidentId}`).catch(() => null)
+      ]);
+
+      setSummary(summaryData);
+      setHologram(hologramData);
+      setHumanData(metadataData);
+      
+      // Store full dashboard data from database
+      if (fullDashboardData && fullDashboardData.success) {
+        setDashboardData(fullDashboardData.data);
+      }
+
+      // Create incident object from summary data
+      if (summaryData) {
+        const stats = summaryData.statistics || {};
+        const isFire = (stats.total_fire_detections ?? 0) > 0;
+        
+        setIncident({
+          incident_id: summaryData.incident_id || incidentId,
+          incident_number: summaryData.incident_id || incidentId,
+          location: summaryData.location || 'Unknown Location',
+          camera_id: summaryData.camera_id || 'CAM-01',
+          camera_stream_url: summaryData.camera_stream_url,
+          timestamp: summaryData.timestamp,
+          timestamp_readable: summaryData.timestamp_readable,
+          frame_count: summaryData.frame_count || 0,
+          severity: deriveSeverity(summaryData),
+          status: 'ACTIVE',
+          type: isFire ? 'FIRE' : 'SMOKE',
+        });
+      }
+
+    } catch (e) {
+      if (!isSilent) setError(e.message);
+    } finally {
+      if (!isSilent) setLoading(false);
+    }
+  }, [incidentId]);
+
+  // Initial load
+  useEffect(() => {
+    loadIncidentData(false);
+  }, [loadIncidentData]);
+
+  // Periodic refresh every 4 seconds
+  useEffect(() => {
+    const timer = setInterval(() => {
+      loadIncidentData(true);
+    }, 4000);
+
+    return () => clearInterval(timer);
+  }, [loadIncidentData]);
+
+  return {
+    incident,
+    summary,
+    hologram,
+    humanData,
+    metadataStats: humanData, // alias for compatibility
+    dashboardData, // Full database data with building, address, fire station, evidence
+    loading,
+    error,
+    refresh: () => loadIncidentData(false),
   };
 }

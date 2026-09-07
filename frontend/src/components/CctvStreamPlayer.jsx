@@ -383,44 +383,7 @@ export default function CctvStreamPlayer({
         fontSize: 12,
         fontFamily: "'Manrope', sans-serif"
       }}>
-        {/* 1. WEBCAM INDEX (LOCAL-ONLY) */}
-        {type === 'WEBCAM_LOCAL' && (
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <div style={{
-                width: 26,
-                height: 26,
-                borderRadius: 4,
-                background: 'rgba(168, 153, 132, 0.15)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: '#ebdbb2'
-              }}>
-                <Video size={14} />
-              </div>
-              <div>
-                <span style={{ color: '#ebdbb2', fontWeight: 600 }}>
-                  Local camera — not remotely viewable
-                </span>
-                <div style={{ fontSize: 11, color: '#a89984', fontFamily: "'JetBrains Mono', monospace", marginTop: 2 }}>
-                  Direct device index: {streamUrl} (host machine webcam driver)
-                </div>
-              </div>
-            </div>
-
-            <span style={{
-              fontSize: 11,
-              fontFamily: "'JetBrains Mono', monospace",
-              color: '#928374',
-              background: 'rgba(0,0,0,0.25)',
-              padding: '3px 8px',
-              borderRadius: 4
-            }}>
-              Non-routable hardware
-            </span>
-          </div>
-        )}
+        {/* 1. WEBCAM INDEX (LOCAL-ONLY) - REMOVED AS PER REQUEST */}
 
         {/* 2. PHONE WI-FI HTTP STREAM */}
         {type === 'HTTP_STREAM' && (

@@ -119,6 +119,11 @@ module.exports = (sequelize, DataTypes) => {
         min: 0,
         max: 1
       }
+    },
+    dashboard_url: {
+      type: DataTypes.STRING(255),
+      allowNull: true,
+      comment: 'URL path to the incident-specific dashboard (e.g., dispatch/INC-20260830-230333)'
     }
   }, {
     tableName: 'incidents',
