@@ -34,6 +34,7 @@ export default function BuildingDetail({ building, onBack, activeIncidentId, onV
 
   const fetchCameras = async () => {
     try {
+
       console.log('🔄 Fetching cameras from API...');
       
       // Fetch ALL cameras regardless of building_id
@@ -49,7 +50,7 @@ export default function BuildingDetail({ building, onBack, activeIncidentId, onV
         const cameraList = data.data?.cameras || data.cameras || [];
         
         console.log('📹 Parsed cameras:', cameraList.length, 'cameras found');
-        
+
         if (cameraList.length > 0) {
           console.log('✅ Setting cameras:', cameraList);
           setCameras(cameraList);

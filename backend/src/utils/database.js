@@ -11,7 +11,7 @@
  * - Database health monitoring
  */
 
-const { sequelize } = require('../../config/sequelize');
+const { sequelize } = require('../config/sequelize');
 const { Sequelize } = require('sequelize');
 
 /**

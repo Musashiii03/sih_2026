@@ -54,13 +54,15 @@
 }
 
 .dc-brand-title {
-  font-family: 'Fraunces', Georgia, serif;
-  font-style: italic;
-  font-size: 19px;
-  font-weight: 400;
+  font-family: 'Rajdhani', sans-serif;
+  font-style: normal;
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
   color: #f7f5ed;
   margin: 0;
   line-height: 1;
+  text-transform: uppercase;
 }
 
 .dc-divider {

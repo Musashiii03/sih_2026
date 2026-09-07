@@ -13,46 +13,47 @@
   purple #d3869b · aqua #8ec07c  · orange #fe8019
 */
 
+/* ── DEFAULT (DARK — Gruvbox) ─────────────────────── */
 :root {
   /* ── Gruvbox Base Surfaces ── */
-  --bg:            #282828;   /* Gruvbox bg — main canvas */
-  --bg-surface:    #3c3836;   /* Gruvbox bg1 — elevated */
-  --bg-card:       #3c3836;   /* Gruvbox bg1 — card surface */
-  --bg-card-hover: #504945;   /* Gruvbox bg2 — hover */
-  --bg-input:      #32302f;   /* Gruvbox bg0_s — input */
-  --bg-deep:       #1d2021;   /* Gruvbox bg0_h — deepest */
-  --bg-sidebar:    #1d2021;   /* Gruvbox bg0_h — sidebar */
+  --bg:            #282828;
+  --bg-surface:    #3c3836;
+  --bg-card:       #3c3836;
+  --bg-card-hover: #504945;
+  --bg-input:      #32302f;
+  --bg-deep:       #1d2021;
+  --bg-sidebar:    #1d2021;
 
-  /* ── Gruvbox Severity / Semantic ── */
-  --critical:      #fb4934;   /* Gruvbox bright red */
+  /* ── Severity ── */
+  --critical:      #fb4934;
   --critical-dim:  rgba(251,73,52,0.15);
   --critical-ring: rgba(251,73,52,0.3);
-  --moderate:      #fabd2f;   /* Gruvbox bright yellow */
+  --moderate:      #fabd2f;
   --moderate-dim:  rgba(250,189,47,0.15);
-  --safe:          #b8bb26;   /* Gruvbox bright green */
+  --safe:          #b8bb26;
   --safe-dim:      rgba(184,187,38,0.15);
-  --accent:        #83a598;   /* Gruvbox bright blue */
+  --accent:        #83a598;
   --accent-dim:    rgba(131,165,152,0.15);
-  --orange:        #fe8019;   /* Gruvbox bright orange */
+  --orange:        #fe8019;
   --orange-dim:    rgba(254,128,25,0.15);
-  --purple:        #d3869b;   /* Gruvbox bright purple */
-  --aqua:          #8ec07c;   /* Gruvbox bright aqua */
-  --yellow:        #fabd2f;   /* Gruvbox bright yellow */
+  --purple:        #d3869b;
+  --aqua:          #8ec07c;
+  --yellow:        #fabd2f;
 
-  /* ── Gruvbox Text ── */
-  --text:          #ebdbb2;   /* Gruvbox fg1 — primary */
-  --text-muted:    #d5c4a1;   /* Gruvbox fg2 — secondary */
-  --text-dim:      #a89984;   /* Gruvbox fg4 — muted */
-  --text-faint:    #928374;   /* Gruvbox gray — very muted */
-  --text-invert:   #282828;   /* Gruvbox bg — inverted text */
+  /* ── Text ── */
+  --text:          #ebdbb2;
+  --text-muted:    #d5c4a1;
+  --text-dim:      #a89984;
+  --text-faint:    #928374;
+  --text-invert:   #282828;
 
-  /* ── Gruvbox Borders ── */
-  --border:        #504945;   /* Gruvbox bg2 — default border */
-  --border-strong: #665c54;   /* Gruvbox bg3 — emphasized border */
-  --border-subtle: #3c3836;   /* Gruvbox bg1 — subtle border */
+  /* ── Borders ── */
+  --border:        #504945;
+  --border-strong: #665c54;
+  --border-subtle: #3c3836;
 
-  /* ── Shadows (deeper on dark bg) ── */
-  --shadow-sm:   0 1px 2px rgba(0,0,0,0.3), 0 4px 8px rgba(0,0,0,0.2);
+  /* ── Shadows ── */
+  --shadow-sm:   0 1px 2px rgba(0,0,0,0.30), 0 4px 8px rgba(0,0,0,0.20);
   --shadow-md:   0 2px 8px rgba(0,0,0,0.35);
   --shadow-lg:   0 4px 24px rgba(0,0,0,0.45);
 
@@ -66,6 +67,71 @@
   --r-badge: 999px;
   --r-sm:    8px;
   --r-xs:    4px;
+
+  /* ── Transition ── */
+  --theme-transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+
+/* ══════════════════════════════════════════════════
+   LIGHT THEME — GIC palette
+   Applied via <html data-theme="light">
+══════════════════════════════════════════════════ */
+[data-theme="light"] {
+  /* ── Base Surfaces ── */
+  --bg:            #fefffc;   /* GIC parchment canvas */
+  --bg-surface:    #ffffff;   /* GIC paper */
+  --bg-card:       #ffffff;
+  --bg-card-hover: #f9faf7;   /* GIC linen */
+  --bg-input:      #f9faf7;
+  --bg-deep:       #f3f4f1;
+  --bg-sidebar:    #fefffc;
+
+  /* ── Severity ── */
+  --critical:      #e11d48;
+  --critical-dim:  #fef2f2;
+  --critical-ring: rgba(225,29,72,0.22);
+  --moderate:      #d97706;
+  --moderate-dim:  #fffbeb;
+  --safe:          #16a34a;
+  --safe-dim:      #f0fdf4;
+  --accent:        #41a1cf;   /* GIC signal blue */
+  --accent-dim:    rgba(65,161,207,0.12);
+  --orange:        #ea580c;
+  --orange-dim:    rgba(234,88,12,0.10);
+  --purple:        #7c3aed;
+  --aqua:          #0891b2;
+  --yellow:        #ca8a04;
+
+  /* ── Text ── */
+  --text:          #2c2c2c;   /* GIC graphite */
+  --text-muted:    #444141;   /* GIC charcoal */
+  --text-dim:      #646464;   /* GIC ash */
+  --text-faint:    #b4b8b4;   /* GIC fog */
+  --text-invert:   #ffffff;
+
+  /* ── Borders ── */
+  --border:        #dee2de;   /* GIC mist — green-tinted hairline */
+  --border-strong: #c8cec8;
+  --border-subtle: #eef0ee;
+
+  /* ── Shadows (lighter on white) ── */
+  --shadow-sm:   0 1px 1px rgba(0,0,0,0.06), 0 4px 5px rgba(0,0,0,0.04);
+  --shadow-md:   0 2px 6px rgba(0,0,0,0.08);
+  --shadow-lg:   0 4px 16px rgba(0,0,0,0.10);
+
+  /* ── Typography & radius unchanged ── */
+  --font-display:  'Fraunces', Georgia, serif;
+  --font-body:     'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-mono:     'JetBrains Mono', 'IBM Plex Mono', 'Fira Code', monospace;
+  --r-card:  12px;
+  --r-badge: 999px;
+  --r-sm:    8px;
+  --r-xs:    4px;
+}
+
+/* Smooth transitions on theme change */
+*, *::before, *::after {
+  transition: var(--theme-transition, none);
 }
 
 /* ── Reset ── */

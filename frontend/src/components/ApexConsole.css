@@ -94,9 +94,10 @@
 }
 
 .sidebar-brand-name {
-  font-size: 18px;
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 20px;
   font-weight: 700;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.08em;
   color: #f7f5ed;
   text-transform: uppercase;
 }

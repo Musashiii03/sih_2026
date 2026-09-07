@@ -203,7 +203,7 @@ export default function LandingPage() {
                 alt="Atmarakshak Logo"
                 style={{ height: 28, width: 28, objectFit: 'contain', borderRadius: 6 }}
               />
-              <span style={{ fontWeight: 800, letterSpacing: '-0.02em', fontSize: '1.22rem' }}>
+              <span style={{ fontFamily: "'Rajdhani', sans-serif", fontWeight: 700, letterSpacing: '0.06em', fontSize: '1.32rem' }}>
                 ATMA<span className="vite-gradient-text">RAKSHAK</span>
               </span>
             </a>
