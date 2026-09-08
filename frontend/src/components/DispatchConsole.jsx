@@ -31,6 +31,7 @@ import {
 import DispatchMap from './DispatchMap';
 import IsometricHologram from './IsometricHologram';
 import Atmarakshak3DHero from './Atmarakshak3DHero';
+import { HologramViewer } from '../viewers/OBJ/HologramViewerWithErrorBoundary';
 import CctvStreamPlayer, { StreamBadge } from './CctvStreamPlayer';
 import {
   useIncidentData,
@@ -261,8 +262,8 @@ function IncidentDetail({ incident, summary, hologram, metadataStats, onSelectFr
               severity={severity}
             />
           ) : (
-            <div style={{ borderRadius: 8, overflow: 'hidden', border: '1px solid #323633', background: '#121413' }}>
-              <Atmarakshak3DHero theme="dark" minHeight="380px" maxHeight="440px" />
+            <div style={{ borderRadius: 8, overflow: 'hidden', border: '1px solid #323633', background: '#121413', height: '440px' }}>
+              <HologramViewer theme="dark" />
             </div>
           )}
         </div>
@@ -461,16 +462,11 @@ function IncidentDetail({ incident, summary, hologram, metadataStats, onSelectFr
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
             <div className="dc-section-label">
               <Layers size={14} color="#fe8019" />
-              <span>3D Architectural Floor Twin & Thermal Hazard Mapping</span>
+              <span>3D Hologram Viewer - Architectural Model</span>
             </div>
-            {hologram && (
-              <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 11, color: '#fe8019' }}>
-                ROOM: {hologram.room_geometry?.width_m}m × {hologram.room_geometry?.depth_m}m
-              </span>
-            )}
           </div>
-          <div style={{ borderRadius: 8, overflow: 'hidden', border: '1px solid #323633', background: '#121413' }}>
-            <Atmarakshak3DHero theme="dark" minHeight="440px" maxHeight="520px" />
+          <div style={{ borderRadius: 8, overflow: 'hidden', border: '1px solid #323633', background: '#121413', height: '520px' }}>
+            <HologramViewer theme="dark" />
           </div>
         </div>
       )}

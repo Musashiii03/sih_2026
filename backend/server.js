@@ -56,6 +56,10 @@ app.use('/data', express.static(DATA_PATH, {
       res.setHeader('Content-Type', 'image/jpeg');
     } else if (filePath.endsWith('.glb')) {
       res.setHeader('Content-Type', 'model/gltf-binary');
+    } else if (filePath.endsWith('.obj')) {
+      res.setHeader('Content-Type', 'model/obj');
+    } else if (filePath.endsWith('.mtl')) {
+      res.setHeader('Content-Type', 'model/mtl');
     } else if (filePath.endsWith('.json')) {
       res.setHeader('Content-Type', 'application/json');
     }
