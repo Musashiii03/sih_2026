@@ -7,6 +7,7 @@ Backend server for the Atmarakshak Fire Detection System. Built with Node.js, Ex
 - 🔥 Fire incident frame management API
 - 🚒 Nearest fire station finder (OpenStreetMap)
 - 📧 Automatic email alerts to fire department (45-second threshold)
+- 📞 **Instant voice call alerts via Twilio** (owner notification)
 - 🐘 PostgreSQL database with Sequelize ORM
 - 🐳 Docker containerized database
 - 🔄 Auto-sync models to database
@@ -133,6 +134,9 @@ npm run test:db
 
 # Test email configuration
 npm run test:email
+
+# Test Twilio voice call configuration
+npm run test:twilio
 
 # Database setup and management
 npm run db:setup                  # Sync database schema with models
@@ -294,8 +298,14 @@ See [src/models/README.md](./src/models/README.md) for detailed model documentat
 | `EMAIL_FROM` | - | Email sender address |
 | `FIRE_DEPARTMENT_EMAIL` | - | Fire department recipient email |
 | `FRONTEND_URL` | http://localhost:5173 | Frontend URL for links |
+| `TWILIO_ACCOUNT_SID` | - | Twilio account SID for voice calls |
+| `TWILIO_AUTH_TOKEN` | - | Twilio auth token |
+| `TWILIO_PHONE_NUMBER` | - | Twilio phone number (E.164 format) |
+| `OWNER_PHONE_NUMBER` | - | Building owner phone number (E.164 format) |
 
 **Email Setup:** See [EMAIL_SETUP_GUIDE.md](./EMAIL_SETUP_GUIDE.md) for configuration instructions.
+
+**Voice Alerts:** See [TWILIO_QUICKSTART.md](./TWILIO_QUICKSTART.md) for quick setup or [docs/TWILIO_SETUP.md](./docs/TWILIO_SETUP.md) for complete documentation.
 
 ## Docker Commands
 
@@ -435,6 +445,8 @@ pytest
 
 ## Documentation
 
+- [TWILIO_QUICKSTART.md](./TWILIO_QUICKSTART.md) - Quick voice alert setup (5 minutes)
+- [docs/TWILIO_SETUP.md](./docs/TWILIO_SETUP.md) - Complete Twilio documentation
 - [EMAIL_SETUP_GUIDE.md](./EMAIL_SETUP_GUIDE.md) - Quick email notification setup (5 minutes)
 - [docs/EMAIL_NOTIFICATIONS.md](./docs/EMAIL_NOTIFICATIONS.md) - Complete email documentation
 - [STRUCTURE.md](./STRUCTURE.md) - Detailed project structure

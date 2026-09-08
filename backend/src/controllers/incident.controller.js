@@ -8,6 +8,7 @@ const { Incident, IncidentDetection, Building, Camera, Evidence, Address, Incide
 const { Op } = require('sequelize');
 const path = require('path');
 const fs = require('fs').promises;
+const twilioService = require('../services/twilio.service');
 
 /**
  * Create a new fire incident from AI detection data
@@ -145,6 +146,61 @@ exports.createIncident = async (req, res, next) => {
     }
     
     console.log(`✅ Created ${timelineEntries.length} timeline entries for incident ${incidentNumber}`);
+
+    // ========================================
+    // TRIGGER IMMEDIATE VOICE CALL ALERT
+    // ========================================
+    if (twilioService.isConfigured()) {
+      console.log('🔔 Triggering immediate voice call alert to owner...');
+      
+      // Prepare alert data for voice call
+      const alertData = {
+        owner_name: 'Property Owner', // TODO: Get from building owner record
+        hazard_type: 'fire',
+        building_name: incident.building?.name || 'Unknown Building',
+        floor_number: cameraRecord?.floor_number || 'Unknown Floor',
+        area_or_room_name: cameraRecord?.room_name || 'Unknown Area',
+        camera_name_or_id: cameraRecord?.camera_code || camera_id || 'Unknown Camera',
+        detection_time: incident.detected_at.toLocaleString('en-US', {
+          month: 'short',
+          day: '2-digit',
+          year: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: true
+        }),
+        occupant_status: statistics?.total_human_detections > 0 
+          ? `${statistics.total_human_detections} person(s) detected in fire zone - URGENT`
+          : 'Unknown - Verification Required'
+      };
+
+      // Make the call without waiting (fire and forget)
+      twilioService.makeFireAlertCall(alertData)
+        .then(result => {
+          if (result.success) {
+            console.log(`✅ Voice alert call initiated: ${result.callSid}`);
+            // Optionally: Create timeline entry for call
+            IncidentTimeline.create({
+              incident_id: incident.id,
+              event_type: 'OWNER_NOTIFIED',
+              description: `Voice call alert sent to property owner at ${twilioService.ownerPhoneNumber}`,
+              actor_type: 'SYSTEM',
+              actor_user_id: null,
+              metadata: {
+                call_sid: result.callSid,
+                call_status: result.status,
+                notification_type: 'VOICE_CALL'
+              },
+              occurred_at: new Date()
+            }).catch(err => console.error('Error creating call timeline entry:', err));
+          } else {
+            console.error(`❌ Failed to initiate voice call: ${result.error}`);
+          }
+        })
+        .catch(err => console.error('❌ Error making voice call:', err));
+    } else {
+      console.warn('⚠️  Twilio not configured. Voice call alert skipped.');
+    }
 
     // Create detection records for each frame
     const detections = [];

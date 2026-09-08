@@ -77,6 +77,75 @@ export function useFireAlerts() {
   }, [activeAlerts]);
 
   /**
+   * Handle timer expiration (auto-escalation)
+   */
+  const handleTimerExpired = useCallback(async (incidentNumber) => {
+    console.log(`⏰ TIMER EXPIRED for ${incidentNumber}`);
+    console.log(`🚨 AUTO-ESCALATION: Contacting fire department for incident ${incidentNumber}`);
+    
+    // Find the alert to get incident ID
+    const alert = activeAlertsRef.current.find(a => a.incident_number === incidentNumber);
+    
+    if (!alert) {
+      console.error(`❌ Could not find alert ${incidentNumber} for escalation`);
+      return;
+    }
+    
+    // Update UI immediately to show escalated state
+    setActiveAlerts(prev => 
+      prev.map(a => 
+        a.incident_number === incidentNumber 
+          ? { ...a, escalated: true, timeRemaining: 0 }
+          : a
+      )
+    );
+    
+    // Clear interval
+    if (timerIntervals.current[incidentNumber]) {
+      clearInterval(timerIntervals.current[incidentNumber]);
+      delete timerIntervals.current[incidentNumber];
+    }
+    
+    // Call backend API to escalate incident and send email
+    try {
+      console.log(`📡 Calling escalate API for incident ID: ${alert.id}`);
+      
+      const response = await fetch(`${API_BASE_URL}/incidents/${alert.id}/escalate`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      });
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`❌ Escalate API error ${response.status}:`, errorText);
+        throw new Error(`HTTP ${response.status}: ${errorText}`);
+      }
+      
+      const data = await response.json();
+      console.log(`✅ Escalate API response:`, data);
+      
+      if (data.data?.email_sent) {
+        console.log(`📧 FIRE DEPARTMENT EMAIL SENT (AUTO-ESCALATION)`);
+        console.log(`   Recipient: ${data.data.email_recipient}`);
+        console.log(`   Reason: ${data.data.escalation_reason}`);
+        console.log(`   Time since detection: ${data.data.time_since_detection_seconds.toFixed(1)}s`);
+        console.log(`🚨 Fire department has been notified automatically`);
+      } else {
+        console.warn(`⚠️  Email not sent during auto-escalation`);
+        if (data.data?.email_recipient) {
+          console.log(`   Configured recipient: ${data.data.email_recipient}`);
+        }
+      }
+      
+    } catch (error) {
+      console.error('❌ Error calling escalate API:', error.message);
+      console.error('   Fire department email may not have been sent!');
+    }
+  }, []);
+
+  /**
    * Process new alerts from API response
    */
   const processAlerts = useCallback((fetchedAlerts) => {
@@ -99,17 +168,15 @@ export function useFireAlerts() {
           return next;
         });
         
-        // Calculate start time from detected_at timestamp from backend
-        // This ensures timer persists across page reloads
-        const detectedAt = alert.detected_at ? new Date(alert.detected_at).getTime() : now;
-        const elapsed = Math.floor((now - detectedAt) / 1000);
-        const remaining = Math.max(0, ALERT_DURATION - elapsed);
+        // START TIMER FROM NOW (when alert is shown to user)
+        // Not based on when incident was detected in backend
+        const startTime = now; // Use current time, not detected_at
+        const timeRemaining = ALERT_DURATION; // Start from full 45 seconds
         
-        console.log(`  🕒 Detected at: ${new Date(detectedAt).toLocaleTimeString()}`);
-        console.log(`  ⏱️  Elapsed since detection: ${elapsed}s`);
-        console.log(`  ⏱️  Time remaining: ${remaining}s`);
+        console.log(`  🕒 Alert shown at: ${new Date(startTime).toLocaleTimeString()}`);
+        console.log(`  ⏱️  Timer starting from: ${timeRemaining}s`);
         
-        // Add to active alerts with timer
+        // Add to active alerts with full timer
         setActiveAlerts(prev => {
           // Don't add if already exists
           if (prev.some(a => a.incident_number === alert.incident_number)) {
@@ -119,20 +186,15 @@ export function useFireAlerts() {
           
           const newAlert = {
             ...alert,
-            timeRemaining: remaining,
-            startTime: detectedAt, // Use actual detection time from backend
-            escalated: remaining === 0, // Auto-escalate if time already expired
+            timeRemaining: timeRemaining,
+            startTime: startTime, // Use time when alert was shown
+            escalated: false,
             dismissed: false
           };
           
           console.log('  Adding alert to activeAlerts:', newAlert);
           console.log('  → startTime:', new Date(newAlert.startTime).toLocaleTimeString());
           console.log('  → timeRemaining:', newAlert.timeRemaining);
-          
-          // If already expired, trigger escalation immediately
-          if (remaining === 0) {
-            console.log('  ⚠️  Alert already expired! Will escalate immediately.');
-          }
           
           return [...prev, newAlert];
         });
@@ -283,75 +345,6 @@ const acknowledgeAlert = useCallback(async (incidentNumber) => {
     }
     
     console.log(`✓ Alert ${incidentNumber} removed from active alerts`);
-  }, []);
-
-  /**
-   * Handle timer expiration (auto-escalation)
-   */
-  const handleTimerExpired = useCallback(async (incidentNumber) => {
-    console.log(`⏰ TIMER EXPIRED for ${incidentNumber}`);
-    console.log(`🚨 AUTO-ESCALATION: Contacting fire department for incident ${incidentNumber}`);
-    
-    // Find the alert to get incident ID
-    const alert = activeAlertsRef.current.find(a => a.incident_number === incidentNumber);
-    
-    if (!alert) {
-      console.error(`❌ Could not find alert ${incidentNumber} for escalation`);
-      return;
-    }
-    
-    // Update UI immediately to show escalated state
-    setActiveAlerts(prev => 
-      prev.map(a => 
-        a.incident_number === incidentNumber 
-          ? { ...a, escalated: true, timeRemaining: 0 }
-          : a
-      )
-    );
-    
-    // Clear interval
-    if (timerIntervals.current[incidentNumber]) {
-      clearInterval(timerIntervals.current[incidentNumber]);
-      delete timerIntervals.current[incidentNumber];
-    }
-    
-    // Call backend API to escalate incident and send email
-    try {
-      console.log(`📡 Calling escalate API for incident ID: ${alert.id}`);
-      
-      const response = await fetch(`${API_BASE_URL}/incidents/${alert.id}/escalate`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        }
-      });
-      
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error(`❌ Escalate API error ${response.status}:`, errorText);
-        throw new Error(`HTTP ${response.status}: ${errorText}`);
-      }
-      
-      const data = await response.json();
-      console.log(`✅ Escalate API response:`, data);
-      
-      if (data.data?.email_sent) {
-        console.log(`📧 FIRE DEPARTMENT EMAIL SENT (AUTO-ESCALATION)`);
-        console.log(`   Recipient: ${data.data.email_recipient}`);
-        console.log(`   Reason: ${data.data.escalation_reason}`);
-        console.log(`   Time since detection: ${data.data.time_since_detection_seconds.toFixed(1)}s`);
-        console.log(`🚨 Fire department has been notified automatically`);
-      } else {
-        console.warn(`⚠️  Email not sent during auto-escalation`);
-        if (data.data?.email_recipient) {
-          console.log(`   Configured recipient: ${data.data.email_recipient}`);
-        }
-      }
-      
-    } catch (error) {
-      console.error('❌ Error calling escalate API:', error.message);
-      console.error('   Fire department email may not have been sent!');
-    }
   }, []);
 
   /**

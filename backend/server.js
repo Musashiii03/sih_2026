@@ -12,6 +12,7 @@ const db = require('./src/models');
 
 // Import API routes
 const { frameRoutes, stationRoutes, incidentRoutes, buildingRoutes, cameraRoutes, organizationRoutes } = require('./src/routes');
+const twilioRoutes = require('./src/routes/twilio.routes');
 
 
 const app = express();
@@ -165,6 +166,9 @@ app.use('/api/cameras', cameraRoutes);
 
 // Mount organization API routes at /api
 app.use('/api/organizations', organizationRoutes);
+
+// Mount twilio API routes at /api
+app.use('/api/twilio', twilioRoutes);
 
 // Health check endpoint (includes database status)
 app.get('/health', async (req, res) => {

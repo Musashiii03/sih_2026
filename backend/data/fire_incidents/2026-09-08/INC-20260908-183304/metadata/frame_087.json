@@ -1,0 +1,50 @@
+{
+  "frame_index": 87,
+  "timestamp": 1788872580.076604,
+  "timestamp_readable": "2026-09-08T18:33:00.076604Z",
+  "fire": {
+    "detected": true,
+    "count": 1,
+    "confidence": 0.31648582220077515,
+    "bounding_boxes": [
+      {
+        "x": 76,
+        "y": 224,
+        "width": 119,
+        "height": 73,
+        "confidence": 0.4084179103374481,
+        "class": "fire"
+      }
+    ]
+  },
+  "smoke": {
+    "detected": true,
+    "count": 1,
+    "bounding_boxes": [
+      {
+        "x": 0,
+        "y": 218,
+        "width": 235,
+        "height": 94,
+        "confidence": 0.7083420157432556,
+        "class": "smoke"
+      }
+    ]
+  },
+  "animals": {
+    "detected": false,
+    "count": 0,
+    "bounding_boxes": []
+  },
+  "humans": {
+    "detected": false,
+    "count": 0,
+    "bounding_boxes": []
+  },
+  "objects": {
+    "detected": false,
+    "count": 0,
+    "bounding_boxes": []
+  },
+  "image_path": "S:\\Programming\\sih_2026\\backend\\src\\ml_models\\..\\..\\data\\fire_incidents\\2026-09-08\\INC-20260908-183304\\frames\\frame_087.jpg"
+}
