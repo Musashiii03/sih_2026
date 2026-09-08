@@ -610,31 +610,33 @@ export default function LoginPage() {
           >
             <div
               style={{
-                width: 38,
-                height: 38,
-                borderRadius: 8,
-                background: 'rgba(254,128,25,0.12)',
-                border: '1px solid rgba(254,128,25,0.3)',
+                width: 56,
+                height: 56,
+                borderRadius: 12,
+                background: 'rgba(254,128,25,0.14)',
+                border: '1.5px solid rgba(254,128,25,0.40)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 overflow: 'hidden',
+                boxShadow: '0 0 18px rgba(254,128,25,0.18)',
               }}
             >
               <img
                 src="/atmarakshak_logo.png"
                 alt="Atmarakshak"
-                style={{ width: 26, height: 26, objectFit: 'contain' }}
+                style={{ width: 40, height: 40, objectFit: 'contain' }}
               />
             </div>
             <div>
               <div
                 style={{
                   fontFamily: "'JetBrains Mono', monospace",
-                  fontSize: 13,
+                  fontSize: 20,
                   fontWeight: 700,
                   color: '#fe8019',
-                  letterSpacing: '0.06em',
+                  letterSpacing: '0.08em',
+                  lineHeight: 1.1,
                 }}
               >
                 ATMARAKSHAK
@@ -642,9 +644,10 @@ export default function LoginPage() {
               <div
                 style={{
                   fontFamily: "'JetBrains Mono', monospace",
-                  fontSize: 9,
-                  color: '#665c54',
-                  letterSpacing: '0.1em',
+                  fontSize: 11,
+                  color: '#a89984',
+                  letterSpacing: '0.10em',
+                  marginTop: 3,
                 }}
               >
                 आत्मरक्षक · v2.4.0

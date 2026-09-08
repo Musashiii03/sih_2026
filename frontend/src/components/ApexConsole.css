@@ -1,273 +1,228 @@
 /* ══════════════════════════════════════════════════════════════════════
-   ATMARAKSHAK OPS CONSOLE — INDUSTRIAL COMMAND CENTER STYLES
-   Visual language: Gruvbox Military Dark / Deep Olive Charcoal Slate
-   Fonts: 'Fraunces' / Georgia for editorial serif titles
-          'Manrope' for clean UI sans
-          'JetBrains Mono' / monospace for codes, telemetry, timestamps
+   ATMARAKSHAK OPS CONSOLE — INDUSTRIAL COMMAND CENTER STYLES v2.0
+   Visual language: Deep Obsidian / Ember Neon / Military Command
+   Fonts: 'Rajdhani' for brand + headings
+           'Manrope' for clean UI sans
+           'JetBrains Mono' for codes, telemetry, timestamps
    ══════════════════════════════════════════════════════════════════════ */
 
+@import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+
 :root {
-  --apex-bg-deep: #161817;
-  --apex-bg-main: #1c1e1d;
-  --apex-bg-surface: #232624;
-  --apex-bg-surface-hover: #2a2e2b;
-  --apex-bg-surface-alt: #1a1d1b;
-  --apex-border: #323633;
-  --apex-border-light: #414642;
-  --apex-border-dim: #272a28;
+  /* Core backgrounds */
+  --apex-bg-deep:          #0d0f0e;
+  --apex-bg-main:          #111412;
+  --apex-bg-surface:       #181b19;
+  --apex-bg-surface-hover: #1e2220;
+  --apex-bg-surface-alt:   #141714;
+  --apex-bg-card:          #161918;
 
-  --apex-text-primary: #eae7df;
-  --apex-text-secondary: #c5c2b8;
-  --apex-text-muted: #8b928a;
-  --apex-text-dim: #646b63;
+  /* Borders */
+  --apex-border:       #252a27;
+  --apex-border-light: #333937;
+  --apex-border-dim:   #1c1f1d;
+  --apex-border-glow:  rgba(254, 128, 25, 0.25);
 
-  --apex-red: #fb4934;
-  --apex-red-dim: rgba(251, 73, 52, 0.15);
-  --apex-red-border: rgba(251, 73, 52, 0.35);
+  /* Text */
+  --apex-text-primary:   #f0ede4;
+  --apex-text-secondary: #c0bdb3;
+  --apex-text-muted:     #767d74;
+  --apex-text-dim:       #4a5048;
 
-  --apex-amber: #fabd2f;
-  --apex-amber-dim: rgba(250, 189, 47, 0.15);
+  /* Brand accent */
+  --apex-orange:        #fe8019;
+  --apex-orange-dim:    rgba(254, 128, 25, 0.12);
+  --apex-orange-border: rgba(254, 128, 25, 0.35);
+  --apex-orange-glow:   rgba(254, 128, 25, 0.2);
+
+  /* Semantic colors */
+  --apex-red:         #fb4934;
+  --apex-red-dim:     rgba(251, 73, 52, 0.13);
+  --apex-red-border:  rgba(251, 73, 52, 0.35);
+  --apex-red-glow:    rgba(251, 73, 52, 0.25);
+
+  --apex-amber:        #fabd2f;
+  --apex-amber-dim:    rgba(250, 189, 47, 0.12);
   --apex-amber-border: rgba(250, 189, 47, 0.35);
 
-  --apex-green: #4ade80;
-  --apex-green-dim: rgba(74, 222, 128, 0.12);
+  --apex-green:        #4ade80;
+  --apex-green-dim:    rgba(74, 222, 128, 0.1);
   --apex-green-border: rgba(74, 222, 128, 0.3);
+  --apex-green-glow:   rgba(74, 222, 128, 0.2);
 
-  --apex-blue: #83a598;
-  --apex-blue-dim: rgba(131, 165, 152, 0.15);
-  --apex-blue-border: rgba(131, 165, 152, 0.35);
+  --apex-blue:        #83a598;
+  --apex-blue-dim:    rgba(131, 165, 152, 0.13);
+  --apex-blue-border: rgba(131, 165, 152, 0.3);
+
+  /* Sidebar width */
+  --sidebar-w: 272px;
 }
 
+*, *::before, *::after { box-sizing: border-box; }
+
+/* ════════════════════════════════════════════════════════════════════════
+   ROOT LAYOUT
+   ════════════════════════════════════════════════════════════════════════ */
 .apex-app-root {
   display: flex;
   flex-direction: row;
   min-height: 100vh;
   width: 100vw;
   background-color: var(--apex-bg-main);
+  background-image:
+    radial-gradient(ellipse 80% 60% at 50% -20%, rgba(254,128,25,0.05) 0%, transparent 60%),
+    radial-gradient(ellipse 40% 40% at 100% 100%, rgba(251,73,52,0.04) 0%, transparent 50%);
   color: var(--apex-text-primary);
   font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   overflow: hidden;
-  box-sizing: border-box;
   position: relative;
 }
 
-/* ─── GLASSY SIDEBAR ────────────────────────────────────────────────── */
+/* ════════════════════════════════════════════════════════════════════════
+   SIDEBAR
+   ════════════════════════════════════════════════════════════════════════ */
 .glassy-sidebar {
-  width: 280px;
-  min-width: 280px;
+  width: var(--sidebar-w);
+  min-width: var(--sidebar-w);
   height: 100vh;
   position: fixed;
   left: 0;
   top: 0;
-  background: rgba(22, 24, 23, 0.85);
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
-  border-right: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(13, 15, 14, 0.92);
+  backdrop-filter: blur(32px) saturate(1.4);
+  -webkit-backdrop-filter: blur(32px) saturate(1.4);
+  border-right: 1px solid rgba(255, 255, 255, 0.07);
   display: flex;
   flex-direction: column;
-  padding: 32px 20px;
-  box-sizing: border-box;
+  padding: 28px 16px;
   z-index: 100;
-  box-shadow: 4px 0 24px rgba(0, 0, 0, 0.3);
+  box-shadow: 4px 0 40px rgba(0, 0, 0, 0.5), inset -1px 0 0 rgba(255,255,255,0.04);
 }
 
+/* ── Brand ── */
 .sidebar-brand {
   display: flex;
   align-items: center;
   gap: 12px;
-  margin-bottom: 40px;
+  margin-bottom: 32px;
   padding-bottom: 24px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 }
 
 .sidebar-logo {
-  width: 40px;
-  height: 40px;
-  border-radius: 10px;
-  background: linear-gradient(135deg, rgba(254, 128, 25, 0.2) 0%, rgba(251, 73, 52, 0.25) 100%);
-  border: 1px solid rgba(254, 128, 25, 0.4);
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, rgba(254,128,25,0.2) 0%, rgba(251,73,52,0.25) 100%);
+  border: 1px solid rgba(254,128,25,0.4);
   padding: 6px;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 4px 16px rgba(254, 128, 25, 0.2);
+  box-shadow: 0 4px 20px rgba(254,128,25,0.25), inset 0 1px 0 rgba(255,255,255,0.1);
+  flex-shrink: 0;
 }
 
 .sidebar-brand-name {
-  font-family: 'Rajdhani', sans-serif;
-  font-size: 20px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 15px;
   font-weight: 700;
   letter-spacing: 0.08em;
   color: #f7f5ed;
   text-transform: uppercase;
 }
 
+/* ── Navigation ── */
 .sidebar-nav {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  flex: 1;
+  gap: 4px;
 }
 
 .sidebar-nav-btn {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 14px 18px;
+  padding: 12px 16px;
   background: transparent;
   border: 1px solid transparent;
-  border-radius: 12px;
-  font-size: 15px;
+  border-radius: 10px;
+  font-size: 14px;
   font-weight: 600;
   color: var(--apex-text-muted);
   cursor: pointer;
   transition: all 0.2s ease;
   position: relative;
   text-align: left;
+  width: 100%;
 }
 
 .sidebar-nav-btn:hover {
   color: var(--apex-text-primary);
-  background: rgba(255, 255, 255, 0.05);
-  border-color: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.08);
 }
 
 .sidebar-nav-btn.active {
   color: #ffffff;
-  background: rgba(254, 128, 25, 0.15);
-  border-color: rgba(254, 128, 25, 0.4);
-  box-shadow: 0 4px 16px rgba(254, 128, 25, 0.15);
+  background: linear-gradient(135deg, rgba(254,128,25,0.18) 0%, rgba(251,73,52,0.1) 100%);
+  border-color: rgba(254,128,25,0.45);
+  box-shadow: 0 4px 20px rgba(254,128,25,0.18), inset 0 1px 0 rgba(255,255,255,0.08);
 }
 
 .sidebar-nav-btn.active svg {
   color: #fe8019;
+  filter: drop-shadow(0 0 4px rgba(254,128,25,0.5));
 }
 
 .sidebar-badge {
   position: absolute;
-  top: 10px;
-  right: 14px;
-  background: #fb4934;
+  top: 9px;
+  right: 12px;
+  background: linear-gradient(135deg, #fb4934 0%, #d63020 100%);
   color: #fff;
   font-family: 'JetBrains Mono', monospace;
   font-size: 10px;
   font-weight: 700;
-  padding: 3px 7px;
+  padding: 3px 8px;
   border-radius: 10px;
   line-height: 1;
   min-width: 20px;
   text-align: center;
-  box-shadow: 0 2px 8px rgba(251, 73, 52, 0.5);
+  box-shadow: 0 2px 10px rgba(251,73,52,0.55);
+  animation: badgePulse 2s ease-in-out infinite;
 }
 
-.sidebar-profile {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 16px;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 12px;
-  margin-top: 20px;
+@keyframes badgePulse {
+  0%, 100% { box-shadow: 0 2px 10px rgba(251,73,52,0.55); }
+  50% { box-shadow: 0 2px 18px rgba(251,73,52,0.8); }
 }
 
-.sidebar-profile-avatar {
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #2b302c 0%, #373d38 100%);
-  border: 2px solid rgba(254, 128, 25, 0.3);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 700;
-  font-size: 14px;
-  color: var(--apex-text-primary);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-  flex-shrink: 0;
-}
-
-.sidebar-profile-info {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.sidebar-profile-name {
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--apex-text-primary);
-  line-height: 1.2;
-}
-
-.sidebar-profile-role {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 11px;
-  color: var(--apex-text-muted);
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-}
-
-/* Sidebar Action Buttons */
-.sidebar-actions {
-  margin-top: 24px;
-  padding-top: 20px;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.sidebar-action-btn {
-  width: 100%;
-  padding: 12px 18px;
-  background: rgba(254, 128, 25, 0.08);
-  border: 1px solid rgba(254, 128, 25, 0.3);
-  border-radius: 10px;
-  color: #fe8019;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  text-align: center;
-}
-
-.sidebar-action-btn:hover {
-  background: rgba(254, 128, 25, 0.15);
-  border-color: rgba(254, 128, 25, 0.5);
-  box-shadow: 0 4px 12px rgba(254, 128, 25, 0.2);
-  transform: translateY(-1px);
-}
-
-.sidebar-action-btn:active {
-  transform: translateY(0);
-}
-
-/* Sidebar Organizations & Buildings Section */
+/* ── Sidebar Section: Orgs + Buildings ── */
 .sidebar-section {
-  margin-top: 0;
-  padding-top: 0;
-  border-top: none;
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(255,255,255,0.05);
   flex: 1;
   overflow-y: auto;
+  overflow-x: hidden;
 }
 
 .sidebar-section-title {
   font-family: 'JetBrains Mono', monospace;
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 700;
-  color: var(--apex-text-muted);
-  letter-spacing: 0.08em;
+  color: var(--apex-text-dim);
+  letter-spacing: 0.12em;
   text-transform: uppercase;
   margin-bottom: 12px;
-  margin-top: 0;
-  padding: 0 8px;
+  padding: 0 6px;
 }
 
 .sidebar-tree {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 2px;
 }
 
 .tree-item {
@@ -279,20 +234,21 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 10px 12px;
+  padding: 9px 10px;
   border-radius: 8px;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.18s;
   user-select: none;
+  position: relative;
 }
 
 .tree-org-item:hover {
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.04);
 }
 
 .tree-chevron {
   flex-shrink: 0;
-  color: var(--apex-text-muted);
+  color: var(--apex-text-dim);
   transition: transform 0.2s;
 }
 
@@ -304,21 +260,13 @@
   transform: rotate(-90deg);
 }
 
-.tree-icon {
-  flex-shrink: 0;
-}
-
-.tree-icon.org-icon {
-  color: #fe8019;
-}
-
-.tree-icon.building-icon {
-  color: #83a598;
-}
+.tree-icon { flex-shrink: 0; }
+.tree-icon.org-icon { color: #fe8019; }
+.tree-icon.building-icon { color: #83a598; }
 
 .tree-label {
   flex: 1;
-  font-size: 13px;
+  font-size: 12.5px;
   font-weight: 500;
   color: var(--apex-text-secondary);
   white-space: nowrap;
@@ -326,18 +274,16 @@
   text-overflow: ellipsis;
 }
 
-.tree-org-item:hover .tree-label {
-  color: var(--apex-text-primary);
-}
+.tree-org-item:hover .tree-label { color: var(--apex-text-primary); }
 
 .tree-count {
   font-family: 'JetBrains Mono', monospace;
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 600;
   color: var(--apex-text-dim);
-  background: rgba(255, 255, 255, 0.05);
-  padding: 2px 8px;
-  border-radius: 10px;
+  background: rgba(255,255,255,0.05);
+  padding: 2px 7px;
+  border-radius: 8px;
   flex-shrink: 0;
 }
 
@@ -345,146 +291,453 @@
   display: flex;
   flex-direction: column;
   gap: 2px;
-  margin-left: 24px;
+  margin-left: 20px;
   padding-left: 12px;
-  border-left: 1px solid rgba(255, 255, 255, 0.08);
+  border-left: 1px solid rgba(255,255,255,0.07);
 }
 
 .tree-building-item {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 8px 12px;
-  border-radius: 6px;
+  padding: 8px 10px;
+  border-radius: 7px;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.18s;
+  border: 1px solid transparent;
 }
 
 .tree-building-item:hover {
-  background: rgba(131, 165, 152, 0.1);
+  background: rgba(131,165,152,0.08);
+  border-color: rgba(131,165,152,0.15);
 }
 
-.tree-building-item:hover .tree-label {
+.tree-building-item:hover .tree-label { color: var(--apex-text-primary); }
+.tree-building-direct { padding: 9px 10px; }
+
+/* Scrollbar */
+.sidebar-section::-webkit-scrollbar { width: 4px; }
+.sidebar-section::-webkit-scrollbar-track { background: transparent; }
+.sidebar-section::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 2px; }
+.sidebar-section::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.14); }
+
+/* ── Sidebar Action Buttons ── */
+.sidebar-actions {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(255,255,255,0.06);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.sidebar-action-btn {
+  width: 100%;
+  padding: 10px 16px;
+  background: rgba(254,128,25,0.08);
+  border: 1px solid rgba(254,128,25,0.25);
+  border-radius: 9px;
+  color: #fe8019;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: center;
+}
+
+.sidebar-action-btn:hover {
+  background: rgba(254,128,25,0.16);
+  border-color: rgba(254,128,25,0.5);
+  box-shadow: 0 4px 16px rgba(254,128,25,0.2);
+  transform: translateY(-1px);
+}
+
+.sidebar-action-btn:active { transform: translateY(0); }
+
+/* ── Profile ── */
+.sidebar-profile {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 12px;
+  margin-top: 16px;
+  transition: all 0.2s;
+}
+
+.sidebar-profile:hover {
+  background: rgba(255,255,255,0.05);
+  border-color: rgba(255,255,255,0.1);
+}
+
+.sidebar-profile-avatar {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #2a3030 0%, #384038 100%);
+  border: 2px solid rgba(254,128,25,0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 13px;
+  color: #fe8019;
+  box-shadow: 0 0 14px rgba(254,128,25,0.2);
+  flex-shrink: 0;
+}
+
+.sidebar-profile-info { display: flex; flex-direction: column; gap: 2px; }
+
+.sidebar-profile-name {
+  font-size: 13px;
+  font-weight: 700;
   color: var(--apex-text-primary);
+  line-height: 1.2;
 }
 
-.tree-building-direct {
-  padding: 10px 12px;
+.sidebar-profile-role {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  color: var(--apex-text-muted);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
 }
 
-/* Scrollbar for sidebar section */
-.sidebar-section::-webkit-scrollbar {
-  width: 6px;
-}
-
-.sidebar-section::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.sidebar-section::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 3px;
-}
-
-.sidebar-section::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.15);
-}
-
-/* ─── MAIN CONTENT VIEWPORT ────────────────────────────────────────── */
+/* ════════════════════════════════════════════════════════════════════════
+   MAIN CONTENT VIEWPORT
+   ════════════════════════════════════════════════════════════════════════ */
 .apex-main-viewport {
   flex: 1;
   display: flex;
   flex-direction: column;
   min-height: 100vh;
   width: 100%;
-  margin-left: 280px;
+  margin-left: var(--sidebar-w);
   overflow: hidden;
   background-color: var(--apex-bg-main);
 }
 
-/* ─── CONTENT CONTAINER ────────────────────────────────────────────── */
-.apex-content-area-new {
-  flex: 1;
-  padding: 32px 40px;
-  overflow-y: auto;
-  box-sizing: border-box;
+/* ── Top Command Bar ── */
+.apex-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 36px;
+  height: 60px;
+  min-height: 60px;
+  background: rgba(13,15,14,0.8);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  box-shadow: 0 1px 0 rgba(254,128,25,0.08);
+  position: sticky;
+  top: 0;
+  z-index: 50;
 }
 
-/* ─── TAB 1: COMMAND OVERVIEW ───────────────────────────────────────── */
+.apex-topbar-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.apex-topbar-title {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--apex-text-primary);
+  letter-spacing: 0.05em;
+}
+
+.apex-topbar-subtitle {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--apex-text-muted);
+  letter-spacing: 0.04em;
+}
+
+.apex-topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.apex-system-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  background: rgba(74,222,128,0.07);
+  border: 1px solid rgba(74,222,128,0.2);
+  border-radius: 20px;
+}
+
+.apex-system-status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #4ade80;
+  box-shadow: 0 0 6px rgba(74,222,128,0.8);
+  animation: statusPulse 2s ease-in-out infinite;
+}
+
+@keyframes statusPulse {
+  0%, 100% { opacity: 1; box-shadow: 0 0 6px rgba(74,222,128,0.8); }
+  50% { opacity: 0.7; box-shadow: 0 0 12px rgba(74,222,128,1); }
+}
+
+.apex-system-status-text {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 700;
+  color: #4ade80;
+  letter-spacing: 0.06em;
+}
+
+.apex-topbar-clock {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--apex-text-secondary);
+  letter-spacing: 0.06em;
+  min-width: 80px;
+  text-align: right;
+}
+
+.apex-signout-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: rgba(251,73,52,0.08);
+  border: 1px solid rgba(251,73,52,0.25);
+  border-radius: 8px;
+  color: var(--apex-red);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.18s;
+}
+
+.apex-signout-btn:hover {
+  background: rgba(251,73,52,0.16);
+  border-color: rgba(251,73,52,0.5);
+  box-shadow: 0 2px 12px rgba(251,73,52,0.25);
+}
+
+/* ── Content Area ── */
+.apex-content-area-new {
+  flex: 1;
+  padding: 28px 36px;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.apex-content-area-new::-webkit-scrollbar { width: 6px; }
+.apex-content-area-new::-webkit-scrollbar-track { background: transparent; }
+.apex-content-area-new::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 3px; }
+.apex-content-area-new::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.14); }
+
+/* ── Page header ── */
+.apex-page-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  margin-bottom: 24px;
+}
+
+.apex-page-title {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--apex-text-primary);
+  letter-spacing: 0.04em;
+  line-height: 1;
+}
+
+.apex-page-meta {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--apex-text-muted);
+  margin-top: 4px;
+  letter-spacing: 0.04em;
+}
+
+/* ════════════════════════════════════════════════════════════════════════
+   TAB 1 — COMMAND OVERVIEW
+   ════════════════════════════════════════════════════════════════════════ */
+
+/* KPI Row */
 .apex-kpi-row {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 16px;
-  margin-bottom: 24px;
+  gap: 14px;
+  margin-bottom: 22px;
 }
 
 .apex-kpi-card {
   background: var(--apex-bg-surface);
   border: 1px solid var(--apex-border);
-  border-radius: 8px;
-  padding: 18px 20px;
+  border-radius: 12px;
+  padding: 20px 22px 18px;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+  gap: 6px;
   position: relative;
   overflow: hidden;
+  transition: all 0.2s ease;
+  cursor: default;
 }
 
-.apex-kpi-label {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--apex-text-muted);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+.apex-kpi-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, rgba(254,128,25,0.5), transparent);
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.apex-kpi-card:hover {
+  border-color: var(--apex-border-light);
+  background: var(--apex-bg-surface-hover);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 30px rgba(0,0,0,0.3);
+}
+
+.apex-kpi-card:hover::before { opacity: 1; }
+
+/* KPI card accent variants */
+.apex-kpi-card.kpi-danger {
+  border-color: rgba(251,73,52,0.25);
+  background: linear-gradient(135deg, var(--apex-bg-surface) 0%, rgba(251,73,52,0.05) 100%);
+}
+.apex-kpi-card.kpi-danger::before {
+  background: linear-gradient(90deg, transparent, rgba(251,73,52,0.6), transparent);
+  opacity: 1;
+}
+
+.apex-kpi-card.kpi-success {
+  border-color: rgba(74,222,128,0.2);
+  background: linear-gradient(135deg, var(--apex-bg-surface) 0%, rgba(74,222,128,0.04) 100%);
+}
+.apex-kpi-card.kpi-success::before {
+  background: linear-gradient(90deg, transparent, rgba(74,222,128,0.5), transparent);
+  opacity: 1;
+}
+
+.apex-kpi-card.kpi-blue {
+  border-color: rgba(131,165,152,0.2);
+}
+.apex-kpi-card.kpi-blue::before {
+  background: linear-gradient(90deg, transparent, rgba(131,165,152,0.5), transparent);
+  opacity: 1;
+}
+
+.apex-kpi-icon-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
 }
 
-.apex-kpi-value {
-  font-size: 38px;
-  font-weight: 700;
-  color: #f7f5ed;
-  line-height: 1.1;
-  margin: 10px 0 4px 0;
-  letter-spacing: -0.02em;
+.apex-kpi-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 9px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
 }
+
+.apex-kpi-icon.danger { background: rgba(251,73,52,0.15); color: #fb4934; }
+.apex-kpi-icon.success { background: rgba(74,222,128,0.12); color: #4ade80; }
+.apex-kpi-icon.amber { background: rgba(250,189,47,0.12); color: #fabd2f; }
+.apex-kpi-icon.blue { background: rgba(131,165,152,0.12); color: #83a598; }
+
+.apex-kpi-live-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #fb4934;
+  box-shadow: 0 0 8px rgba(251,73,52,0.7);
+  animation: apexDotPulse 1.4s ease-in-out infinite;
+}
+
+.apex-kpi-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--apex-text-muted);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-top: 14px;
+}
+
+.apex-kpi-value {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 42px;
+  font-weight: 700;
+  color: var(--apex-text-primary);
+  line-height: 1;
+  letter-spacing: -0.01em;
+}
+
+.apex-kpi-value.danger { color: #fb4934; text-shadow: 0 0 20px rgba(251,73,52,0.35); }
+.apex-kpi-value.success { color: #4ade80; text-shadow: 0 0 20px rgba(74,222,128,0.25); }
 
 .apex-kpi-sub {
   font-size: 12px;
   color: var(--apex-text-muted);
+  font-weight: 500;
+  line-height: 1.3;
 }
 
 .apex-kpi-bar {
   height: 3px;
-  background: #2a2e2b;
+  background: rgba(255,255,255,0.06);
   border-radius: 2px;
-  margin-top: 8px;
+  margin-top: 4px;
   overflow: hidden;
 }
 
 .apex-kpi-bar-fill {
   height: 100%;
-  background: #4ade80;
+  background: linear-gradient(90deg, #4ade80 0%, #22d3ee 100%);
   border-radius: 2px;
+  box-shadow: 0 0 8px rgba(74,222,128,0.4);
+  transition: width 1s ease;
 }
 
-/* Overview Two-Column Matrix & Readiness */
+/* Overview Two-Column */
 .apex-overview-grid {
   display: grid;
   grid-template-columns: 1.8fr 1fr;
-  gap: 20px;
-  margin-bottom: 24px;
+  gap: 16px;
+  margin-bottom: 22px;
 }
 
+/* Panel base */
 .apex-panel {
   background: var(--apex-bg-surface);
   border: 1px solid var(--apex-border);
-  border-radius: 8px;
+  border-radius: 12px;
   padding: 20px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 2px 16px rgba(0,0,0,0.2);
+  position: relative;
+  overflow: hidden;
+}
+
+.apex-panel::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.06), transparent);
 }
 
 .apex-panel-header {
@@ -492,6 +745,8 @@
   align-items: center;
   justify-content: space-between;
   margin-bottom: 18px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--apex-border-dim);
 }
 
 .apex-panel-title {
@@ -499,70 +754,75 @@
   font-size: 11px;
   font-weight: 700;
   color: var(--apex-text-secondary);
-  letter-spacing: 0.08em;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.apex-panel-title::before {
+  content: '';
+  width: 3px;
+  height: 14px;
+  background: linear-gradient(180deg, #fe8019 0%, #fb4934 100%);
+  border-radius: 2px;
+  flex-shrink: 0;
 }
 
 .apex-tag-badge {
   font-family: 'JetBrains Mono', monospace;
   font-size: 10px;
-  font-weight: 600;
+  font-weight: 700;
   color: var(--apex-text-muted);
-  background: var(--apex-bg-surface-alt);
+  background: rgba(255,255,255,0.04);
   border: 1px solid var(--apex-border);
-  padding: 2px 8px;
-  border-radius: 4px;
+  padding: 3px 10px;
+  border-radius: 6px;
+  letter-spacing: 0.04em;
 }
 
-.safety-matrix-section {
-  margin-bottom: 24px;
-}
-
-.safety-matrix-section:last-child {
-  margin-bottom: 0;
-}
+/* Safety matrix sections */
+.safety-matrix-section { margin-bottom: 20px; }
+.safety-matrix-section:last-child { margin-bottom: 0; }
 
 .safety-section-label {
   font-family: 'JetBrains Mono', monospace;
   font-size: 10px;
   font-weight: 700;
-  color: var(--apex-text-muted);
-  letter-spacing: 0.08em;
+  color: var(--apex-text-dim);
+  letter-spacing: 0.1em;
   text-transform: uppercase;
-  margin-bottom: 12px;
-  padding: 0 4px;
+  margin-bottom: 10px;
+  padding: 0 2px;
 }
 
 .apex-org-card-list {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
 }
 
 .apex-org-card {
   background: var(--apex-bg-surface-alt);
   border: 1px solid var(--apex-border-dim);
-  border-radius: 6px;
-  padding: 14px 18px;
+  border-radius: 9px;
+  padding: 13px 16px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  transition: all 0.15s;
+  transition: all 0.18s;
+  cursor: default;
 }
 
 .apex-org-card:hover {
   border-color: var(--apex-border-light);
-  background: #1f2320;
-}
-
-.apex-org-card.selected {
-  border-color: var(--apex-border-light);
-  background: #242925;
-  box-shadow: 0 0 0 1px var(--apex-border-light);
+  background: rgba(255,255,255,0.02);
+  transform: translateX(2px);
 }
 
 .apex-org-name {
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 600;
   color: var(--apex-text-primary);
   display: flex;
@@ -574,60 +834,43 @@
   font-family: 'JetBrains Mono', monospace;
   font-size: 11px;
   color: var(--apex-text-muted);
-  margin-top: 4px;
+  margin-top: 3px;
 }
 
 .apex-org-stats {
   display: flex;
   align-items: center;
-  gap: 32px;
+  gap: 28px;
 }
 
-.apex-stat-col {
-  text-align: right;
-}
+.apex-stat-col { text-align: right; }
 
 .apex-stat-label {
   font-family: 'JetBrains Mono', monospace;
-  font-size: 10px;
-  color: var(--apex-text-muted);
-  letter-spacing: 0.04em;
+  font-size: 9px;
+  color: var(--apex-text-dim);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
   margin-bottom: 2px;
 }
 
 .apex-stat-val {
+  font-family: 'Rajdhani', sans-serif;
   font-size: 16px;
   font-weight: 700;
 }
 
-.apex-stat-val.green {
-  color: var(--apex-green);
-}
+.apex-stat-val.green { color: var(--apex-green); }
+.apex-stat-val.amber { color: var(--apex-amber); }
 
-.apex-stat-val.amber {
-  color: var(--apex-amber);
-}
-
-.apex-selected-org-bar {
-  margin-top: 20px;
-  padding: 12px 16px;
-  background: var(--apex-bg-surface-alt);
-  border: 1px solid var(--apex-border-dim);
-  border-radius: 6px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
+/* Readiness items */
 .apex-readiness-item {
   padding: 14px 0;
   border-bottom: 1px solid var(--apex-border-dim);
 }
 
-.apex-readiness-item:last-child {
-  border-bottom: none;
-  padding-bottom: 0;
-}
+.apex-readiness-item:first-child { padding-top: 4px; }
+.apex-readiness-item:last-child { border-bottom: none; padding-bottom: 0; }
 
 .apex-readiness-title-row {
   display: flex;
@@ -636,26 +879,38 @@
   margin-bottom: 6px;
 }
 
-/* ─── TAB 2: LIVE MONITORING ───────────────────────────────────────── */
+.apex-pulse-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #4ade80;
+  box-shadow: 0 0 8px rgba(74,222,128,0.7);
+  animation: statusPulse 1.8s ease-in-out infinite;
+}
+
+/* ════════════════════════════════════════════════════════════════════════
+   TAB 2 — LIVE MONITORING
+   ════════════════════════════════════════════════════════════════════════ */
 .apex-monitoring-grid {
   display: grid;
   grid-template-columns: 1.85fr 1fr;
-  gap: 20px;
+  gap: 16px;
 }
 
 .apex-cctv-container {
-  background: #0d0f0e;
+  background: #080a09;
   border: 1px solid var(--apex-border);
-  border-radius: 8px;
+  border-radius: 12px;
   overflow: hidden;
   display: flex;
   flex-direction: column;
+  box-shadow: 0 4px 30px rgba(0,0,0,0.4);
 }
 
 .apex-cctv-header {
-  padding: 12px 18px;
+  padding: 11px 18px;
   background: var(--apex-bg-deep);
-  border-bottom: 1px solid var(--apex-border-dim);
+  border-bottom: 1px solid rgba(255,255,255,0.05);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -665,7 +920,7 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 700;
   color: #f5f4ed;
 }
@@ -686,7 +941,13 @@
   height: 7px;
   border-radius: 50%;
   background: #fb4934;
-  animation: apexDotPulse 1.2s infinite ease-in-out;
+  box-shadow: 0 0 8px rgba(251,73,52,0.7);
+  animation: apexDotPulse 1.2s ease-in-out infinite;
+}
+
+@keyframes apexDotPulse {
+  0%, 100% { opacity: 1; box-shadow: 0 0 8px rgba(251,73,52,0.7); }
+  50% { opacity: 0.6; box-shadow: 0 0 14px rgba(251,73,52,1); }
 }
 
 .apex-cctv-clock {
@@ -700,7 +961,7 @@
   position: relative;
   width: 100%;
   height: 420px;
-  background: #111312;
+  background: #080a09;
   overflow: hidden;
   display: flex;
   align-items: center;
@@ -711,23 +972,23 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
-  filter: contrast(1.08) brightness(0.92);
+  filter: contrast(1.1) brightness(0.9) saturate(0.85);
 }
 
 .apex-scanlines {
   position: absolute;
   inset: 0;
   pointer-events: none;
-  background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%);
+  background: linear-gradient(rgba(18,16,16,0) 50%, rgba(0,0,0,0.2) 50%);
   background-size: 100% 4px;
-  opacity: 0.6;
+  opacity: 0.55;
 }
 
 .apex-cctv-hud-crosshair {
   position: absolute;
   inset: 0;
   pointer-events: none;
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255,255,255,0.04);
 }
 
 .apex-cctv-hud-camid {
@@ -735,11 +996,14 @@
   top: 14px;
   left: 18px;
   font-family: 'JetBrains Mono', monospace;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 700;
-  color: rgba(255, 255, 255, 0.7);
+  color: rgba(255,255,255,0.65);
   letter-spacing: 0.06em;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+  text-shadow: 0 1px 4px rgba(0,0,0,0.9);
+  background: rgba(0,0,0,0.4);
+  padding: 3px 8px;
+  border-radius: 4px;
 }
 
 .apex-bounding-box {
@@ -749,19 +1013,19 @@
   width: 36%;
   height: 46%;
   border: 2px solid #fb4934;
-  box-shadow: 0 0 12px rgba(251, 73, 52, 0.4);
+  box-shadow: 0 0 12px rgba(251,73,52,0.4), inset 0 0 12px rgba(251,73,52,0.05);
   pointer-events: none;
   animation: apexBoxPulse 1.5s infinite alternate;
 }
 
 @keyframes apexBoxPulse {
-  0% { box-shadow: 0 0 8px rgba(251, 73, 52, 0.3); }
-  100% { box-shadow: 0 0 16px rgba(251, 73, 52, 0.7); }
+  0% { box-shadow: 0 0 8px rgba(251,73,52,0.3), inset 0 0 8px rgba(251,73,52,0.03); }
+  100% { box-shadow: 0 0 20px rgba(251,73,52,0.7), inset 0 0 16px rgba(251,73,52,0.08); }
 }
 
 .apex-bounding-badge {
   position: absolute;
-  top: -24px;
+  top: -22px;
   left: -2px;
   background: #fb4934;
   color: #ffffff;
@@ -770,6 +1034,7 @@
   font-weight: 700;
   padding: 2px 8px;
   letter-spacing: 0.04em;
+  border-radius: 3px 3px 0 0;
 }
 
 .apex-bounding-sub {
@@ -792,23 +1057,24 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 4px 12px;
-  border-radius: 4px;
+  padding: 5px 14px;
+  border-radius: 6px;
   font-family: 'JetBrains Mono', monospace;
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.06em;
+  backdrop-filter: blur(8px);
 }
 
 .apex-cctv-bottom-bar.normal {
-  background: rgba(18, 26, 20, 0.85);
-  border: 1px solid rgba(74, 222, 128, 0.3);
+  background: rgba(14,26,18,0.88);
+  border: 1px solid rgba(74,222,128,0.3);
   color: #4ade80;
 }
 
 .apex-cctv-bottom-bar.hazard {
-  background: rgba(40, 18, 16, 0.9);
-  border: 1px solid rgba(251, 73, 52, 0.5);
+  background: rgba(40,14,12,0.92);
+  border: 1px solid rgba(251,73,52,0.5);
   color: #fb4934;
   animation: apexFlash 1s infinite alternate;
 }
@@ -821,17 +1087,17 @@
 .apex-camera-tabs {
   padding: 12px 18px;
   background: var(--apex-bg-deep);
-  border-top: 1px solid var(--apex-border-dim);
+  border-top: 1px solid rgba(255,255,255,0.05);
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
 }
 
 .apex-cam-tab-btn {
-  background: var(--apex-bg-surface);
+  background: rgba(255,255,255,0.03);
   border: 1px solid var(--apex-border);
   padding: 8px 14px;
-  border-radius: 6px;
+  border-radius: 8px;
   cursor: pointer;
   display: flex;
   flex-direction: column;
@@ -841,11 +1107,13 @@
 
 .apex-cam-tab-btn:hover {
   border-color: var(--apex-border-light);
+  background: rgba(255,255,255,0.05);
 }
 
 .apex-cam-tab-btn.active {
   border-color: #fe8019;
-  background: #252824;
+  background: rgba(254,128,25,0.1);
+  box-shadow: 0 0 12px rgba(254,128,25,0.15);
 }
 
 .apex-cam-tab-id {
@@ -855,250 +1123,294 @@
   color: var(--apex-text-primary);
 }
 
-.apex-cam-tab-room {
-  font-size: 11px;
-  color: var(--apex-text-muted);
-}
+.apex-cam-tab-room { font-size: 11px; color: var(--apex-text-muted); }
 
+/* Simulator */
 .apex-sim-btn {
   width: 100%;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px 16px;
-  background: var(--apex-bg-surface-alt);
+  padding: 13px 16px;
+  background: rgba(255,255,255,0.025);
   border: 1px solid var(--apex-border);
-  border-radius: 6px;
+  border-radius: 9px;
   font-family: 'JetBrains Mono', monospace;
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.06em;
   color: var(--apex-text-primary);
   cursor: pointer;
-  transition: all 0.15s;
+  transition: all 0.18s;
   margin-bottom: 10px;
 }
 
-.apex-sim-btn:hover {
-  background: #222623;
-  border-color: var(--apex-border-light);
-}
+.apex-sim-btn:hover { background: rgba(255,255,255,0.04); border-color: var(--apex-border-light); }
 
-.apex-sim-btn.fire {
-  color: #fb4934;
-}
-.apex-sim-btn.fire:hover {
-  border-color: #fb4934;
-  background: rgba(251, 73, 52, 0.08);
-}
+.apex-sim-btn.fire { color: #fb4934; }
+.apex-sim-btn.fire:hover { border-color: rgba(251,73,52,0.5); background: rgba(251,73,52,0.08); box-shadow: 0 0 16px rgba(251,73,52,0.15); }
 
-.apex-sim-btn.smoke {
-  color: #fabd2f;
-}
-.apex-sim-btn.smoke:hover {
-  border-color: #fabd2f;
-  background: rgba(250, 189, 47, 0.08);
-}
+.apex-sim-btn.smoke { color: #fabd2f; }
+.apex-sim-btn.smoke:hover { border-color: rgba(250,189,47,0.5); background: rgba(250,189,47,0.08); box-shadow: 0 0 16px rgba(250,189,47,0.12); }
 
-.apex-sim-btn.water {
-  color: #83a598;
-}
-.apex-sim-btn.water:hover {
-  border-color: #83a598;
-  background: rgba(131, 165, 152, 0.08);
-}
+.apex-sim-btn.water { color: #83a598; }
+.apex-sim-btn.water:hover { border-color: rgba(131,165,152,0.5); background: rgba(131,165,152,0.08); box-shadow: 0 0 16px rgba(131,165,152,0.12); }
 
 .apex-hazard-confirmed-box {
   margin-top: 16px;
   padding: 18px;
-  background: rgba(36, 18, 16, 0.6);
-  border: 1px solid rgba(251, 73, 52, 0.4);
-  border-radius: 6px;
+  background: rgba(251,73,52,0.05);
+  border: 1px solid rgba(251,73,52,0.35);
+  border-radius: 10px;
+  box-shadow: 0 0 20px rgba(251,73,52,0.1);
 }
 
 .apex-create-incident-btn {
   width: 100%;
   margin-top: 14px;
-  padding: 10px 14px;
-  background: #fe8019;
-  border: 1px solid #ff9b44;
-  border-radius: 6px;
+  padding: 11px 16px;
+  background: linear-gradient(135deg, #fe8019 0%, #fb4934 100%);
+  border: none;
+  border-radius: 8px;
   font-family: 'JetBrains Mono', monospace;
   font-size: 11px;
   font-weight: 700;
-  color: #181b19;
-  letter-spacing: 0.04em;
+  color: #fff;
+  letter-spacing: 0.05em;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  transition: all 0.15s;
+  transition: all 0.18s;
+  box-shadow: 0 4px 16px rgba(254,128,25,0.3);
 }
 
 .apex-create-incident-btn:hover {
-  background: #ffa04d;
-  box-shadow: 0 0 12px rgba(254, 128, 25, 0.4);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 24px rgba(254,128,25,0.45);
 }
 
-/* ─── TAB 3: INCIDENT MANAGEMENT ───────────────────────────────────── */
+/* ════════════════════════════════════════════════════════════════════════
+   TAB 3 — INCIDENT MANAGEMENT
+   ════════════════════════════════════════════════════════════════════════ */
 .apex-incidents-grid {
   display: grid;
-  grid-template-columns: 1.4fr 1fr;
-  gap: 20px;
+  grid-template-columns: 1.3fr 1fr;
+  gap: 16px;
 }
 
 .apex-filter-bar {
   display: flex;
   align-items: center;
-  gap: 12px;
-  margin-bottom: 16px;
+  gap: 10px;
+  margin-bottom: 14px;
 }
 
 .apex-search-input {
   flex: 1;
   background: var(--apex-bg-surface-alt);
   border: 1px solid var(--apex-border);
-  border-radius: 6px;
-  padding: 8px 12px;
+  border-radius: 8px;
+  padding: 9px 14px;
   font-family: 'Manrope', sans-serif;
   font-size: 13px;
   color: var(--apex-text-primary);
   outline: none;
-  transition: border-color 0.15s;
+  transition: all 0.18s;
 }
+
+.apex-search-input::placeholder { color: var(--apex-text-muted); }
 
 .apex-search-input:focus {
-  border-color: var(--apex-border-light);
+  border-color: rgba(254,128,25,0.4);
+  box-shadow: 0 0 0 3px rgba(254,128,25,0.08);
 }
 
+.apex-select-pill {
+  background: var(--apex-bg-surface-alt);
+  border: 1px solid var(--apex-border);
+  border-radius: 8px;
+  padding: 9px 12px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--apex-text-secondary);
+  outline: none;
+  cursor: pointer;
+  transition: all 0.18s;
+  letter-spacing: 0.04em;
+}
+
+.apex-select-pill:focus { border-color: rgba(254,128,25,0.4); }
+
+/* Incident list */
 .apex-incidents-list {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  max-height: calc(100vh - 240px);
+  gap: 6px;
+  max-height: calc(100vh - 250px);
   overflow-y: auto;
   padding-right: 4px;
 }
 
+.apex-incidents-list::-webkit-scrollbar { width: 4px; }
+.apex-incidents-list::-webkit-scrollbar-track { background: transparent; }
+.apex-incidents-list::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 2px; }
+
 .apex-incident-card {
   background: var(--apex-bg-surface-alt);
   border: 1px solid var(--apex-border-dim);
-  border-radius: 6px;
+  border-radius: 9px;
   padding: 12px 16px;
   cursor: pointer;
-  transition: all 0.15s;
+  transition: all 0.18s;
   display: flex;
   align-items: center;
   justify-content: space-between;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Severity left-border */
+.apex-incident-card::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 3px;
+  border-radius: 2px 0 0 2px;
+  background: var(--apex-border);
+  transition: background 0.18s;
+}
+
+.apex-incident-card[data-severity="HIGH"]::before,
+.apex-incident-card[data-severity="CRITICAL"]::before {
+  background: #fb4934;
+}
+
+.apex-incident-card[data-severity="MEDIUM"]::before {
+  background: #fabd2f;
+}
+
+.apex-incident-card[data-severity="LOW"]::before {
+  background: #83a598;
 }
 
 .apex-incident-card:hover {
-  background: #1f2320;
+  background: var(--apex-bg-surface-hover);
   border-color: var(--apex-border-light);
+  transform: translateX(2px);
 }
 
 .apex-incident-card.selected {
-  background: #242925;
-  border-color: var(--apex-green);
-  box-shadow: 0 0 0 1px var(--apex-green);
+  background: rgba(254,128,25,0.06);
+  border-color: rgba(254,128,25,0.4);
+  box-shadow: 0 0 0 1px rgba(254,128,25,0.15), 0 4px 16px rgba(0,0,0,0.2);
 }
 
+.apex-incident-card.selected::before {
+  background: #fe8019;
+}
+
+/* Status badges */
 .apex-inc-status-badge {
   font-family: 'JetBrains Mono', monospace;
-  font-size: 10px;
+  font-size: 9px;
   font-weight: 700;
-  letter-spacing: 0.05em;
-  padding: 2px 8px;
-  border-radius: 4px;
+  letter-spacing: 0.06em;
+  padding: 3px 8px;
+  border-radius: 5px;
+  white-space: nowrap;
 }
 
 .apex-inc-status-badge.unacknowledged {
   color: #fb4934;
-  background: rgba(251, 73, 52, 0.1);
-  border: 1px solid rgba(251, 73, 52, 0.4);
+  background: rgba(251,73,52,0.1);
+  border: 1px solid rgba(251,73,52,0.35);
 }
 
 .apex-inc-status-badge.acknowledged {
   color: #fabd2f;
-  background: rgba(250, 189, 47, 0.1);
-  border: 1px solid rgba(250, 189, 47, 0.4);
+  background: rgba(250,189,47,0.1);
+  border: 1px solid rgba(250,189,47,0.35);
 }
 
 .apex-inc-status-badge.resolved {
   color: #4ade80;
-  background: rgba(74, 222, 128, 0.1);
-  border: 1px solid rgba(74, 222, 128, 0.4);
+  background: rgba(74,222,128,0.1);
+  border: 1px solid rgba(74,222,128,0.35);
 }
 
+/* Action buttons */
 .apex-ack-btn {
   width: 100%;
   padding: 12px 18px;
-  background: #4ade80;
-  border: 1px solid #86efac;
-  border-radius: 6px;
+  background: linear-gradient(135deg, #4ade80 0%, #22c55e 100%);
+  border: none;
+  border-radius: 9px;
   font-family: 'JetBrains Mono', monospace;
   font-size: 12px;
   font-weight: 700;
-  color: #111e15;
-  letter-spacing: 0.04em;
+  color: #0b1a10;
+  letter-spacing: 0.05em;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  transition: all 0.15s;
+  transition: all 0.18s;
+  box-shadow: 0 4px 16px rgba(74,222,128,0.25);
 }
 
 .apex-ack-btn:hover {
-  background: #5eead4;
-  box-shadow: 0 0 12px rgba(74, 222, 128, 0.4);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 24px rgba(74,222,128,0.4);
 }
 
-/* ─── TOAST NOTIFICATIONS ─────────────────────────────────────────── */
+/* ════════════════════════════════════════════════════════════════════════
+   TOAST NOTIFICATIONS
+   ════════════════════════════════════════════════════════════════════════ */
 .apex-toast-stack {
   position: fixed;
-  top: 24px;
+  bottom: 28px;
   right: 28px;
   display: flex;
-  flex-direction: column;
+  flex-direction: column-reverse;
   gap: 10px;
   z-index: 9999;
+  max-width: 360px;
 }
 
 .apex-toast {
-  background: #1e221f;
-  border: 1px solid var(--apex-border);
-  border-radius: 8px;
-  padding: 12px 18px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+  background: rgba(20,24,22,0.95);
+  border: 1px solid var(--apex-border-light);
+  border-radius: 10px;
+  padding: 13px 18px;
+  box-shadow: 0 12px 40px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.04);
   display: flex;
   align-items: center;
   gap: 12px;
   font-size: 13px;
   font-weight: 600;
   color: #f7f5ed;
-  animation: apexToastIn 0.25s ease-out;
+  animation: apexToastIn 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+  backdrop-filter: blur(12px);
 }
 
 @keyframes apexToastIn {
-  from { transform: translateX(40px); opacity: 0; }
-  to { transform: translateX(0); opacity: 1; }
+  from { transform: translateY(20px) scale(0.95); opacity: 0; }
+  to { transform: translateY(0) scale(1); opacity: 1; }
 }
 
-.apex-toast.success {
-  border-color: rgba(74, 222, 128, 0.4);
-}
-.apex-toast.alert {
-  border-color: rgba(251, 73, 52, 0.5);
-}
-.apex-toast.info {
-  border-color: rgba(250, 189, 47, 0.4);
-}
+.apex-toast.success { border-color: rgba(74,222,128,0.35); box-shadow: 0 12px 40px rgba(0,0,0,0.6), 0 0 20px rgba(74,222,128,0.1); }
+.apex-toast.alert  { border-color: rgba(251,73,52,0.4);  box-shadow: 0 12px 40px rgba(0,0,0,0.6), 0 0 20px rgba(251,73,52,0.12); }
+.apex-toast.info   { border-color: rgba(250,189,47,0.35); box-shadow: 0 12px 40px rgba(0,0,0,0.6), 0 0 20px rgba(250,189,47,0.08); }
 
-/* ─── FOOTER ──────────────────────────────────────────────────────── */
+/* ════════════════════════════════════════════════════════════════════════
+   FOOTER
+   ════════════════════════════════════════════════════════════════════════ */
 .apex-footer-bar {
-  padding: 12px 32px;
+  padding: 10px 36px;
   background: var(--apex-bg-deep);
   border-top: 1px solid var(--apex-border-dim);
   display: flex;
@@ -1110,55 +1422,34 @@
   letter-spacing: 0.08em;
 }
 
-
-/* ═══════════════════════════════════════════════════════════════════════
+/* ════════════════════════════════════════════════════════════════════════
    FIRE ALERT BUILDING HIGHLIGHTING
-   ═══════════════════════════════════════════════════════════════════════ */
-
-/* Building with fire alert */
+   ════════════════════════════════════════════════════════════════════════ */
 .tree-building-item.building-fire-alert {
-  background: linear-gradient(90deg, 
-    rgba(251, 73, 52, 0.15) 0%, 
-    rgba(251, 73, 52, 0.08) 100%
-  ) !important;
-  border: 1px solid rgba(251, 73, 52, 0.4) !important;
+  background: linear-gradient(90deg, rgba(251,73,52,0.15) 0%, rgba(251,73,52,0.06) 100%) !important;
+  border: 1px solid rgba(251,73,52,0.35) !important;
   border-left: 3px solid #fb4934 !important;
   animation: buildingFirePulse 2s ease-in-out infinite;
   position: relative;
   overflow: visible;
 }
 
-/* Pulsing animation for fire alert buildings */
 @keyframes buildingFirePulse {
-  0%, 100% {
-    border-color: rgba(251, 73, 52, 0.4);
-    box-shadow: 0 0 8px rgba(251, 73, 52, 0.2);
-  }
-  50% {
-    border-color: rgba(254, 128, 25, 0.6);
-    box-shadow: 0 0 16px rgba(254, 128, 25, 0.3);
-  }
+  0%, 100% { border-color: rgba(251,73,52,0.35); box-shadow: 0 0 8px rgba(251,73,52,0.15); }
+  50% { border-color: rgba(254,128,25,0.55); box-shadow: 0 0 16px rgba(254,128,25,0.25); }
 }
 
-/* Fire icon for buildings with alerts */
 .fire-alert-icon {
   color: #fb4934 !important;
   animation: fireIconFlicker 1.5s ease-in-out infinite;
-  margin-right: 4px;
+  margin-right: 2px;
 }
 
 @keyframes fireIconFlicker {
-  0%, 100% {
-    opacity: 1;
-    transform: scale(1);
-  }
-  50% {
-    opacity: 0.8;
-    transform: scale(1.1);
-  }
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.75; transform: scale(1.12); }
 }
 
-/* Fire alert badge */
 .fire-alert-badge {
   margin-left: auto;
   font-size: 14px;
@@ -1166,41 +1457,484 @@
 }
 
 @keyframes fireEmojiBounce {
-  0%, 100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(-2px);
-  }
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-3px); }
 }
 
-/* Hover state for fire alert buildings */
 .tree-building-item.building-fire-alert:hover {
-  background: linear-gradient(90deg, 
-    rgba(251, 73, 52, 0.25) 0%, 
-    rgba(251, 73, 52, 0.15) 100%
-  ) !important;
-  border-color: rgba(254, 128, 25, 0.6) !important;
-  box-shadow: 0 2px 12px rgba(251, 73, 52, 0.3);
+  background: linear-gradient(90deg, rgba(251,73,52,0.24) 0%, rgba(251,73,52,0.12) 100%) !important;
+  border-color: rgba(254,128,25,0.6) !important;
+  box-shadow: 0 2px 14px rgba(251,73,52,0.25);
   transform: translateX(2px);
 }
 
-/* Make building text more prominent when fire alert */
 .tree-building-item.building-fire-alert .tree-label {
   color: #f7f5ed !important;
   font-weight: 600;
 }
 
-/* Ensure fire alert buildings are visible even when parent org is collapsed */
-.tree-org-item {
-  position: relative;
-}
+.tree-org-item { position: relative; }
 
-/* Add subtle fire indicator on organization if it has buildings with alerts */
 .tree-org-item.has-fire-alert::before {
   content: '🔥';
   position: absolute;
-  left: -8px;
-  font-size: 12px;
+  left: -10px;
+  font-size: 11px;
   animation: fireEmojiBounce 1s ease-in-out infinite;
+}
+
+/* ════════════════════════════════════════════════════════════════════════
+   UTILS & ANIMATION
+   ════════════════════════════════════════════════════════════════════════ */
+.apex-divider {
+  height: 1px;
+  background: var(--apex-border-dim);
+  margin: 16px 0;
+}
+
+
+/* ════════════════════════════════════════════════════════════════════════
+   LIGHT THEME OVERRIDES — GIC palette
+   Applied via <html data-theme="light"> from ThemeContext
+   ════════════════════════════════════════════════════════════════════════ */
+[data-theme="light"] {
+  /* Core backgrounds */
+  --apex-bg-deep:          #f3f4f1;
+  --apex-bg-main:          #fefffc;
+  --apex-bg-surface:       #ffffff;
+  --apex-bg-surface-hover: #f9faf7;
+  --apex-bg-surface-alt:   #f9faf7;
+  --apex-bg-card:          #ffffff;
+
+  /* Borders */
+  --apex-border:       #dee2de;
+  --apex-border-light: #c8cec8;
+  --apex-border-dim:   #eef0ee;
+  --apex-border-glow:  rgba(234,88,12,0.18);
+
+  /* Text */
+  --apex-text-primary:   #2c2c2c;
+  --apex-text-secondary: #444141;
+  --apex-text-muted:     #646464;
+  --apex-text-dim:       #b4b8b4;
+
+  /* Brand accent — keep orange/red readable on light bg */
+  --apex-orange:        #d97706;
+  --apex-orange-dim:    rgba(217,119,6,0.10);
+  --apex-orange-border: rgba(217,119,6,0.30);
+  --apex-orange-glow:   rgba(217,119,6,0.15);
+
+  /* Semantic */
+  --apex-red:         #e11d48;
+  --apex-red-dim:     rgba(225,29,72,0.08);
+  --apex-red-border:  rgba(225,29,72,0.25);
+  --apex-red-glow:    rgba(225,29,72,0.15);
+
+  --apex-amber:        #d97706;
+  --apex-amber-dim:    rgba(217,119,6,0.10);
+  --apex-amber-border: rgba(217,119,6,0.28);
+
+  --apex-green:        #16a34a;
+  --apex-green-dim:    rgba(22,163,74,0.08);
+  --apex-green-border: rgba(22,163,74,0.25);
+  --apex-green-glow:   rgba(22,163,74,0.15);
+
+  --apex-blue:        #41a1cf;
+  --apex-blue-dim:    rgba(65,161,207,0.10);
+  --apex-blue-border: rgba(65,161,207,0.28);
+}
+
+/* ── Root layout — remove dark radial gradients in light mode ── */
+[data-theme="light"] .apex-app-root {
+  background-image: none;
+  background-color: var(--apex-bg-main);
+}
+
+/* ── Sidebar — opaque white in light mode ── */
+[data-theme="light"] .glassy-sidebar {
+  background: rgba(255, 255, 255, 0.97);
+  backdrop-filter: blur(20px);
+  border-right: 1px solid var(--apex-border);
+  box-shadow: 2px 0 16px rgba(0,0,0,0.06);
+}
+
+[data-theme="light"] .sidebar-brand {
+  border-bottom: 1px solid var(--apex-border);
+}
+
+[data-theme="light"] .sidebar-brand-name {
+  color: #2c2c2c;
+}
+
+[data-theme="light"] .sidebar-nav-btn:hover {
+  background: #f9faf7;
+  border-color: var(--apex-border);
+  color: #2c2c2c;
+}
+
+[data-theme="light"] .sidebar-nav-btn.active {
+  background: rgba(217,119,6,0.10);
+  border-color: rgba(217,119,6,0.35);
+  color: #2c2c2c;
+  box-shadow: none;
+}
+
+[data-theme="light"] .sidebar-section {
+  border-top: 1px solid var(--apex-border);
+}
+
+[data-theme="light"] .sidebar-section-title {
+  color: #b4b8b4;
+}
+
+[data-theme="light"] .tree-children {
+  border-left: 1px solid var(--apex-border);
+}
+
+[data-theme="light"] .tree-count {
+  background: #f3f4f1;
+  color: #646464;
+}
+
+[data-theme="light"] .tree-org-item:hover {
+  background: #f9faf7;
+}
+
+[data-theme="light"] .tree-building-item:hover {
+  background: rgba(65,161,207,0.07);
+  border-color: rgba(65,161,207,0.20);
+}
+
+[data-theme="light"] .sidebar-actions {
+  border-top: 1px solid var(--apex-border);
+}
+
+[data-theme="light"] .sidebar-action-btn {
+  background: rgba(217,119,6,0.07);
+  border-color: rgba(217,119,6,0.25);
+  color: #d97706;
+}
+
+[data-theme="light"] .sidebar-action-btn:hover {
+  background: rgba(217,119,6,0.14);
+  border-color: rgba(217,119,6,0.45);
+  box-shadow: 0 4px 12px rgba(217,119,6,0.12);
+}
+
+[data-theme="light"] .sidebar-profile {
+  background: #f9faf7;
+  border: 1px solid var(--apex-border);
+}
+
+[data-theme="light"] .sidebar-profile:hover {
+  background: #f3f4f1;
+  border-color: var(--apex-border-light);
+}
+
+[data-theme="light"] .sidebar-profile-avatar {
+  background: linear-gradient(135deg, #fef9f0 0%, #fef3e0 100%);
+  border-color: rgba(217,119,6,0.30);
+  color: #d97706;
+  box-shadow: none;
+}
+
+[data-theme="light"] .sidebar-profile-name { color: #2c2c2c; }
+[data-theme="light"] .sidebar-profile-role { color: #646464; }
+
+/* ── Topbar ── */
+[data-theme="light"] .apex-topbar {
+  background: rgba(255,255,255,0.95);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--apex-border);
+  box-shadow: 0 1px 0 rgba(217,119,6,0.06), 0 2px 8px rgba(0,0,0,0.04);
+}
+
+[data-theme="light"] .apex-topbar-title { color: #2c2c2c; }
+[data-theme="light"] .apex-topbar-subtitle { color: #b4b8b4; }
+[data-theme="light"] .apex-topbar-clock { color: #646464; }
+
+[data-theme="light"] .apex-system-status {
+  background: rgba(22,163,74,0.07);
+  border-color: rgba(22,163,74,0.22);
+}
+
+[data-theme="light"] .apex-system-status-text { color: #16a34a; }
+[data-theme="light"] .apex-system-status-dot {
+  background: #16a34a;
+  box-shadow: 0 0 6px rgba(22,163,74,0.7);
+}
+
+[data-theme="light"] .apex-signout-btn {
+  background: rgba(225,29,72,0.06);
+  border-color: rgba(225,29,72,0.22);
+  color: #e11d48;
+}
+
+[data-theme="light"] .apex-signout-btn:hover {
+  background: rgba(225,29,72,0.12);
+  border-color: rgba(225,29,72,0.40);
+  box-shadow: 0 2px 8px rgba(225,29,72,0.15);
+}
+
+/* ── Content area scrollbar ── */
+[data-theme="light"] .apex-content-area-new::-webkit-scrollbar-thumb {
+  background: #dee2de;
+}
+
+/* ── KPI Cards ── */
+[data-theme="light"] .apex-kpi-card {
+  background: #ffffff;
+  border-color: #dee2de;
+  box-shadow: 0 1px 1px rgba(0,0,0,0.05), 0 4px 8px rgba(0,0,0,0.03);
+}
+
+[data-theme="light"] .apex-kpi-card::before {
+  background: linear-gradient(90deg, transparent, rgba(217,119,6,0.35), transparent);
+}
+
+[data-theme="light"] .apex-kpi-card:hover {
+  border-color: #c8cec8;
+  background: #fafbf9;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+}
+
+[data-theme="light"] .apex-kpi-card.kpi-danger {
+  border-color: rgba(225,29,72,0.20);
+  background: linear-gradient(135deg, #ffffff 0%, rgba(225,29,72,0.03) 100%);
+}
+
+[data-theme="light"] .apex-kpi-card.kpi-success {
+  border-color: rgba(22,163,74,0.18);
+  background: linear-gradient(135deg, #ffffff 0%, rgba(22,163,74,0.03) 100%);
+}
+
+[data-theme="light"] .apex-kpi-card.kpi-blue {
+  border-color: rgba(65,161,207,0.18);
+}
+
+[data-theme="light"] .apex-kpi-value { color: #2c2c2c; }
+[data-theme="light"] .apex-kpi-value.danger { color: #e11d48; text-shadow: none; }
+[data-theme="light"] .apex-kpi-value.success { color: #16a34a; text-shadow: none; }
+[data-theme="light"] .apex-kpi-label { color: #b4b8b4; }
+[data-theme="light"] .apex-kpi-sub { color: #646464; }
+
+[data-theme="light"] .apex-kpi-bar {
+  background: #f3f4f1;
+}
+
+[data-theme="light"] .apex-kpi-bar-fill {
+  background: linear-gradient(90deg, #16a34a 0%, #0891b2 100%);
+  box-shadow: none;
+}
+
+[data-theme="light"] .apex-kpi-live-dot {
+  background: #e11d48;
+  box-shadow: 0 0 6px rgba(225,29,72,0.6);
+}
+
+/* ── Panels ── */
+[data-theme="light"] .apex-panel {
+  background: #ffffff;
+  border-color: #dee2de;
+  box-shadow: 0 1px 1px rgba(0,0,0,0.04), 0 4px 8px rgba(0,0,0,0.03);
+}
+
+[data-theme="light"] .apex-panel::after {
+  background: linear-gradient(90deg, transparent, rgba(0,0,0,0.04), transparent);
+}
+
+[data-theme="light"] .apex-panel-header {
+  border-bottom-color: #eef0ee;
+}
+
+[data-theme="light"] .apex-panel-title { color: #444141; }
+[data-theme="light"] .apex-panel-title::before {
+  background: linear-gradient(180deg, #d97706 0%, #e11d48 100%);
+}
+
+[data-theme="light"] .apex-tag-badge {
+  color: #646464;
+  background: #f3f4f1;
+  border-color: #dee2de;
+}
+
+[data-theme="light"] .safety-section-label { color: #b4b8b4; }
+
+/* ── Org / Building cards in matrix ── */
+[data-theme="light"] .apex-org-card {
+  background: #f9faf7;
+  border-color: #eef0ee;
+}
+
+[data-theme="light"] .apex-org-card:hover {
+  border-color: #c8cec8;
+  background: #f3f4f1;
+}
+
+[data-theme="light"] .apex-org-name { color: #2c2c2c; }
+[data-theme="light"] .apex-org-sub { color: #646464; }
+[data-theme="light"] .apex-stat-label { color: #b4b8b4; }
+[data-theme="light"] .apex-stat-val.green { color: #16a34a; }
+[data-theme="light"] .apex-stat-val.amber { color: #d97706; }
+
+[data-theme="light"] .apex-readiness-item {
+  border-bottom-color: #eef0ee;
+}
+
+/* ── Monitoring / CCTV ── (stays dark — cameras always dark bg) ── */
+[data-theme="light"] .apex-cctv-container {
+  border-color: #dee2de;
+  box-shadow: 0 2px 16px rgba(0,0,0,0.08);
+}
+
+[data-theme="light"] .apex-cctv-header {
+  background: #f3f4f1;
+  border-bottom: 1px solid #dee2de;
+}
+
+[data-theme="light"] .apex-cctv-clock { color: #646464; }
+
+[data-theme="light"] .apex-camera-tabs {
+  background: #f3f4f1;
+  border-top: 1px solid #dee2de;
+}
+
+[data-theme="light"] .apex-cam-tab-btn {
+  background: #ffffff;
+  border-color: #dee2de;
+}
+
+[data-theme="light"] .apex-cam-tab-btn:hover {
+  border-color: #c8cec8;
+  background: #f9faf7;
+}
+
+[data-theme="light"] .apex-cam-tab-btn.active {
+  border-color: #d97706;
+  background: rgba(217,119,6,0.08);
+  box-shadow: none;
+}
+
+[data-theme="light"] .apex-cam-tab-id { color: #2c2c2c; }
+[data-theme="light"] .apex-cam-tab-room { color: #646464; }
+
+/* ── Simulator buttons ── */
+[data-theme="light"] .apex-sim-btn {
+  background: #f9faf7;
+  border-color: #dee2de;
+  color: #2c2c2c;
+}
+
+[data-theme="light"] .apex-sim-btn:hover {
+  background: #f3f4f1;
+  border-color: #c8cec8;
+}
+
+[data-theme="light"] .apex-sim-btn.fire { color: #e11d48; }
+[data-theme="light"] .apex-sim-btn.fire:hover {
+  border-color: rgba(225,29,72,0.35);
+  background: rgba(225,29,72,0.05);
+  box-shadow: none;
+}
+
+[data-theme="light"] .apex-sim-btn.smoke { color: #d97706; }
+[data-theme="light"] .apex-sim-btn.smoke:hover {
+  border-color: rgba(217,119,6,0.35);
+  background: rgba(217,119,6,0.05);
+  box-shadow: none;
+}
+
+[data-theme="light"] .apex-sim-btn.water { color: #41a1cf; }
+[data-theme="light"] .apex-sim-btn.water:hover {
+  border-color: rgba(65,161,207,0.35);
+  background: rgba(65,161,207,0.05);
+  box-shadow: none;
+}
+
+[data-theme="light"] .apex-hazard-confirmed-box {
+  background: rgba(225,29,72,0.04);
+  border-color: rgba(225,29,72,0.22);
+  box-shadow: none;
+}
+
+/* ── Incident cards ── */
+[data-theme="light"] .apex-search-input {
+  background: #f9faf7;
+  border-color: #dee2de;
+  color: #2c2c2c;
+}
+
+[data-theme="light"] .apex-search-input::placeholder { color: #b4b8b4; }
+[data-theme="light"] .apex-search-input:focus {
+  border-color: rgba(217,119,6,0.35);
+  box-shadow: 0 0 0 3px rgba(217,119,6,0.06);
+}
+
+[data-theme="light"] .apex-select-pill {
+  background: #f9faf7;
+  border-color: #dee2de;
+  color: #444141;
+}
+
+[data-theme="light"] .apex-select-pill:focus {
+  border-color: rgba(217,119,6,0.35);
+}
+
+/* Incident list scrollbar */
+[data-theme="light"] .apex-incidents-list::-webkit-scrollbar-thumb {
+  background: #dee2de;
+}
+
+/* ── Fire alert badge on tree ── */
+[data-theme="light"] .tree-org-item.has-fire-alert::before {
+  /* keep emoji */
+}
+
+[data-theme="light"] .tree-building-item.building-fire-alert {
+  background: rgba(225,29,72,0.05);
+  border-color: rgba(225,29,72,0.20);
+}
+
+/* ── Toast stack ── */
+[data-theme="light"] .apex-toast-stack .apex-toast {
+  background: #ffffff;
+  border: 1px solid #dee2de;
+  color: #2c2c2c;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.10);
+}
+
+/* ── Theme toggle button in topbar ── */
+.apex-theme-toggle-btn {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 13px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid var(--apex-border);
+  border-radius: 20px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--apex-text-secondary);
+  cursor: pointer;
+  letter-spacing: 0.04em;
+  transition: all 0.18s;
+}
+
+.apex-theme-toggle-btn:hover {
+  background: rgba(255,255,255,0.08);
+  border-color: var(--apex-border-light);
+  color: var(--apex-text-primary);
+}
+
+[data-theme="light"] .apex-theme-toggle-btn {
+  background: #f9faf7;
+  border-color: #dee2de;
+  color: #444141;
+}
+
+[data-theme="light"] .apex-theme-toggle-btn:hover {
+  background: #f3f4f1;
+  border-color: #c8cec8;
+  color: #2c2c2c;
 }

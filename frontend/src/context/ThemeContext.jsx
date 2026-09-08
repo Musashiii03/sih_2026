@@ -1,31 +1,41 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+/**
+ * ThemeContext — global light/dark theme toggle
+ *
+ * - Dark  = Gruvbox (:root defaults, no attribute)
+ * - Light = GIC parchment ([data-theme="light"] on <html>)
+ *
+ * Persists to localStorage. Defaults to dark.
+ */
+import React, { createContext, useContext, useEffect, useState } from 'react';
 
-const ThemeContext = createContext();
+const ThemeContext = createContext({ theme: 'dark', toggle: () => {} });
 
 export function ThemeProvider({ children }) {
-  const [isDark, setIsDark] = useState(() => {
-    const saved = localStorage.getItem('theme');
-    if (saved) return saved === 'dark';
-    return window.matchMedia('(prefers-color-scheme: dark)').matches;
+  const [theme, setTheme] = useState(() => {
+    try {
+      return localStorage.getItem('atma-theme') || 'dark';
+    } catch {
+      return 'dark';
+    }
   });
 
+  // Apply to <html> element
   useEffect(() => {
     const root = document.documentElement;
-    if (isDark) {
-      root.classList.add('dark-theme');
-      root.classList.remove('light-theme');
-      localStorage.setItem('theme', 'dark');
+    if (theme === 'light') {
+      root.setAttribute('data-theme', 'light');
     } else {
-      root.classList.add('light-theme');
-      root.classList.remove('dark-theme');
-      localStorage.setItem('theme', 'light');
+      root.removeAttribute('data-theme');
     }
-  }, [isDark]);
+    try {
+      localStorage.setItem('atma-theme', theme);
+    } catch {}
+  }, [theme]);
 
-  const toggleTheme = () => setIsDark(prev => !prev);
+  const toggle = () => setTheme(t => (t === 'dark' ? 'light' : 'dark'));
 
   return (
-    <ThemeContext.Provider value={{ isDark, toggleTheme }}>
+    <ThemeContext.Provider value={{ theme, toggle }}>
       {children}
     </ThemeContext.Provider>
   );

@@ -32,13 +32,20 @@ import {
   ArrowRight,
   Activity,
   Layers,
-  Camera
+  Camera,
+  Building2,
+  TrendingUp,
+  Wifi,
+  Bell
 } from 'lucide-react';
 import AddOrganization from './AddOrganization';
 import AddBuilding from './AddBuilding';
 import BuildingDetail from './BuildingDetail';
 import { useFireAlerts } from '../hooks/useFireAlerts';
 import FireAlertNotification from './FireAlertNotification';
+import { useTheme } from '../context/ThemeContext';
+import TimerDebugPanel from './TimerDebugPanel';
+
 import './ApexConsole.css';
 
 // ─── SEEDED ORGANIZATIONS & SITES ────────────────────────────────────
@@ -273,6 +280,7 @@ const INITIAL_INCIDENTS = [
 
 export default function OwnerConsole() {
   const navigate = useNavigate();
+  const { theme, toggle: toggleTheme } = useTheme();
 
   // Fire Alerts Hook
   const { 
@@ -813,6 +821,47 @@ export default function OwnerConsole() {
 
       {/* ─── MAIN CONTENT VIEWPORT ─── */}
       <main className="apex-main-viewport">
+
+        {/* ─── TOP COMMAND BAR ─── */}
+        <header className="apex-topbar">
+          <div className="apex-topbar-left">
+            <div>
+              <div className="apex-topbar-title">
+                {activeTab === 'overview' && 'Command Overview'}
+                {activeTab === 'monitoring' && 'Live Monitoring'}
+                {activeTab === 'incidents' && 'Incident History'}
+                {activeTab === 'add-organization' && 'Add Organization'}
+                {activeTab === 'add-building' && 'Add Building'}
+                {activeTab === 'building-detail' && (selectedBuilding?.name || 'Building Detail')}
+              </div>
+              <div className="apex-topbar-subtitle">ATMARAKSHAK OWNER CONSOLE · SAFETY COMMAND</div>
+            </div>
+          </div>
+          <div className="apex-topbar-right">
+            <div className="apex-system-status">
+              <div className="apex-system-status-dot" />
+              <span className="apex-system-status-text">SYSTEMS NOMINAL</span>
+            </div>
+            <div className="apex-topbar-clock">{liveTime}</div>
+            <button
+              className="apex-theme-toggle-btn"
+              onClick={toggleTheme}
+              title={theme === 'dark' ? 'Switch to Light mode' : 'Switch to Dark mode'}
+            >
+              {theme === 'dark' ? (
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+              ) : (
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+              )}
+              {theme === 'dark' ? 'Light' : 'Dark'}
+            </button>
+            <button className="apex-signout-btn" onClick={handleSignOut}>
+              <LogOut size={15} />
+              <span>Sign Out</span>
+            </button>
+          </div>
+        </header>
+
         {/* Content Body */}
         <div className="apex-content-area-new">
           {/* ═════════════════════════════════════════════════════════════ */}
@@ -823,24 +872,25 @@ export default function OwnerConsole() {
               {/* 4 KPI Cards */}
               <div className="apex-kpi-row">
                 {/* Active Incidents */}
-                <div className="apex-kpi-card">
-                  <div className="apex-kpi-label">
-                    <span>ACTIVE INCIDENTS</span>
-                    <span
-                      style={{
-                        width: 6,
-                        height: 6,
-                        borderRadius: '50%',
-                        background: '#fb4934',
-                      }}
-                    />
+                <div className={`apex-kpi-card ${activeIncidentsCount > 0 ? 'kpi-danger' : 'kpi-success'}`}>
+                  <div className="apex-kpi-icon-row">
+                    <div className={`apex-kpi-icon ${activeIncidentsCount > 0 ? 'danger' : 'success'}`}>
+                      <ShieldAlert size={18} />
+                    </div>
+                    {activeIncidentsCount > 0 && <div className="apex-kpi-live-dot" />}
                   </div>
-                  <div className="apex-kpi-value">{activeIncidentsCount}</div>
-                  <div className="apex-kpi-sub">Requires operator review</div>
+                  <div className="apex-kpi-label">ACTIVE INCIDENTS</div>
+                  <div className={`apex-kpi-value ${activeIncidentsCount > 0 ? 'danger' : 'success'}`}>{activeIncidentsCount}</div>
+                  <div className="apex-kpi-sub">{activeIncidentsCount > 0 ? 'Requires operator review' : 'All incidents clear'}</div>
                 </div>
 
                 {/* Safety Score */}
-                <div className="apex-kpi-card">
+                <div className="apex-kpi-card kpi-success">
+                  <div className="apex-kpi-icon-row">
+                    <div className="apex-kpi-icon success">
+                      <TrendingUp size={18} />
+                    </div>
+                  </div>
                   <div className="apex-kpi-label">SAFETY SCORE</div>
                   <div className="apex-kpi-value">91%</div>
                   <div className="apex-kpi-sub">Across all monitored sites</div>
@@ -851,13 +901,23 @@ export default function OwnerConsole() {
 
                 {/* Buildings */}
                 <div className="apex-kpi-card">
+                  <div className="apex-kpi-icon-row">
+                    <div className="apex-kpi-icon amber">
+                      <Building2 size={18} />
+                    </div>
+                  </div>
                   <div className="apex-kpi-label">BUILDINGS</div>
-                  <div className="apex-kpi-value">03</div>
-                  <div className="apex-kpi-sub">2 organizations</div>
+                  <div className="apex-kpi-value">{String(buildings.length).padStart(2, '0')}</div>
+                  <div className="apex-kpi-sub">{organizations.length} organization{organizations.length !== 1 ? 's' : ''}</div>
                 </div>
 
                 {/* Cameras Online */}
-                <div className="apex-kpi-card">
+                <div className="apex-kpi-card kpi-blue">
+                  <div className="apex-kpi-icon-row">
+                    <div className="apex-kpi-icon blue">
+                      <Wifi size={18} />
+                    </div>
+                  </div>
                   <div className="apex-kpi-label">CAMERAS ONLINE</div>
                   <div className="apex-kpi-value">5/6</div>
                   <div className="apex-kpi-sub">Network availability</div>
@@ -1236,6 +1296,7 @@ export default function OwnerConsole() {
                         <div
                           key={inc.id}
                           className={`apex-incident-card ${isSelected ? 'selected' : ''}`}
+                          data-severity={inc.severity}
                           onClick={() => setSelectedIncidentId(inc.id)}
                         >
                           <div>
@@ -1484,6 +1545,9 @@ export default function OwnerConsole() {
           )}
         </div>
       </main>
+
+      {/* ─── TIMER DEBUG PANEL (Bottom-Left) ─── */}
+      <TimerDebugPanel activeAlerts={activeAlerts} />
     </div>
   );
 }

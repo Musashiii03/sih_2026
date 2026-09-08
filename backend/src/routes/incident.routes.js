@@ -82,4 +82,18 @@ router.get('/:id', incidentController.getIncidentById);
  */
 router.patch('/:id/status', incidentController.updateIncidentStatus);
 
+/**
+ * @route   POST /api/incidents/:id/acknowledge
+ * @desc    Acknowledge incident alert (sends email to fire dept if within 45s)
+ * @access  Public (should be protected in production)
+ */
+router.post('/:id/acknowledge', incidentController.acknowledgeIncident);
+
+/**
+ * @route   POST /api/incidents/:id/escalate
+ * @desc    Auto-escalate incident (timer expired, sends email to fire dept)
+ * @access  Public (should be protected in production)
+ */
+router.post('/:id/escalate', incidentController.escalateIncident);
+
 module.exports = router;
