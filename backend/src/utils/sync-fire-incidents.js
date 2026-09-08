@@ -198,6 +198,48 @@ async function syncFireIncidents(dataPath = null) {
           console.log(`✅ Synced incident: ${summary.incident_id} with ${summary.frame_count} frames`);
           syncedCount++;
 
+          // ========================================
+          // TRIGGER VOICE CALL FOR NEW INCIDENTS
+          // ========================================
+          try {
+            const twilioService = require('../services/twilio.service');
+            
+            if (twilioService.isConfigured()) {
+              console.log(`🔔 Triggering voice call for incident ${summary.incident_id}...`);
+              
+              const alertData = {
+                owner_name: 'Property Owner',
+                hazard_type: 'fire',
+                building_name: cameraRecord?.building?.name || 'Unknown Building',
+                floor_number: cameraRecord?.floor_number || 'Unknown Floor',
+                area_or_room_name: cameraRecord?.room_name || 'Unknown Area',
+                camera_name_or_id: cameraRecord?.camera_code || summary.camera_id || 'Unknown Camera',
+                detection_time: incident.detected_at.toLocaleString('en-US', {
+                  month: 'short',
+                  day: '2-digit',
+                  year: 'numeric',
+                  hour: '2-digit',
+                  minute: '2-digit',
+                  hour12: true
+                }),
+                occupant_status: summary.statistics?.total_human_detections > 0 
+                  ? `${summary.statistics.total_human_detections} person(s) detected in fire zone - URGENT`
+                  : 'Unknown - Verification Required'
+              };
+
+              // Wait for the call to be initiated (don't fire-and-forget)
+              const result = await twilioService.makeFireAlertCall(alertData);
+              
+              if (result.success) {
+                console.log(`   ✅ Voice call initiated: ${result.callSid}`);
+              } else {
+                console.log(`   ⚠️  Voice call failed: ${result.error}`);
+              }
+            }
+          } catch (twilioError) {
+            console.log(`   ⚠️  Twilio service error: ${twilioError.message}`);
+          }
+
         } catch (error) {
           console.error(`❌ Error syncing incident ${incidentDir.name}:`, error.message);
           console.error(`   File: ${summaryPath}`);
