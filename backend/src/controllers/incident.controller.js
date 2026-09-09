@@ -958,13 +958,10 @@ exports.getIncidentDashboardData = async (req, res, next) => {
  */
 exports.getActiveFireAlerts = async (req, res, next) => {
   try {
-    // For demo purposes, hardcoded to building_id = 1
-    // In production, this would filter by user's owned buildings
-    const targetBuildingId = 1;
-
+    // Returns all active DETECTED fire incidents across all buildings
+    // In production, this would filter by the authenticated user's owned buildings
     const activeAlerts = await Incident.findAll({
       where: {
-        building_id: targetBuildingId,
         incident_type: 'FIRE',
         status: 'DETECTED'
       },

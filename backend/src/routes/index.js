@@ -11,6 +11,7 @@ const incidentRoutes = require('./incident.routes');
 const buildingRoutes = require('./building.routes');
 const cameraRoutes = require('./camera.routes');
 const organizationRoutes = require('./organization.routes');
+const userRoutes = require('./user.routes');
 
 module.exports = {
   frameRoutes,
@@ -18,5 +19,6 @@ module.exports = {
   incidentRoutes,
   buildingRoutes,
   cameraRoutes,
-  organizationRoutes
+  organizationRoutes,
+  userRoutes
 };

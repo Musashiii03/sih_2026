@@ -36,7 +36,8 @@ import {
   Building2,
   TrendingUp,
   Wifi,
-  Bell
+  Bell,
+  User
 } from 'lucide-react';
 import AddOrganization from './AddOrganization';
 import AddBuilding from './AddBuilding';
@@ -44,8 +45,6 @@ import BuildingDetail from './BuildingDetail';
 import { useFireAlerts } from '../hooks/useFireAlerts';
 import FireAlertNotification from './FireAlertNotification';
 import { useTheme } from '../context/ThemeContext';
-import TimerDebugPanel from './TimerDebugPanel';
-
 import './ApexConsole.css';
 
 // ─── SEEDED ORGANIZATIONS & SITES ────────────────────────────────────
@@ -715,6 +714,14 @@ export default function OwnerConsole() {
               <span className="sidebar-badge">{activeIncidentsCount}</span>
             )}
           </button>
+          <Link
+            to="/owner/profile/1"
+            className="sidebar-nav-btn"
+            style={{ textDecoration: 'none' }}
+          >
+            <User size={20} />
+            <span>My Profile</span>
+          </Link>
         </nav>
 
         {/* Organizations & Buildings List */}
@@ -810,13 +817,24 @@ export default function OwnerConsole() {
         </div>
 
         {/* Profile */}
-        <div className="sidebar-profile">
-          <div className="sidebar-profile-avatar">MR</div>
-          <div className="sidebar-profile-info">
-            <div className="sidebar-profile-name">Morgan Reed</div>
-            <div className="sidebar-profile-role">Owner</div>
+        <Link
+          to="/owner/profile/1"
+          style={{ textDecoration: 'none' }}
+          title="View your profile"
+        >
+          <div
+            className="sidebar-profile"
+            style={{ cursor: 'pointer', transition: 'background 0.2s' }}
+            onMouseEnter={e => e.currentTarget.style.background = 'rgba(254,128,25,0.06)'}
+            onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+          >
+            <div className="sidebar-profile-avatar">MR</div>
+            <div className="sidebar-profile-info">
+              <div className="sidebar-profile-name">Morgan Reed</div>
+              <div className="sidebar-profile-role">Owner · View Profile →</div>
+            </div>
           </div>
-        </div>
+        </Link>
       </aside>
 
       {/* ─── MAIN CONTENT VIEWPORT ─── */}
@@ -1546,8 +1564,6 @@ export default function OwnerConsole() {
         </div>
       </main>
 
-      {/* ─── TIMER DEBUG PANEL (Bottom-Left) ─── */}
-      <TimerDebugPanel activeAlerts={activeAlerts} />
     </div>
   );
 }
