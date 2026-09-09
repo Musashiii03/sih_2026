@@ -4,6 +4,7 @@ import LandingPage from './components/LandingPage';
 import OwnerConsole from './components/OwnerConsole';
 import DispatchConsole from './components/DispatchConsole';
 import LoginPage from './components/LoginPage';
+import UserProfile from './components/UserProfile';
 
 // ══════════════════════════════════════════════════
 // OWNER SIDEBAR — visible on /owner routes
@@ -151,7 +152,9 @@ function OwnerLayout() {
     <div className="atma-layout">
       <div className="atma-main-full">
         <Routes>
-          <Route path="/" element={<OwnerConsole />} />
+          <Route path="/"           element={<OwnerConsole />} />
+          <Route path="/profile"    element={<UserProfile />} />
+          <Route path="/profile/:id" element={<UserProfile />} />
         </Routes>
       </div>
     </div>
